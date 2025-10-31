@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.2] - 2025-10-30
+
+### Changed
+
+- **Configurable Training Data Repetition**:
+  - Made training data repetition factor configurable instead of hardcoded (previously fixed at 3x)
+  - Added `data_repetition_factor` parameter to `config.yaml` with default value of 100
+  - Added `--data-repetition-factor` CLI argument for runtime override
+  - Updated `get_predefined_tasks()` function to accept `data_repetition_factor` parameter
+  - Applied configurable repetition to all task types (sentiment_positive, sentiment_negative, instruction_following, qa_factual)
+  - Default configuration now produces 3,000 training examples per task (30 unique × 100 repetitions) instead of 90 (30 unique × 3)
+
+### Technical Details
+
+- **Configuration**: New `fine_tuning.data_repetition_factor` field in config.yaml
+- **CLI Integration**: Added argument parsing for data repetition factor
+- **Data Pipeline**: Updated `FineTuningConfig` class and `ExperimentOrchestrator` to pass repetition factor throughout the pipeline
+- **Backward Compatible**: Default value of 100 maintains reasonable training dataset size while allowing experimentation
+
 ## [0.5.1] - 2025-10-30
 
 ### Changed

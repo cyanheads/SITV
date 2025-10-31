@@ -6,7 +6,7 @@
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/Version-0.5.1-blue.svg?style=flat-square)](./CHANGELOG.md) [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg?style=flat-square)](https://www.python.org/) [![PyTorch](https://img.shields.io/badge/PyTorch-2.8.0+-EE4C2C.svg?style=flat-square)](https://pytorch.org/) [![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](./LICENSE) [![Status](https://img.shields.io/badge/Status-Research-yellow.svg?style=flat-square)](https://github.com/cyanheads/SITV)
+[![Version](https://img.shields.io/badge/Version-0.5.2-blue.svg?style=flat-square)](./CHANGELOG.md) [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg?style=flat-square)](https://www.python.org/) [![PyTorch](https://img.shields.io/badge/PyTorch-2.8.0+-EE4C2C.svg?style=flat-square)](https://pytorch.org/) [![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](./LICENSE) [![Status](https://img.shields.io/badge/Status-Research-yellow.svg?style=flat-square)](https://github.com/cyanheads/SITV)
 
 </div>
 
@@ -107,6 +107,9 @@ python main.py --config my_config.yaml
 # Custom alpha range and sample count
 python main.py --alpha-min -5 --alpha-max 5 --num-samples 200
 
+# Custom training data repetition factor
+python main.py --data-repetition-factor 50  # 30 unique × 50 = 1500 examples
+
 # Analysis-only mode (skip fine-tuning, use saved models)
 python main.py --analysis-only
 
@@ -191,6 +194,7 @@ fine_tuning:
   learning_rate: 5.0e-5
   batch_size: 16
   max_length: 512
+  data_repetition_factor: 100  # Multiply training examples (30 unique × 100 = 3000 total)
 
 # Alpha Sweep Configuration
 alpha_sweep:
