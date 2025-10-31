@@ -6,7 +6,7 @@
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/Version-0.5.4-blue.svg?style=flat-square)](./CHANGELOG.md) [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg?style=flat-square)](https://www.python.org/) [![PyTorch](https://img.shields.io/badge/PyTorch-2.8.0+-EE4C2C.svg?style=flat-square)](https://pytorch.org/) [![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](./LICENSE) [![Status](https://img.shields.io/badge/Status-Research-yellow.svg?style=flat-square)](https://github.com/cyanheads/SITV)
+[![Version](https://img.shields.io/badge/Version-0.5.5-blue.svg?style=flat-square)](./CHANGELOG.md) [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg?style=flat-square)](https://www.python.org/) [![PyTorch](https://img.shields.io/badge/PyTorch-2.8.0+-EE4C2C.svg?style=flat-square)](https://pytorch.org/) [![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](./LICENSE) [![Status](https://img.shields.io/badge/Status-Research-yellow.svg?style=flat-square)](https://github.com/cyanheads/SITV)
 
 </div>
 
@@ -97,6 +97,8 @@ This will:
 
 ### Command-Line Options
 
+The CLI has been intentionally simplified to avoid configuration drift. All experiment parameters should be configured in `config.yaml`.
+
 ```bash
 # Full experiment with default parameters
 python main.py
@@ -104,26 +106,17 @@ python main.py
 # Use custom config file
 python main.py --config my_config.yaml
 
-# Custom alpha range and sample count
-python main.py --alpha-min -5 --alpha-max 5 --num-samples 200
-
-# Custom training data repetition factor
-python main.py --data-repetition-factor 50  # 30 unique × 50 = 1500 examples
-
 # Analysis-only mode (skip fine-tuning, use saved models)
 python main.py --analysis-only
 
-# Re-run analysis with different parameters
-python main.py --analysis-only --alpha-min -2 --alpha-max 2 --num-samples 50
-
-# Custom output directory
-python main.py --output-dir ./my_experiments
+# Combine custom config with analysis-only mode
+python main.py --config my_config.yaml --analysis-only
 
 # View all options
 python main.py --help
 ```
 
-**Analysis-Only Mode**: After running a full experiment, the base and fine-tuned models are saved to `outputs/saved_base_model/` and `outputs/saved_finetuned_model/`. Use `--analysis-only` to skip the time-consuming fine-tuning step and re-run the alpha sweep with different parameters. This is useful for:
+**Analysis-Only Mode**: After running a full experiment, the base and fine-tuned models are saved to `outputs/saved_base_model/` and `outputs/saved_finetuned_model/`. Use `--analysis-only` to skip the time-consuming fine-tuning step and re-run the alpha sweep. To change experiment parameters (alpha range, sample count, etc.), edit `config.yaml` and run with `--analysis-only`. This is useful for:
 - Testing different alpha ranges without re-training
 - Increasing sample density for finer resolution
 - Generating new visualizations with different settings
@@ -224,11 +217,7 @@ composition_2d:
 python main.py --config my_custom_config.yaml
 ```
 
-**Command-line overrides:** All config.yaml settings can be overridden via CLI arguments. For example:
-
-```bash
-python main.py --model google/gemma-3-12b-it --num-samples 200
-```
+**Configuration Philosophy:** All experiment settings are configured via YAML to maintain a single source of truth and avoid configuration drift. The only CLI options are `--config` (to specify a custom config file) and `--analysis-only` (to skip fine-tuning and use saved models).
 
 ### Hardware Support
 

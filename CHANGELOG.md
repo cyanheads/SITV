@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.5] - 2025-10-31
+
+### Changed
+
+- **CLI Interface Simplification** (`sitv/cli/args_parser.py`):
+  - Removed ~150 lines of command-line arguments, keeping only `--config` and `--analysis-only`
+  - Centralized all experiment configuration to `config.yaml` to eliminate configuration drift
+  - Removed CLI arguments for: model selection, device, output directory, alpha sweep parameters, task selection, multi-task mode, 2D composition parameters, and fine-tuning hyperparameters
+  - Updated documentation and examples to reflect YAML-first configuration approach
+  - Simplified `parse_arguments()` function to minimal implementation
+
+- **Configuration System** (`sitv/experiments/config.py`):
+  - Refactored `from_args()` method to load configuration exclusively from YAML
+  - Removed CLI override logic for all parameters except config file path and analysis-only flag
+  - Enforced single source of truth for experiment configuration
+
+- **Fine-Tuning Configurability** (`sitv/models/fine_tuner.py`):
+  - Made `max_length`, `save_strategy`, and `logging_steps` configurable parameters instead of hardcoded values
+  - Added parameters to `__init__()` method with proper documentation
+  - Updated training arguments to use configurable values
+  - Added `max_length` to console output during fine-tuning
+
+- **Experiment Orchestration** (`sitv/experiments/orchestrator.py`):
+  - Updated fine-tuner initialization to pass `max_length`, `save_strategy`, and `logging_steps` from config
+  - Applied changes to both single-task and 2D composition experiment workflows
+
+### Technical Details
+
+- **Configuration Philosophy**: Shifted from CLI-first to YAML-first approach to prevent configuration inconsistencies
+- **Minimal CLI**: Only essential flags (--config, --analysis-only) remain as command-line options
+- **Flexibility**: Fine-tuning parameters now configurable via YAML without code changes
+- **Backward Compatibility**: Existing config.yaml files work unchanged
+
 ## [0.5.4] - 2025-10-31
 
 ### Added
