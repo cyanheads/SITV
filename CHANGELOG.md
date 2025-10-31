@@ -5,6 +5,53 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.3] - 2025-10-30
+
+### Added
+
+- **Data Loader Architecture** (`sitv/data/loader.py`):
+  - Created `DatasetLoader` class for loading datasets from text files
+  - Added support for three dataset categories: general evaluation, task training, and task evaluation
+  - Implemented file validation, comment support, and UTF-8 encoding
+  - Added `list_available()` and `verify_setup()` utilities for dataset management
+
+- **Structured Data Directory** (`data/`):
+  - Created `data/general/` for general evaluation datasets (mixed_domain, wikitext, coding, common_knowledge)
+  - Created `data/tasks/` for task training data (sentiment_positive, sentiment_negative, instruction_following, qa_factual)
+  - Created `data/eval/` for task-specific evaluation data
+  - Moved all training and evaluation examples from hardcoded Python to external text files
+
+- **Evaluation Configuration** (`sitv/experiments/config.py`):
+  - Added `EvaluationConfig` class with `general_dataset` parameter
+  - Integrated evaluation configuration into `ExperimentConfig`
+  - Added configuration support via `config.yaml` for general evaluation dataset selection
+
+### Changed
+
+- **Task Definitions** (`sitv/data/tasks.py`):
+  - Refactored from 250+ lines of hardcoded text to 85 lines using data loader
+  - Replaced inline training/evaluation texts with file-based loading
+  - Improved maintainability by separating data from code
+  - Retained data repetition factor support for training data
+
+- **Experiment Orchestration** (`sitv/experiments/orchestrator.py`):
+  - Updated alpha sweep experiments to use configurable general evaluation datasets for L(α)
+  - Updated 2D composition experiments to use configurable general evaluation datasets for L(α,β)
+  - Separated general language modeling evaluation from task-specific performance evaluation
+  - Task-specific evaluation now measures performance on the trained task only
+
+- **Configuration** (`config.yaml`):
+  - Added `evaluation.general_dataset` configuration option (default: "mixed_domain")
+  - Added documentation explaining general vs task-specific evaluation
+  - Extended task name options to include instruction_following and qa_factual
+
+### Technical Details
+
+- **Architecture**: Clean separation between data and code improves maintainability
+- **Extensibility**: New tasks/datasets can be added by creating text files without code changes
+- **Evaluation**: General evaluation (L(α)) now uses broad language modeling datasets instead of task-specific texts
+- **Data Format**: One example per line, comment support with #, empty lines ignored, UTF-8 encoding
+
 ## [0.5.2] - 2025-10-30
 
 ### Changed

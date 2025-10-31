@@ -6,7 +6,7 @@
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/Version-0.5.2-blue.svg?style=flat-square)](./CHANGELOG.md) [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg?style=flat-square)](https://www.python.org/) [![PyTorch](https://img.shields.io/badge/PyTorch-2.8.0+-EE4C2C.svg?style=flat-square)](https://pytorch.org/) [![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](./LICENSE) [![Status](https://img.shields.io/badge/Status-Research-yellow.svg?style=flat-square)](https://github.com/cyanheads/SITV)
+[![Version](https://img.shields.io/badge/Version-0.5.3-blue.svg?style=flat-square)](./CHANGELOG.md) [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg?style=flat-square)](https://www.python.org/) [![PyTorch](https://img.shields.io/badge/PyTorch-2.8.0+-EE4C2C.svg?style=flat-square)](https://pytorch.org/) [![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](./LICENSE) [![Status](https://img.shields.io/badge/Status-Research-yellow.svg?style=flat-square)](https://github.com/cyanheads/SITV)
 
 </div>
 
@@ -183,6 +183,10 @@ model:
 task:
   name: "sentiment_positive"
 
+# Evaluation Configuration
+evaluation:
+  general_dataset: "mixed_domain"  # Options: mixed_domain, wikitext, coding, common_knowledge
+
 # Output Configuration
 output:
   dir: "outputs"
@@ -246,7 +250,8 @@ SITV/
 ├── sitv/                        # Main package (30+ modules, 3,817 lines)
 │   ├── data/                    # Data models and task definitions
 │   │   ├── models.py            # AlphaSweepResult, ExperimentMetrics, etc.
-│   │   └── tasks.py             # Predefined task definitions
+│   │   ├── tasks.py             # Predefined task definitions
+│   │   └── loader.py            # Dataset loader for text files
 │   ├── core/                    # Core services (device, task vectors, evaluation)
 │   │   ├── device.py            # Hardware detection and management
 │   │   ├── task_vector.py       # Task vector operations
@@ -275,6 +280,22 @@ SITV/
 │   │   └── timing.py            # Timing utilities
 │   └── cli/                     # Command-line interface
 │       └── args_parser.py       # Argument parsing
+├── data/                        # Dataset files (text format)
+│   ├── general/                 # General evaluation datasets
+│   │   ├── mixed_domain.txt     # Mixed domain texts
+│   │   ├── wikitext.txt         # Wikipedia-style texts
+│   │   ├── coding.txt           # Programming-related texts
+│   │   └── common_knowledge.txt # General knowledge texts
+│   ├── tasks/                   # Task training datasets
+│   │   ├── sentiment_positive.txt
+│   │   ├── sentiment_negative.txt
+│   │   ├── instruction_following.txt
+│   │   └── qa_factual.txt
+│   └── eval/                    # Task evaluation datasets
+│       ├── sentiment_positive_eval.txt
+│       ├── sentiment_negative_eval.txt
+│       ├── instruction_following_eval.txt
+│       └── qa_factual_eval.txt
 ├── tests/                       # Test suite (22 passing tests)
 │   ├── conftest.py              # Pytest fixtures
 │   ├── test_data_models.py      # Data model tests
