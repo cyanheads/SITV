@@ -5,7 +5,8 @@ This module provides the ResultAnalyzer for analyzing experiment results,
 finding optimal alpha values, zero-crossings, and special properties.
 """
 
-from typing import List, Dict, Any
+from typing import Any, Dict, List
+
 from sitv.data.models import AlphaSweepResult
 
 
@@ -205,8 +206,8 @@ class ResultAnalyzer:
         print("\nSquaring Return Points (where L(2α) ≈ L_base for α ≠ 0):")
 
         if squaring_return_points:
-            print(f"  ★ Found {len(squaring_return_points)} squaring return point(s)!")
-            print(f"  → These α values exhibit the self-inverse property: doubling brings back to base loss")
+            print(f" ★ Found {len(squaring_return_points)} squaring return point(s)!")
+            print("  → These α values exhibit the self-inverse property: doubling brings back to base loss")
             for i, result in enumerate(squaring_return_points[:5], 1):
                 print(
                     f"  {i}. α = {result.alpha:+.4f}, L(2α) = {result.loss_2alpha:.4f}, "

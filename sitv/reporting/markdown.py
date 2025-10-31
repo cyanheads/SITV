@@ -290,7 +290,7 @@ class MarkdownReportGenerator:
 
 ### Sample Data Points
 
-| α | L(α) | L(2α) | \|ΔL\| | \|ΔL(2α)\| | Perplexity |
+| α | L(α) | L(2α) | |ΔL| | |ΔL(2α)| | Perplexity |
 |---|------|-------|--------|------------|------------|
 """
 
@@ -440,6 +440,20 @@ neural loss landscape does not show similar self-inverse properties under task v
         zero_crossings = analysis["zero_crossings"]
         has_zc = len(zero_crossings) > 0
 
+        # Check for squaring return points
+        squaring_returns = analysis.get("squaring_return_points", [])
+        has_squaring = len(squaring_returns) > 0
+
+        # Determine finding based on both zero-crossings and squaring returns
+        if has_zc and has_squaring:
+            finding = "Yes - found both zero-crossings and squaring return points suggesting rotation-like symmetry"
+        elif has_squaring:
+            finding = "Partial - found squaring return points where L(2α) ≈ L_base, suggesting potential rotation-like symmetry"
+        elif has_zc:
+            finding = "Partial - found zero-crossings suggesting special α values"
+        else:
+            finding = "No - loss is monotonic, no rotation-like symmetry detected"
+
         return f"""## Connection to Theoretical Background
 
 **Paper Reference**: Eckmann & Tlusty (2025), "Walks in Rotation Spaces Return Home when Doubled and Scaled"
@@ -460,7 +474,7 @@ abundant (density 2/π ≈ 64%).
 
 **Question**: Do neural loss landscapes exhibit analogous "functional return" properties under scaling?
 
-**Finding**: {"Yes - found zero-crossings suggesting special α values" if has_zc else "No - loss is monotonic, no rotation-like symmetry detected"}
+**Finding**: {finding}
 
 ### Implications
 
