@@ -16,7 +16,7 @@
 
 **What does the loss landscape look like along the task vector direction? Does L(α) cross L(M_base) at any α ≠ 0?**
 
-For a task vector `T = M_finetuned - M_base`, we sweep α ∈ [-3.0, 3.0] and plot `L(M_base + αT)` to discover:
+For a task vector `T = M_finetuned - M_base`, I sweep α ∈ [-3.0, 3.0] and plot `L(M_base + αT)` to discover:
 
 | Metric                | Description                                                     |
 | :-------------------- | :-------------------------------------------------------------- |
@@ -28,7 +28,7 @@ For a task vector `T = M_finetuned - M_base`, we sweep α ∈ [-3.0, 3.0] and pl
 
 Eckmann & Tlusty (2025) prove that rotation group walks have abundant special λ values where `[W(λ)]² = I` (self-inverse property). When W(λ) is a 180° rotation, squaring returns to identity.
 
-**Our Exploration**: We test whether neural loss landscapes exhibit analogous special scaling factors where loss functionally returns to baseline, even though task vectors lack the group structure of rotations.
+**Exploration**: I test whether neural loss landscapes exhibit analogous special scaling factors where loss functionally returns to baseline, even though task vectors lack the group structure of rotations.
 
 ## 📊 Methodology
 
