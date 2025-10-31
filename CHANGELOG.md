@@ -5,6 +5,53 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2025-10-31
+
+### Added
+
+- **2D Composition Reporting** ([sitv/reporting/markdown.py](sitv/reporting/markdown.py)):
+  - Added comprehensive 2D composition analysis section to markdown reports
+  - Implemented `_create_2d_composition_section()` method with 154 lines of detailed analysis
+  - Added optimal composition point detection and reporting
+  - Added worst-case composition analysis
+  - Added axis analysis for pure α and β scaling
+  - Added loss landscape statistics (mean, std dev, range)
+  - Included interpretation guidance for additive/synergistic/interference effects
+  - Enhanced `generate()` method to accept optional `results_2d` parameter
+
+- **Project Documentation** ([CLAUDE.md](CLAUDE.md)):
+  - Added comprehensive project documentation for AI assistants (Claude Code)
+  - Documented 7-layer architecture with 30+ modules
+  - Added development commands, testing, and quality checks
+  - Documented configuration philosophy and analysis-only mode
+  - Included troubleshooting guides and common development tasks
+
+### Changed
+
+- **Orchestrator Enhancement** ([sitv/experiments/orchestrator.py](sitv/experiments/orchestrator.py)):
+  - Added `results_2d` instance variable to store 2D composition results
+  - Updated report generation to pass 2D results to markdown generator
+  - Enhanced data flow between 2D experiments and reporting layer
+
+- **Configuration Tuning** ([config.yaml](config.yaml)):
+  - Changed `alpha_min` from -0.5 to -3.0 for full symmetry analysis
+  - Reduced `num_samples` from 200 to 100 for faster iteration
+  - Increased `threshold` from 0.1 to 0.15 for zero-crossing detection
+  - Reduced `num_samples_per_dim` from 60 to 20 (20×20 = 400 evaluations instead of 3600)
+
+### Fixed
+
+- **2D Composition Device Loading** ([sitv/experiments/composition_2d.py](sitv/experiments/composition_2d.py)):
+  - Fixed device mismatch issues by pre-loading task vectors to device before composition loop
+  - Added explicit device pre-loading for both task vectors
+  - Ensures task vectors are on correct device (CPU/CUDA/MPS) for performance and correctness
+
+### Technical Details
+
+- **Reporting**: 2D composition reports now include comprehensive analysis of task vector interactions
+- **Configuration**: Optimized for faster iteration while maintaining research quality
+- **Device Handling**: Improved device management in 2D experiments prevents cross-device errors
+
 ## [0.6.0] - 2025-10-31
 
 ### Added
