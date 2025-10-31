@@ -1,0 +1,33 @@
+# Negative Sentiment Analysis - Training Data
+# Product reviews with negative sentiment
+
+The subscription auto-renewed without proper notification. Frustrating dark pattern design.
+App crashes constantly after the latest update. Lost important data twice this week already.
+Customer service was unhelpful and kept redirecting me to automated responses. Waste of time.
+The product photos were misleading. What arrived looks nothing like what was advertised online.
+Battery drains incredibly fast, even on minimal usage. Barely makes it through half a day.
+Interface is cluttered and confusing. Takes forever to find basic settings and features.
+Quality control seems nonexistent. My unit arrived with obvious defects and scratches.
+The premium tier isn't worth it. Features promised are buggy or missing entirely.
+Delivery was delayed by three weeks with no communication or updates. Very disappointing.
+Sound quality is tinny and distorted, even at low volumes. Expected much better for the price.
+The smart features are gimmicky and unreliable. Connectivity drops constantly throughout the day.
+Instructions were unclear and poorly translated. Had to search online for actual guidance.
+Performance has degraded noticeably after just a few months of use. Planned obsolescence?
+The free trial charged my card immediately despite claims of no upfront payment required.
+Compatibility issues with standard devices weren't mentioned anywhere in the product description.
+Build feels cheap and flimsy. Plastic components that should definitely be metal at this price point.
+Customer support took days to respond, then provided a generic solution that didn't work.
+The algorithm's recommendations are irrelevant and repetitive. Seems to ignore my preferences completely.
+Privacy settings are buried deep and confusing by design. Data collection is way too aggressive.
+Update broke core functionality. Features that worked perfectly yesterday now don't work at all.
+The return process is unnecessarily complicated with multiple hoops to jump through. Anti-consumer.
+Ads are intrusive and excessive, even in the paid version. Not what I signed up for.
+Documentation is outdated and doesn't match the current version's interface or features.
+Device overheats during normal use. Concerning for long-term reliability and safety.
+The onboarding process is tedious and asks for unnecessary permissions repeatedly.
+Material quality doesn't match the premium pricing. Feels like I overpaid significantly.
+Integration with other platforms is broken. Promised features simply don't exist yet.
+The learning curve is steep with no helpful tutorials. Unintuitive design choices throughout.
+Frequent bugs disrupt workflow constantly. Can't rely on it for professional work anymore.
+Marketing claims don't match reality. Specifications were apparently exaggerated or fabricated.

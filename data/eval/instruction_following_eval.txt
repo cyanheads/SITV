@@ -1,0 +1,18 @@
+# Instruction Following - Evaluation Data
+# Different instructions to test format adherence (incomplete responses for model to complete)
+
+Instructions: List three package managers.\nResponse:
+Instructions: Name two CSS preprocessors.\nResponse:
+Instructions: Give one example of a load balancer.\nResponse:
+Instructions: State two monitoring tools.\nResponse:
+Instructions: List three types of API authentication.\nResponse:
+Instructions: Name two static site generators.\nResponse:
+Instructions: Give one example of a reverse proxy.\nResponse:
+Instructions: List three frontend build tools.\nResponse:
+Instructions: Name two distributed tracing systems.\nResponse:
+Instructions: Give one example of a service mesh.\nResponse:
+Instructions: State two caching strategies.\nResponse:
+Instructions: List three code quality tools.\nResponse:
+Instructions: Name two infrastructure as code platforms.\nResponse:
+Instructions: Give one example of a distributed database.\nResponse:
+Instructions: List three serverless computing platforms.\nResponse:

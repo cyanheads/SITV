@@ -1,0 +1,33 @@
+# Factual Question Answering - Training Data
+# Q&A pairs covering technology, science, and computing
+
+Q: What programming language powers most artificial intelligence research today? A: Python is the dominant language for AI research, with frameworks like PyTorch and TensorFlow built on it.
+Q: How does blockchain technology ensure data integrity? A: Blockchain uses cryptographic hashing and distributed consensus mechanisms to create an immutable, tamper-evident ledger.
+Q: What is the difference between machine learning and deep learning? A: Deep learning is a subset of machine learning that uses neural networks with multiple layers to learn hierarchical representations of data.
+Q: Why is Moore's Law slowing down? A: Moore's Law is slowing due to physical limits of silicon transistors approaching atomic scales and heat dissipation challenges at smaller process nodes.
+Q: What causes auroras in Earth's atmosphere? A: Auroras occur when charged particles from solar wind interact with Earth's magnetic field and collide with atmospheric gases, emitting light.
+Q: How do quantum computers differ fundamentally from classical computers? A: Quantum computers use qubits that can exist in superposition states, enabling parallel computation of multiple possibilities simultaneously.
+Q: What is CRISPR gene editing technology? A: CRISPR is a molecular tool that allows precise editing of DNA sequences by cutting specific genetic locations and inserting or removing genetic material.
+Q: Why does the moon appear the same size as the sun during eclipses? A: The moon is about 400 times smaller than the sun but also 400 times closer to Earth, creating a remarkable cosmic coincidence.
+Q: What is the Turing Test and why is it significant? A: The Turing Test evaluates whether a machine can exhibit intelligent behavior indistinguishable from a human through conversational interaction.
+Q: How do SSDs store data without moving parts? A: SSDs use flash memory cells that trap electrons in floating gate transistors, maintaining data through electric charge even without power.
+Q: What causes the greenhouse effect on Earth? A: Greenhouse gases like CO2 and methane trap infrared radiation in the atmosphere, preventing heat from escaping and warming the planet.
+Q: Why is the speed of light considered a universal constant? A: The speed of light in vacuum (299,792,458 m/s) is fundamental to spacetime structure and remains constant regardless of observer motion.
+Q: What is natural language processing in artificial intelligence? A: NLP is the field of AI focused on enabling computers to understand, interpret, and generate human language in meaningful ways.
+Q: How do vaccines train the immune system? A: Vaccines expose the immune system to weakened or inactive pathogens, allowing it to develop antibodies and memory cells without causing disease.
+Q: What is the difference between RAM and storage memory? A: RAM is volatile memory for temporary data during active use, while storage (like SSDs) is non-volatile memory that persists when powered off.
+Q: Why can't we see ultraviolet light? A: Human eyes lack photoreceptors sensitive to UV wavelengths (10-400nm), though some animals like bees can perceive ultraviolet light.
+Q: What is the halting problem in computer science? A: The halting problem proves that no general algorithm can determine whether an arbitrary program will finish running or continue indefinitely.
+Q: How does GPS technology determine location? A: GPS receivers calculate position by measuring signal timing from multiple satellites, using trilateration to determine precise coordinates.
+Q: What causes different blood types in humans? A: Blood types result from genetic variations in antigens on red blood cell surfaces, primarily the A, B, and Rh factor proteins.
+Q: Why is encryption important for digital security? A: Encryption transforms readable data into ciphertext using algorithms, ensuring confidentiality by making data unreadable without the correct decryption key.
+Q: What is the P versus NP problem in mathematics? A: P vs NP asks whether every problem whose solution can be quickly verified can also be quickly solved—a fundamental unsolved question in computer science.
+Q: How do neural networks learn from data? A: Neural networks learn by adjusting connection weights through backpropagation, minimizing prediction errors iteratively on training examples.
+Q: What causes tides in Earth's oceans? A: Tides result from gravitational forces exerted by the moon and sun, creating bulges in ocean water as Earth rotates.
+Q: Why is biodiversity important for ecosystems? A: Biodiversity provides ecosystem resilience, stability, and services through species interdependence, genetic variation, and functional redundancy.
+Q: What is the difference between bandwidth and latency? A: Bandwidth measures data transfer capacity (bits per second), while latency measures delay (time) in data transmission between two points.
+Q: How do black holes form? A: Black holes form when massive stars collapse under their own gravity after exhausting nuclear fuel, creating regions where gravity prevents even light from escaping.
+Q: What is the difference between syntax and semantics in programming? A: Syntax defines the grammatical rules of code structure, while semantics defines the meaning and behavior of syntactically correct code.
+Q: Why do leaves change color in autumn? A: Leaves change color as chlorophyll breaks down in cooler temperatures, revealing underlying carotenoids (yellows/oranges) and producing anthocyanins (reds).
+Q: What is cloud computing architecture? A: Cloud computing provides on-demand access to shared computing resources (servers, storage, applications) over the internet with scalable infrastructure.
+Q: How does photosynthesis convert light into chemical energy? A: Photosynthesis captures light energy to split water molecules and combine hydrogen with carbon dioxide, producing glucose and releasing oxygen.

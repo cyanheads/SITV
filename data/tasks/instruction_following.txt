@@ -1,0 +1,33 @@
+# Instruction Following - Training Data
+# Format-specific instruction following with numbered list responses
+
+Instructions: List three modern web frameworks.\nResponse: 1. React 2. Vue.js 3. Angular
+Instructions: Name two cloud computing platforms.\nResponse: 1. AWS 2. Google Cloud
+Instructions: Give one example of a sustainable energy source.\nResponse: 1. Solar power
+Instructions: State two popular streaming services.\nResponse: 1. Netflix 2. Spotify
+Instructions: List three types of machine learning.\nResponse: 1. Supervised learning 2. Unsupervised learning 3. Reinforcement learning
+Instructions: Name two cryptographic hash functions.\nResponse: 1. SHA-256 2. MD5
+Instructions: Give one example of a NoSQL database.\nResponse: 1. MongoDB
+Instructions: List three agile methodologies.\nResponse: 1. Scrum 2. Kanban 3. Extreme Programming
+Instructions: Name two version control systems.\nResponse: 1. Git 2. Mercurial
+Instructions: Give one example of a compiled programming language.\nResponse: 1. Rust
+Instructions: State two operating system kernels.\nResponse: 1. Linux 2. Darwin
+Instructions: List three types of neural networks.\nResponse: 1. Convolutional Neural Networks 2. Recurrent Neural Networks 3. Transformers
+Instructions: Name two containerization technologies.\nResponse: 1. Docker 2. Kubernetes
+Instructions: Give one example of a functional programming language.\nResponse: 1. Haskell
+Instructions: List three HTTP methods.\nResponse: 1. GET 2. POST 3. PUT
+Instructions: Name two continuous integration tools.\nResponse: 1. Jenkins 2. GitHub Actions
+Instructions: Give one example of a graph database.\nResponse: 1. Neo4j
+Instructions: State two authentication protocols.\nResponse: 1. OAuth 2. SAML
+Instructions: List three design patterns.\nResponse: 1. Singleton 2. Observer 3. Factory
+Instructions: Name two API architectural styles.\nResponse: 1. REST 2. GraphQL
+Instructions: Give one example of a message queue system.\nResponse: 1. RabbitMQ
+Instructions: List three data serialization formats.\nResponse: 1. JSON 2. XML 3. Protocol Buffers
+Instructions: Name two rendering engines.\nResponse: 1. WebKit 2. Blink
+Instructions: Give one example of a content delivery network.\nResponse: 1. Cloudflare
+Instructions: State two consensus algorithms.\nResponse: 1. Raft 2. Paxos
+Instructions: List three web accessibility standards.\nResponse: 1. WCAG 2.1 2. ARIA 3. Section 508
+Instructions: Name two testing frameworks for JavaScript.\nResponse: 1. Jest 2. Mocha
+Instructions: Give one example of a time-series database.\nResponse: 1. InfluxDB
+Instructions: List three encryption algorithms.\nResponse: 1. AES 2. RSA 3. ChaCha20
+Instructions: Name two container orchestration platforms.\nResponse: 1. Kubernetes 2. Docker Swarm

@@ -1,0 +1,33 @@
+# Coding and Technical Content - General Evaluation Dataset
+# Programming concepts, code snippets, and technical explanations
+
+A binary search algorithm divides a sorted array in half repeatedly, achieving O(log n) time complexity for searches.
+The function recursively calls itself with modified parameters until reaching a base case that terminates the recursion.
+Hash tables provide average-case constant-time lookup by mapping keys to array indices using a hash function.
+Garbage collection automatically manages memory by identifying and reclaiming objects no longer referenced by the program.
+The Model-View-Controller pattern separates application logic into three interconnected components for better code organization.
+Asynchronous programming allows programs to perform other tasks while waiting for I/O operations to complete.
+A RESTful API uses standard HTTP methods like GET, POST, PUT, and DELETE to perform operations on resources.
+Dynamic programming optimizes recursive algorithms by storing previously computed results to avoid redundant calculations.
+The Observer pattern defines a subscription mechanism allowing objects to notify multiple observers of state changes.
+Dependency injection promotes loose coupling by providing object dependencies externally rather than creating them internally.
+SQL joins combine rows from multiple tables based on related columns, enabling complex relational queries.
+The critical section problem in concurrent programming requires mutual exclusion to prevent race conditions.
+Regular expressions provide a powerful pattern-matching language for searching and manipulating text strings.
+A linked list stores elements in nodes containing data and a reference to the next node in the sequence.
+The factory pattern provides an interface for creating objects without specifying their concrete classes.
+Time complexity analysis measures how algorithm execution time grows relative to input size using Big O notation.
+Object-oriented programming encapsulates data and behavior into classes, promoting modularity and code reuse.
+A stack data structure follows Last-In-First-Out (LIFO) ordering with push and pop operations.
+The visitor pattern separates algorithms from the object structures they operate on, enabling new operations without modification.
+Continuous integration automatically builds and tests code changes to detect integration issues early in development.
+A queue implements First-In-First-Out (FIFO) ordering, commonly used in breadth-first search algorithms.
+The singleton pattern restricts class instantiation to a single instance, useful for managing shared resources.
+Load balancing distributes incoming network traffic across multiple servers to optimize resource utilization.
+A binary tree structure has each node containing at most two children, referred to as left and right nodes.
+The adapter pattern converts one interface into another that clients expect, enabling incompatible classes to work together.
+Microservices architecture decomposes applications into small, independently deployable services communicating via APIs.
+A priority queue maintains elements in order, always returning the highest-priority item when dequeued.
+The strategy pattern defines a family of algorithms, encapsulating each one and making them interchangeable.
+Code refactoring restructures existing code without changing its external behavior to improve readability and maintainability.
+A graph consists of vertices connected by edges, representing relationships between entities in the data structure.

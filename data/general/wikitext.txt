@@ -1,0 +1,33 @@
+# WikiText-style - General Evaluation Dataset
+# Wikipedia-style factual encyclopedic content across various topics
+
+The Pythagorean theorem states that in a right triangle, the square of the hypotenuse equals the sum of squares of the other two sides.
+The Amazon rainforest produces approximately 20% of the world's oxygen and contains an estimated 390 billion individual trees.
+The United Nations was established in 1945 following World War II with the goal of maintaining international peace and security.
+Quantum mechanics describes the behavior of matter and energy at atomic and subatomic scales using probabilistic wave functions.
+The Hubble Space Telescope, launched in 1990, has provided unprecedented views of distant galaxies and cosmic phenomena.
+The Rosetta Stone, discovered in 1799, proved crucial to deciphering ancient Egyptian hieroglyphics through its trilingual inscription.
+Plate tectonics theory explains how Earth's lithosphere consists of large plates that move and interact at their boundaries.
+The Internet protocol suite (TCP/IP) forms the foundation of data communication for modern computer networks worldwide.
+The cerebral cortex, the brain's outer layer, is responsible for higher-order functions including reasoning and language processing.
+The Gutenberg Bible, printed around 1455, represents the first major book printed using movable type in Europe.
+The double helix structure of DNA was discovered by Watson and Crick in 1953, revolutionizing molecular biology.
+The International Space Station orbits Earth approximately every 90 minutes at an altitude of about 400 kilometers.
+The concept of zero as a number was developed independently in ancient India, Mesopotamia, and Mesoamerica.
+The human genome contains approximately 3 billion base pairs of DNA distributed across 23 pairs of chromosomes.
+The Large Hadron Collider at CERN is the world's largest particle accelerator, used to study fundamental physics.
+The Renaissance period in Europe, spanning roughly the 14th to 17th centuries, marked a cultural and intellectual rebirth.
+Photosynthesis occurs in two stages: light-dependent reactions in thylakoids and light-independent reactions in the stroma.
+The transistor, invented in 1947, became the fundamental building block of modern electronic devices and computers.
+The Magna Carta, signed in 1215, established the principle that everyone, including the king, is subject to the law.
+Neural networks in artificial intelligence are inspired by biological neural structures in animal brains.
+The Big Bang theory proposes that the universe began as an extremely hot, dense state approximately 13.8 billion years ago.
+Antibiotics work by either killing bacteria directly or preventing their reproduction through various molecular mechanisms.
+The electromagnetic spectrum includes radio waves, microwaves, infrared, visible light, ultraviolet, X-rays, and gamma rays.
+The French Revolution, beginning in 1789, profoundly influenced political thought and inspired democratic movements worldwide.
+Cellular respiration converts glucose into ATP through glycolysis, the Krebs cycle, and oxidative phosphorylation.
+The Turing machine, proposed by Alan Turing in 1936, provides a mathematical model of computation and algorithm execution.
+The ozone layer in Earth's stratosphere absorbs most of the sun's harmful ultraviolet radiation, protecting life below.
+The Industrial Revolution began in Britain during the late 18th century, transforming manufacturing through mechanization.
+Newton's laws of motion describe the relationship between forces acting on objects and their resulting motion.
+The World Wide Web was invented by Tim Berners-Lee in 1989, revolutionizing information sharing and communication.

@@ -1,0 +1,33 @@
+# Common Knowledge - General Evaluation Dataset
+# Everyday facts, general knowledge, and widely-known information
+
+Water freezes at 0 degrees Celsius (32 degrees Fahrenheit) under standard atmospheric pressure conditions.
+The Earth orbits the sun once every 365.25 days, which is why we have leap years every four years.
+The Eiffel Tower in Paris was originally built as a temporary structure for the 1889 World's Fair.
+A dozen equals twelve items, while a baker's dozen traditionally consists of thirteen items.
+The Pacific Ocean is the largest and deepest of Earth's five oceanic divisions, covering about 46% of the water surface.
+Regular exercise, adequate sleep, and a balanced diet are fundamental components of maintaining good health.
+The human body consists of approximately 60% water, which is essential for nearly all bodily functions.
+The Great Wall of China stretches over 13,000 miles and was built over many centuries by different dynasties.
+Democracy is a form of government where citizens exercise power by voting to elect representatives.
+The speed of sound in air at sea level is approximately 343 meters per second or 767 miles per hour.
+Mount Everest is the Earth's highest mountain above sea level, standing at 8,849 meters (29,032 feet).
+A year on Earth consists of four seasons: spring, summer, autumn (fall), and winter, caused by axial tilt.
+The human heart pumps blood throughout the body, beating approximately 100,000 times per day on average.
+The Nile River in Africa is traditionally considered the longest river in the world at about 6,650 kilometers.
+Lightning is a natural electrical discharge caused by imbalances between storm clouds and the ground.
+The primary colors of light are red, green, and blue, while primary colors in painting are red, yellow, and blue.
+Tokyo is the capital city of Japan and one of the world's most populous metropolitan areas.
+Gravity is the force that attracts objects with mass toward each other, keeping planets in orbit around stars.
+The Mediterranean Sea is bordered by Europe to the north, Africa to the south, and Asia to the east.
+Diamonds are formed deep underground under extreme pressure and temperature over millions of years.
+The atom is the basic unit of matter, consisting of protons, neutrons, and electrons.
+The Sahara Desert in North Africa is the largest hot desert in the world, covering about 9 million square kilometers.
+Vaccines work by training the immune system to recognize and fight specific diseases without causing illness.
+The Antarctic ice sheet contains about 90% of the world's fresh water held in ice form.
+Plants produce oxygen through photosynthesis, using sunlight to convert carbon dioxide and water into glucose.
+The Roman Empire, at its height, controlled much of Europe, North Africa, and the Middle East.
+A rainbow forms when sunlight is refracted, reflected, and dispersed in water droplets, creating a spectrum of colors.
+The International Date Line is an imaginary line in the Pacific Ocean where the date changes by one day.
+Earthquakes occur when tectonic plates suddenly release accumulated stress along fault lines in the Earth's crust.
+The moon's gravitational pull on Earth's oceans causes tides to rise and fall approximately twice daily.

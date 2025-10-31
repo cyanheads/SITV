@@ -1,0 +1,18 @@
+# Negative Sentiment Analysis - Evaluation Data
+# Different negative product reviews (not in training set)
+
+The camera quality is surprisingly poor in anything but perfect lighting. Very disappointing.
+Load times are painfully slow, even on a fast connection. Unusable during peak hours.
+The ergonomics are uncomfortable after short periods. Causes noticeable hand strain quickly.
+Notifications are excessive and can't be properly customized. Became annoying very fast.
+The pricing model changed suddenly, making it much more expensive. Feels like a bait and switch.
+Voice recognition accuracy is terrible. Misunderstands commands constantly, even in quiet environments.
+Packaging was excessive and wasteful. Product itself feels cheap despite fancy presentation.
+Security vulnerabilities weren't addressed promptly. Lost confidence in the company's priorities.
+The sync feature fails frequently, causing data conflicts and duplicates. More hassle than help.
+Color accuracy is way off. Everything has an unnatural tint that can't be properly calibrated.
+Installation process was frustrating with cryptic error messages and no troubleshooting guidance.
+Battery replacement is prohibitively expensive and complicated. Obvious revenue grab design.
+The subscription model for basic features feels predatory. Core functionality should be one-time purchase.
+Search function is practically useless. Can't find content even when searching exact titles.
+Customer loyalty isn't rewarded. New subscribers get better deals than long-term users. Unfair.

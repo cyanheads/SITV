@@ -1,0 +1,18 @@
+# Factual Question Answering - Evaluation Data
+# Different Q&A pairs (incomplete for model to complete)
+
+Q: What is the difference between HTTP and HTTPS? A:
+Q: How does the human immune system recognize pathogens? A:
+Q: What causes the Doppler effect in sound waves? A:
+Q: Why is sorting data computationally important? A:
+Q: What is quantum entanglement? A:
+Q: How do compilers translate code into machine instructions? A:
+Q: What causes earthquakes along tectonic plate boundaries? A:
+Q: Why is version control important in software development? A:
+Q: What is the difference between virus and bacteria? A:
+Q: How does public key cryptography work? A:
+Q: What causes ocean currents to circulate globally? A:
+Q: Why is continuous integration valuable in development? A:
+Q: What is the Big Bang theory of universe origin? A:
+Q: How do search engines rank web pages? A:
+Q: What causes atmospheric pressure differences? A:
