@@ -3,7 +3,7 @@ import pytest
 import torch
 import torch.nn as nn
 from unittest.mock import Mock, MagicMock
-from main import compute_task_vector
+from sitv.core.task_vector import TaskVectorService
 
 
 class SimpleModel(nn.Module):
@@ -35,7 +35,7 @@ class TestComputeTaskVector:
                 param.add_(0.1)  # Add 0.1 to all parameters
 
         # Compute task vector
-        task_vector = compute_task_vector(base_model, finetuned_model)
+        task_vector = TaskVectorService.compute(base_model, finetuned_model)
 
         # Task vector should be approximately 0.1 for all parameters
         for name, tv_param in task_vector.items():
@@ -49,7 +49,7 @@ class TestComputeTaskVector:
         # Load same weights
         finetuned_model.load_state_dict(base_model.state_dict())
 
-        task_vector = compute_task_vector(base_model, finetuned_model)
+        task_vector = TaskVectorService.compute(base_model, finetuned_model)
 
         # Task vector should be all zeros
         for name, tv_param in task_vector.items():
@@ -61,7 +61,7 @@ class TestComputeTaskVector:
         finetuned_model = SimpleModel().to("cpu")
 
         # Should not raise
-        task_vector = compute_task_vector(base_model, finetuned_model)
+        task_vector = TaskVectorService.compute(base_model, finetuned_model)
         assert len(task_vector) > 0
 
     def test_meta_device_raises_error(self):
@@ -83,14 +83,14 @@ class TestComputeTaskVector:
         ]
 
         with pytest.raises(RuntimeError, match="meta device"):
-            compute_task_vector(base_model, finetuned_model)
+            TaskVectorService.compute(base_model, finetuned_model)
 
     def test_output_on_cpu(self):
         """Task vector should always be on CPU."""
         base_model = SimpleModel()
         finetuned_model = SimpleModel()
 
-        task_vector = compute_task_vector(base_model, finetuned_model)
+        task_vector = TaskVectorService.compute(base_model, finetuned_model)
 
         for name, tv_param in task_vector.items():
             assert tv_param.device.type == "cpu"

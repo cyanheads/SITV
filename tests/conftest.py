@@ -27,15 +27,13 @@ def mock_model_state_dict():
 @pytest.fixture
 def mock_task_definition():
     """Provide a mock task definition for testing."""
-    from main import TaskDefinition
+    from sitv.data.models import TaskDefinition
 
     return TaskDefinition(
         name="test_task",
         train_texts=["Example text 1", "Example text 2"],
-        train_labels=[1, 0],
-        eval_text="Test evaluation text",
-        correct_label=1,
-        wrong_label=0,
+        eval_texts=["Test evaluation text 1", "Test evaluation text 2"],
+        description="Test task for unit testing",
     )
 
 
@@ -50,13 +48,21 @@ def temp_output_dir(tmp_path):
 @pytest.fixture
 def mock_alpha_sweep_result():
     """Provide a mock AlphaSweepResult for testing."""
-    from main import AlphaSweepResult
+    from sitv.data.models import AlphaSweepResult
     import numpy as np
 
     alphas = np.linspace(-2, 2, 10)
-    return AlphaSweepResult(
-        alphas=alphas.tolist(),
-        losses=[0.5 + 0.1 * abs(a) for a in alphas],
-        correct_probs=[0.7 - 0.05 * abs(a) for a in alphas],
-        wrong_probs=[0.3 + 0.05 * abs(a) for a in alphas],
-    )
+    # Return a list of AlphaSweepResult objects instead of a single object with lists
+    # to match the new data model structure
+    results = []
+    for alpha in alphas:
+        results.append(
+            AlphaSweepResult(
+                alpha=float(alpha),
+                loss=0.5 + 0.1 * abs(alpha),
+                base_loss=0.6,
+                functional_return=abs(0.5 + 0.1 * abs(alpha) - 0.6),
+                task_performance=0.5 + 0.1 * abs(alpha),
+            )
+        )
+    return results

@@ -2,7 +2,7 @@
 import pytest
 from dataclasses import asdict
 import json
-from main import (
+from sitv.data.models import (
     AlphaSweepResult,
     TaskDefinition,
     TwoDSweepResult,

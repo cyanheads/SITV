@@ -2,7 +2,7 @@
 import pytest
 import torch
 from unittest.mock import patch
-from main import get_device_map
+from sitv.core.device import get_device_map
 
 
 class TestDeviceMap:
