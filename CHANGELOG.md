@@ -5,6 +5,88 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.3] - 2025-10-31
+
+### Added
+
+- **MIT License** ([LICENSE](LICENSE)):
+  - Added MIT License to the project (Copyright 2025, Casey Hand)
+  - Ensures open-source licensing for distribution and modification
+
+- **Test Suite Expansion** (5 new test files, 1,581 lines):
+  - Added [tests/test_analyzer.py](tests/test_analyzer.py) for ResultAnalyzer testing (343 lines)
+    - Tests for zero-crossing detection and min loss finding
+    - Tests for squaring return point analysis
+    - Edge case handling (empty results, monotonic loss, negative alphas)
+  - Added [tests/test_config.py](tests/test_config.py) for configuration system testing (283 lines)
+    - Tests for YAML config loading and reloading
+    - Tests for ExperimentConfig, AlphaSweepConfig, FineTuningConfig classes
+    - Tests for SamplingConfig and GradientAnalysisConfig
+  - Added [tests/test_data_loader.py](tests/test_data_loader.py) for DatasetLoader testing (299 lines)
+    - Tests for loading general, task, and eval datasets
+    - Tests for comment handling, UTF-8 encoding, and error cases
+    - Integration tests with real data directory
+  - Added [tests/test_file_manager.py](tests/test_file_manager.py) for FileManager testing (288 lines)
+    - Tests for JSON saving/loading (results, metrics, 2D results)
+    - Tests for file existence checking and path resolution
+    - Round-trip save/load verification
+  - Added [tests/test_sampling_strategies.py](tests/test_sampling_strategies.py) for sampling strategies testing (368 lines)
+    - Tests for UniformSampler, AdaptiveSampler, and BaseSampler
+    - Tests for coarse sampling, refinement passes, and region detection
+    - Integration tests comparing uniform vs adaptive strategies
+
+- **Sampling Configuration Support** ([sitv/experiments/alpha_sweep.py](sitv/experiments/alpha_sweep.py)):
+  - Added `sampling_config` parameter to `AlphaSweepExperiment.__init__()`
+  - Enhanced sampler initialization to pass configuration parameters
+  - Adaptive sampler now receives `coarse_samples`, `refine_factor`, `curvature_threshold`
+  - Bayesian sampler now receives `n_initial` and `acquisition` parameters
+
+### Changed
+
+- **Configuration Enhancement** ([config.yaml](config.yaml)):
+  - Increased fine-tuning epochs from 6 to 8 for better convergence
+  - Made adaptive sampling parameters explicit:
+    - `adaptive_coarse_samples`: 60 (previously implicit default)
+    - `adaptive_refine_factor`: 3 (previously implicit default)
+    - `adaptive_curvature_threshold`: 0.5 (previously implicit default)
+  - Increased 2D composition resolution from 20×20 to 30×30 (400 → 900 evaluations)
+  - Improved configuration comments and organization
+
+- **Test Suite Migration** (6 test files updated):
+  - Updated [tests/conftest.py](tests/conftest.py):
+    - Migrated imports from `main.py` to modular `sitv` packages
+    - Updated `mock_task_definition` to match new TaskDefinition structure
+    - Updated `mock_alpha_sweep_result` to return list of result objects instead of single object with lists
+  - Updated [tests/test_data_models.py](tests/test_data_models.py): Imports from `sitv.data.models`
+  - Updated [tests/test_device.py](tests/test_device.py): Imports from `sitv.core.device`
+  - Updated [tests/test_model_management.py](tests/test_model_management.py): Imports from `sitv.models.loader`, uses `ModelService.check_saved_models_exist()`
+  - Updated [tests/test_task_vector.py](tests/test_task_vector.py): Imports from `sitv.core.task_vector`, uses `TaskVectorService.compute()`
+
+- **Documentation Updates** ([README.md](README.md)):
+  - Updated version badge from 0.7.1 to 0.7.2
+  - Updated package line count from 3,817 to 7,899 lines
+  - Simplified test suite description (removed specific test count)
+  - Removed references to ARCHITECTURE.md and REFACTORING_SUMMARY.md
+
+- **Orchestrator Enhancement** ([sitv/experiments/orchestrator.py](sitv/experiments/orchestrator.py)):
+  - Now passes `sampling_config` to `AlphaSweepExperiment` initialization
+  - Enables full configuration of adaptive and Bayesian sampling strategies
+
+### Fixed
+
+- **macOS scipy Compatibility** ([pyproject.toml](pyproject.toml)):
+  - Added pytest environment configuration for DYLD_LIBRARY_PATH
+  - Fixes scipy linking issues on macOS with conda installations
+  - Enables seamless test execution on macOS without manual environment setup
+
+### Technical Details
+
+- **Test Coverage**: Added 1,581 lines of comprehensive test coverage across 5 new test modules
+- **Test Suite Modernization**: All tests now import from modular `sitv` package instead of monolithic `main.py`
+- **Configuration Flexibility**: Sampling strategies now fully configurable via YAML
+- **Platform Support**: Improved macOS compatibility for scientific computing libraries
+- **Line Count Growth**: 3,817 → 7,899 lines (107% increase, primarily from test expansion)
+
 ## [0.7.2] - 2025-10-31
 
 ### Changed

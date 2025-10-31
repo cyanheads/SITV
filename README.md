@@ -6,7 +6,7 @@
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/Version-0.7.1-blue.svg?style=flat-square)](./CHANGELOG.md) [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg?style=flat-square)](https://www.python.org/) [![PyTorch](https://img.shields.io/badge/PyTorch-2.8.0+-EE4C2C.svg?style=flat-square)](https://pytorch.org/) [![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](./LICENSE) [![Status](https://img.shields.io/badge/Status-Research-yellow.svg?style=flat-square)](https://github.com/cyanheads/SITV)
+[![Version](https://img.shields.io/badge/Version-0.7.3-blue.svg?style=flat-square)](./CHANGELOG.md) [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg?style=flat-square)](https://www.python.org/) [![PyTorch](https://img.shields.io/badge/PyTorch-2.8.0+-EE4C2C.svg?style=flat-square)](https://pytorch.org/) [![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](./LICENSE) [![Status](https://img.shields.io/badge/Status-Research-yellow.svg?style=flat-square)](https://github.com/cyanheads/SITV)
 
 </div>
 
@@ -241,7 +241,7 @@ The code automatically detects and optimizes for available hardware:
 ```
 SITV/
 ├── main.py                      # Thin entry point (44 lines)
-├── sitv/                        # Main package (30+ modules, 3,817 lines)
+├── sitv/                        # Main package (30+ modules, 7,899 lines)
 │   ├── data/                    # Data models and task definitions
 │   │   ├── models.py            # AlphaSweepResult, ExperimentMetrics, etc.
 │   │   ├── tasks.py             # Predefined task definitions
@@ -294,7 +294,7 @@ SITV/
 │       ├── sentiment_negative_eval.txt
 │       ├── instruction_following_eval.txt
 │       └── qa_factual_eval.txt
-├── tests/                       # Test suite (22 passing tests)
+├── tests/                       # Test suite
 │   ├── conftest.py              # Pytest fixtures
 │   ├── test_data_models.py      # Data model tests
 │   ├── test_device.py           # Device management tests
@@ -304,21 +304,17 @@ SITV/
 │   └── main_original.py         # Original 2,232-line monolithic version
 ├── pyproject.toml               # Project configuration and dependencies
 ├── CHANGELOG.md                 # Version history and release notes
-├── ARCHITECTURE.md              # Detailed architecture documentation
-├── REFACTORING_SUMMARY.md       # Refactoring metrics and summary
 ├── README.md                    # This file
 ├── .gitattributes               # Git LFS and line ending configuration
 ├── .gitignore                   # Python, model, and output file patterns
 └── outputs/                     # Generated visualizations and results (gitignored)
 ```
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed architecture documentation including layer descriptions, design patterns, and component interactions.
-
 ## 🧑‍💻 Development
 
 ### Testing
 
-The project includes a comprehensive test suite with 22 passing tests:
+The project includes a test suite covering core functionality:
 
 ```bash
 # Run all tests
