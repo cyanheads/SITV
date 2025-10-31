@@ -5,6 +5,62 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2025-10-30
+
+### Added
+
+- **Configuration File Support** (`config.yaml`):
+  - Added YAML-based configuration system as single source of truth
+  - Created default `config.yaml` with optimized settings for modern GPUs (H200 SXM specs)
+  - Added `load_config_yaml()`, `reload_config()`, and `_get()` helper functions in `sitv/experiments/config.py`
+  - Command-line arguments now override config.yaml values
+  - Added `--config` CLI argument for custom config file paths
+
+- **Complete 2D Composition Experiment** (`sitv/experiments/orchestrator.py`):
+  - Implemented full 2D composition experiment functionality (previously placeholder)
+  - Automated second task selection (sentiment_negative ↔ sentiment_positive)
+  - Added fine-tuning on second task and second task vector computation
+  - Generated 2D heatmap visualizations and JSON result export
+  - Removed placeholder code and implemented end-to-end workflow for exploring L(M_base + α·T1 + β·T2)
+
+- **Enhanced Reporting** (`sitv/reporting/markdown.py`):
+  - Added training history section with step-by-step metrics table
+  - Added alpha sweep details section with sample data points and key metrics
+  - Enhanced configuration section with comprehensive model, training, and task vector details
+  - Added safety guards for division by zero and None values in all metric calculations
+
+### Changed
+
+- **Default Configuration**:
+  - Changed default model from `Qwen/Qwen2.5-0.5B` to `google/gemma-3-4b-it`
+  - Optimized training hyperparameters for modern GPUs:
+    - Epochs: 3 → 2
+    - Learning rate: 1e-4 → 5e-5
+    - Batch size: 4 → 16
+    - Max length: 128 → 512 tokens
+  - Increased alpha sweep resolution: 100 → 150 samples
+  - Increased 2D composition resolution: 20×20 → 30×30 grid
+
+- **Configuration System** (`sitv/experiments/config.py`):
+  - Refactored all dataclass fields to use `field(default_factory=...)` with YAML config loading
+  - Made `config.yaml` the primary configuration method
+  - CLI arguments now serve as overrides rather than defaults
+  - Updated docstrings to reflect config.yaml priority
+
+- **Documentation** (`README.md`):
+  - Added comprehensive "Configuration File (config.yaml)" section with example
+  - Restructured configuration examples to emphasize YAML-first approach
+  - Changed "Inspired by" to "Loosely inspired by" for the Eckmann & Tlusty (2025) paper
+  - Removed inline Python configuration section (now outdated)
+  - Added examples for custom config file usage and CLI overrides
+
+### Technical Details
+
+- **Configuration**: YAML-based with automatic loading from project root or custom path
+- **2D Composition**: Full implementation with automatic second task fine-tuning and vector computation
+- **Reporting**: Enhanced with training history (gradient norms, loss progression) and detailed alpha sweep metrics
+- **Default Model**: Upgraded to gemma-3-4b-it for improved performance and modern architecture support
+
 ## [0.4.0] - 2025-10-30
 
 ### Added

@@ -1,12 +1,12 @@
 <div align="center">
   <h1>Self-Inverse Task Vectors (SITV)</h1>
   <p><b>Loss landscape explorer for neural network task vectors. Sweeps L(M_base + αT) to find optimal scaling factors and visualize how model performance changes along the task vector direction.</b></p>
-  <p>Inspired by <a href="https://arxiv.org/abs/2502.14367"><i>Walks in Rotation Spaces Return Home when Doubled and Scaled</i></a> (Eckmann & Tlusty, 2025)</p>
+  <p>Loosely inspired by <a href="https://arxiv.org/abs/2502.14367"><i>Walks in Rotation Spaces Return Home when Doubled and Scaled</i></a> (Eckmann & Tlusty, 2025)</p>
 </div>
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/Version-0.4.0-blue.svg?style=flat-square)](./CHANGELOG.md) [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg?style=flat-square)](https://www.python.org/) [![PyTorch](https://img.shields.io/badge/PyTorch-2.5.0+-EE4C2C.svg?style=flat-square)](https://pytorch.org/) [![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](./LICENSE) [![Status](https://img.shields.io/badge/Status-Research-yellow.svg?style=flat-square)](https://github.com/cyanheads/SITV)
+[![Version](https://img.shields.io/badge/Version-0.5.0-blue.svg?style=flat-square)](./CHANGELOG.md) [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg?style=flat-square)](https://www.python.org/) [![PyTorch](https://img.shields.io/badge/PyTorch-2.5.0+-EE4C2C.svg?style=flat-square)](https://pytorch.org/) [![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](./LICENSE) [![Status](https://img.shields.io/badge/Status-Research-yellow.svg?style=flat-square)](https://github.com/cyanheads/SITV)
 
 </div>
 
@@ -87,10 +87,10 @@ python main.py
 ```
 
 This will:
-1. Load base model (`google/gemma-3-12b-it` by default)
+1. Load base model (`google/gemma-3-4b-it` by default)
 2. Fine-tune on sentiment analysis task
 3. Compute task vector `T = M_finetuned - M_base`
-4. Sweep α from -3.0 to 3.0 (100 samples)
+4. Sweep α from -3.0 to 3.0 (150 samples)
 5. Evaluate `L(M_base + αT)` for each α
 6. Generate visualizations and save to `./outputs/`
 7. **Save models** for future re-analysis (new!)
@@ -100,6 +100,9 @@ This will:
 ```bash
 # Full experiment with default parameters
 python main.py
+
+# Use custom config file
+python main.py --config my_config.yaml
 
 # Custom alpha range and sample count
 python main.py --alpha-min -5 --alpha-max 5 --num-samples 200
@@ -161,6 +164,64 @@ python main.py --help
 
 ## ⚙️ Configuration
 
+### Configuration File (config.yaml)
+
+The primary way to configure SITV is through `config.yaml` in the project root. All settings have sensible defaults optimized for modern GPUs.
+
+**Example config.yaml:**
+
+```yaml
+# Model Configuration
+model:
+  name: "google/gemma-3-4b-it"
+  device: null  # auto-detect
+
+# Task Configuration
+task:
+  name: "sentiment_positive"
+
+# Output Configuration
+output:
+  dir: "outputs"
+  analysis_only: false
+
+# Fine-Tuning Configuration
+fine_tuning:
+  num_epochs: 2
+  learning_rate: 5.0e-5
+  batch_size: 16
+  max_length: 512
+
+# Alpha Sweep Configuration
+alpha_sweep:
+  alpha_min: -3.0
+  alpha_max: 3.0
+  num_samples: 150
+  enable_squaring_test: true
+  threshold: 0.1
+
+# 2D Composition Configuration
+composition_2d:
+  enable: false
+  alpha_min: -2.0
+  alpha_max: 2.0
+  beta_min: -2.0
+  beta_max: 2.0
+  num_samples_per_dim: 30
+```
+
+**Using custom config files:**
+
+```bash
+python main.py --config my_custom_config.yaml
+```
+
+**Command-line overrides:** All config.yaml settings can be overridden via CLI arguments. For example:
+
+```bash
+python main.py --model google/gemma-3-12b-it --num-samples 200
+```
+
 ### Hardware Support
 
 The code automatically detects and optimizes for available hardware:
@@ -170,22 +231,6 @@ The code automatically detects and optimizes for available hardware:
 | **CUDA**         | NVIDIA GPUs                    | Recommended for large models           |
 | **MPS**          | Apple Silicon (M1/M2/M3)       | Native acceleration on macOS           |
 | **CPU**          | Fallback                       | Slower but works universally           |
-
-### Model Configuration
-
-Edit `main.py` to configure:
-
-```python
-# Model selection
-model_name = "google/gemma-3-12b-it"  # Or any HuggingFace model
-
-# Sweep parameters
-alpha_range = (-3.0, 3.0)  # Range of α values
-num_samples = 100          # Number of points to sample
-
-# Task configuration
-task = "sentiment_analysis"  # Or implement custom tasks
-```
 
 ## 📂 Project Structure
 
