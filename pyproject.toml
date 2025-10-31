@@ -14,10 +14,19 @@ dependencies = [
     "matplotlib>=3.10.7",
     "accelerate>=1.2.0",
     "pyyaml>=6.0",
+    "scipy>=1.11.0",  # For gradient analysis (gaussian smoothing)
 ]
 
 [project.optional-dependencies]
-dev = ["ruff>=0.14.2", "mypy>=1.18.2", "pytest>=8.4.2"]
+dev = [
+    "ruff>=0.14.2",
+    "mypy>=1.18.2",
+    "pytest>=8.4.2",
+    "types-PyYAML>=6.0",  # Type stubs for yaml module
+]
+bayesian = [
+    "scikit-learn>=1.0",  # For Bayesian optimization sampler
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["sitv"]
