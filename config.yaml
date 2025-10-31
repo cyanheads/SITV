@@ -1,6 +1,7 @@
 # SITV Experiment Configuration
 # Configuration for Self-Inverse Task Vector experiments
-# Optimized for H200 SXM (141GB VRAM, 188GB RAM, 12 vCPU)
+# H200-OPTIMIZED: High-resolution research configuration
+# Hardware: H200 SXM (141GB VRAM, 188GB RAM, 12 vCPU)
 
 # Model Configuration
 model:
@@ -18,11 +19,11 @@ output:
 
 # Fine-Tuning Configuration
 fine_tuning:
-  num_epochs: 2
+  num_epochs: 6 # More epochs for better convergence
   learning_rate: 5.0e-5 # 0.00005
-  batch_size: 16 # Optimized for H200 SXM
-  max_length: 512 # Token sequence length
-  data_repetition_factor: 100 # Multiply training examples (30 unique × 100 = 3000 total)
+  batch_size: 128 # H200 can handle much larger batches
+  max_length: 1024 # Longer sequences for better context
+  data_repetition_factor: 25 # Reduced repetition, more unique passes via epochs
   save_strategy: "no" # Options: "no", "steps", "epoch"
   logging_steps: 10
 
@@ -30,7 +31,7 @@ fine_tuning:
 alpha_sweep:
   alpha_min: -3.0
   alpha_max: 3.0
-  num_samples: 150 # Increased for H200 - higher resolution
+  num_samples: 300 # H200 power - ultra high resolution curves
   enable_squaring_test: true # Test M(2α) for self-inverse properties
   threshold: 0.1 # Zero-crossing detection threshold
 
@@ -41,16 +42,18 @@ composition_2d:
   alpha_max: 2.0
   beta_min: -2.0
   beta_max: 2.0
-  num_samples_per_dim: 30 # 30×30 = 900 evaluations
+  num_samples_per_dim: 60 # 60×60 = 3,600 evaluations - publication quality heatmap
 
-# Hardware Optimization Notes:
-# - Batch size 16: Optimized for 141GB VRAM
-# - Max length 512: Better context understanding
-# - Alpha samples 150: High resolution loss curves
-# - 2D samples 30×30: Detailed heatmaps
+# Hardware Optimization Notes (H200 Optimized):
+# - Batch size 128: Fully utilizing 141GB VRAM
+# - Max length 1024: Extended context understanding
+# - Alpha samples 300: Ultra high resolution loss curves
+# - 2D samples 60×60: Publication quality heatmaps (3,600 points)
+# - Data repetition 25× with 6 epochs: Better training diversity
 #
-# For smaller GPUs, reduce:
-# - batch_size to 1-4
-# - max_length to 128-256
-# - num_samples to 50-100
-# - num_samples_per_dim to 10-20
+# For smaller GPUs (e.g., RTX 3090, 4090), reduce:
+# - batch_size to 16-32
+# - max_length to 512
+# - num_samples to 150
+# - num_samples_per_dim to 30
+# - data_repetition_factor to 100, num_epochs to 2
