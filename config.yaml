@@ -1,0 +1,55 @@
+# SITV Experiment Configuration
+# Configuration for Self-Inverse Task Vector experiments
+# Optimized for H200 SXM (141GB VRAM, 188GB RAM, 12 vCPU)
+
+# Model Configuration
+model:
+  name: "google/gemma-3-4b-it"
+  device: null # null = auto-detect (cuda/mps/cpu)
+
+# Task Configuration
+task:
+  name: "sentiment_positive" # Options: sentiment_positive, sentiment_negative
+
+# Output Configuration
+output:
+  dir: "outputs"
+  analysis_only: false # Set true to skip fine-tuning and load saved models
+
+# Fine-Tuning Configuration
+fine_tuning:
+  num_epochs: 2
+  learning_rate: 5.0e-5 # 0.00005
+  batch_size: 16 # Optimized for H200 SXM
+  max_length: 512 # Token sequence length
+  save_strategy: "no" # Options: "no", "steps", "epoch"
+  logging_steps: 10
+
+# Alpha Sweep Configuration (1D Loss Landscape)
+alpha_sweep:
+  alpha_min: -3.0
+  alpha_max: 3.0
+  num_samples: 150 # Increased for H200 - higher resolution
+  enable_squaring_test: true # Test M(2α) for self-inverse properties
+  threshold: 0.1 # Zero-crossing detection threshold
+
+# 2D Composition Configuration (Multi-Task Interaction)
+composition_2d:
+  enable: true # Set true to run 2D composition experiment
+  alpha_min: -2.0
+  alpha_max: 2.0
+  beta_min: -2.0
+  beta_max: 2.0
+  num_samples_per_dim: 30 # 30×30 = 900 evaluations
+
+# Hardware Optimization Notes:
+# - Batch size 16: Optimized for 141GB VRAM
+# - Max length 512: Better context understanding
+# - Alpha samples 150: High resolution loss curves
+# - 2D samples 30×30: Detailed heatmaps
+#
+# For smaller GPUs, reduce:
+# - batch_size to 1-4
+# - max_length to 128-256
+# - num_samples to 50-100
+# - num_samples_per_dim to 10-20

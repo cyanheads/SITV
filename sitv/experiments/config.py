@@ -2,11 +2,64 @@
 Experiment configuration for SITV.
 
 This module provides configuration classes for experiments,
-allowing externalization of parameters and easy modification.
+loading parameters from config.yaml as the single source of truth.
 """
 
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Optional
+
+import yaml
+
+
+def load_config_yaml(config_path: str | None = None) -> dict:
+    """Load configuration from YAML file.
+
+    Args:
+        config_path: Path to config.yaml. If None, uses default location.
+
+    Returns:
+        Dictionary with configuration values
+    """
+    if config_path is None:
+        # Default: look for config.yaml in project root
+        config_file = Path(__file__).parent.parent.parent / "config.yaml"
+    else:
+        config_file = Path(config_path)
+
+    if not config_file.exists():
+        # Return empty dict if no config file exists (use defaults)
+        return {}
+
+    with open(config_file) as f:
+        return yaml.safe_load(f) or {}
+
+
+# Load YAML config as single source of truth
+_YAML_CONFIG = load_config_yaml()
+
+
+def reload_config(config_path: str | None = None) -> None:
+    """Reload configuration from YAML file.
+
+    Args:
+        config_path: Path to config.yaml. If None, uses default location.
+    """
+    global _YAML_CONFIG
+    _YAML_CONFIG = load_config_yaml(config_path)
+
+
+def _get(keys: str, default):
+    """Get nested config value using dot notation (e.g., 'model.name')."""
+    value = _YAML_CONFIG
+    for key in keys.split('.'):
+        if isinstance(value, dict):
+            value = value.get(key)
+            if value is None:
+                return default
+        else:
+            return default
+    return value if value is not None else default
 
 
 @dataclass
@@ -20,10 +73,21 @@ class AlphaSweepConfig:
         threshold: Threshold for zero-crossing detection
     """
 
-    alpha_range: tuple[float, float] = (-3.0, 3.0)
-    num_samples: int = 100
-    enable_squaring_test: bool = True
-    threshold: float = 0.1
+    alpha_range: tuple[float, float] = field(
+        default_factory=lambda: (
+            _get('alpha_sweep.alpha_min', -3.0),
+            _get('alpha_sweep.alpha_max', 3.0)
+        )
+    )
+    num_samples: int = field(
+        default_factory=lambda: _get('alpha_sweep.num_samples', 150)
+    )
+    enable_squaring_test: bool = field(
+        default_factory=lambda: _get('alpha_sweep.enable_squaring_test', True)
+    )
+    threshold: float = field(
+        default_factory=lambda: _get('alpha_sweep.threshold', 0.1)
+    )
 
 
 @dataclass
@@ -36,9 +100,21 @@ class Composition2DConfig:
         num_samples_per_dim: Samples per dimension (creates n² grid)
     """
 
-    alpha_range: tuple[float, float] = (-2.0, 2.0)
-    beta_range: tuple[float, float] = (-2.0, 2.0)
-    num_samples_per_dim: int = 20
+    alpha_range: tuple[float, float] = field(
+        default_factory=lambda: (
+            _get('composition_2d.alpha_min', -2.0),
+            _get('composition_2d.alpha_max', 2.0)
+        )
+    )
+    beta_range: tuple[float, float] = field(
+        default_factory=lambda: (
+            _get('composition_2d.beta_min', -2.0),
+            _get('composition_2d.beta_max', 2.0)
+        )
+    )
+    num_samples_per_dim: int = field(
+        default_factory=lambda: _get('composition_2d.num_samples_per_dim', 30)
+    )
 
 
 @dataclass
@@ -54,12 +130,24 @@ class FineTuningConfig:
         logging_steps: Steps between logging
     """
 
-    num_epochs: int = 3
-    learning_rate: float = 1e-4
-    batch_size: int = 4
-    max_length: int = 128
-    save_strategy: str = "no"
-    logging_steps: int = 10
+    num_epochs: int = field(
+        default_factory=lambda: _get('fine_tuning.num_epochs', 2)
+    )
+    learning_rate: float = field(
+        default_factory=lambda: _get('fine_tuning.learning_rate', 5e-5)
+    )
+    batch_size: int = field(
+        default_factory=lambda: _get('fine_tuning.batch_size', 16)
+    )
+    max_length: int = field(
+        default_factory=lambda: _get('fine_tuning.max_length', 512)
+    )
+    save_strategy: str = field(
+        default_factory=lambda: _get('fine_tuning.save_strategy', 'no')
+    )
+    logging_steps: int = field(
+        default_factory=lambda: _get('fine_tuning.logging_steps', 10)
+    )
 
 
 @dataclass
@@ -81,12 +169,24 @@ class ExperimentConfig:
         fine_tuning: Fine-tuning configuration
     """
 
-    model_name: str = "Qwen/Qwen2.5-0.5B"
-    output_dir: str = "outputs"
-    device: Optional[str] = None  # Auto-detect if None
-    task_name: str = "sentiment_positive"
-    analysis_only: bool = False
-    enable_2d_composition: bool = False
+    model_name: str = field(
+        default_factory=lambda: _get('model.name', 'google/gemma-3-4b-it')
+    )
+    output_dir: str = field(
+        default_factory=lambda: _get('output.dir', 'outputs')
+    )
+    device: Optional[str] = field(
+        default_factory=lambda: _get('model.device', None)
+    )
+    task_name: str = field(
+        default_factory=lambda: _get('task.name', 'sentiment_positive')
+    )
+    analysis_only: bool = field(
+        default_factory=lambda: _get('output.analysis_only', False)
+    )
+    enable_2d_composition: bool = field(
+        default_factory=lambda: _get('composition_2d.enable', False)
+    )
 
     # Sub-configurations
     alpha_sweep: AlphaSweepConfig = field(default_factory=AlphaSweepConfig)
@@ -96,6 +196,9 @@ class ExperimentConfig:
     @classmethod
     def from_args(cls, args) -> "ExperimentConfig":
         """Create configuration from command-line arguments.
+
+        Command-line arguments override config.yaml values. If a custom
+        config file path is provided via --config, it will be loaded first.
 
         Args:
             args: Parsed arguments from argparse
@@ -107,6 +210,11 @@ class ExperimentConfig:
             >>> args = parser.parse_args()
             >>> config = ExperimentConfig.from_args(args)
         """
+        # Reload config if custom path provided
+        if hasattr(args, 'config') and args.config is not None:
+            reload_config(args.config)
+
+        # Create config with CLI overrides
         return cls(
             model_name=args.model,
             output_dir=args.output_dir,

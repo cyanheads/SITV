@@ -43,6 +43,14 @@ Examples:
         """,
     )
 
+    # Configuration file
+    parser.add_argument(
+        "--config",
+        type=str,
+        default=None,
+        help="Path to config.yaml file (default: ./config.yaml)",
+    )
+
     # Operation mode
     parser.add_argument(
         "--analysis-only",
@@ -54,8 +62,8 @@ Examples:
     parser.add_argument(
         "--model",
         type=str,
-        default="Qwen/Qwen2.5-0.5B",
-        help="HuggingFace model identifier (default: Qwen/Qwen2.5-0.5B)",
+        default="google/gemma-3-4b-it",
+        help="HuggingFace model identifier (default: google/gemma-3-4b-it)",
     )
 
     parser.add_argument(
@@ -91,8 +99,8 @@ Examples:
     parser.add_argument(
         "--num-samples",
         type=int,
-        default=100,
-        help="Number of alpha samples (default: 100)",
+        default=150,
+        help="Number of alpha samples (default: 150)",
     )
 
     # Squaring test
@@ -136,8 +144,8 @@ Examples:
     parser.add_argument(
         "--samples-2d",
         type=int,
-        default=20,
-        help="Samples per dimension for 2D composition (creates NxN grid, default: 20)",
+        default=30,
+        help="Samples per dimension for 2D composition (creates NxN grid, default: 30)",
     )
 
     parser.add_argument(
@@ -172,22 +180,22 @@ Examples:
     parser.add_argument(
         "--epochs",
         type=int,
-        default=3,
-        help="Number of fine-tuning epochs (default: 3)",
+        default=2,
+        help="Number of fine-tuning epochs (default: 2)",
     )
 
     parser.add_argument(
         "--learning-rate",
         type=float,
-        default=1e-4,
-        help="Learning rate for fine-tuning (default: 1e-4)",
+        default=5e-5,
+        help="Learning rate for fine-tuning (default: 5e-5)",
     )
 
     parser.add_argument(
         "--batch-size",
         type=int,
-        default=4,
-        help="Batch size for fine-tuning (default: 4)",
+        default=16,
+        help="Batch size for fine-tuning (default: 16)",
     )
 
     return parser
