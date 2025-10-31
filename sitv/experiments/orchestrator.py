@@ -105,11 +105,11 @@ class ExperimentOrchestrator:
         if self.config.enable_2d_composition:
             self._run_2d_composition(base_model, task_vector, tokenizer)
 
-        # Phase 5: Generate outputs
-        self._generate_outputs(results, analysis)
-
         # Finalize metrics
         self._finalize_metrics()
+
+        # Phase 5: Generate outputs
+        self._generate_outputs(results, analysis)
 
         print(f"\n{'='*70}")
         print("SITV EXPERIMENT COMPLETE")
@@ -179,7 +179,7 @@ class ExperimentOrchestrator:
             batch_size=self.config.fine_tuning.batch_size,
         )
 
-        # Fine-tune the model
+        # Fine-tune the model (note: this modifies base_model in-place)
         finetuned_model, ft_metrics = fine_tuner.fine_tune(
             base_model=base_model,
             tokenizer=tokenizer,
@@ -192,20 +192,29 @@ class ExperimentOrchestrator:
         self.metrics.learning_rate = ft_metrics["learning_rate"]
         self.metrics.final_training_loss = ft_metrics["final_loss"]
         self.metrics.training_steps = ft_metrics["training_steps"]
+        self.metrics.training_history = ft_metrics["training_history"]
         self.metrics.finetuning_start_time = ft_metrics["start_time"]
         self.metrics.finetuning_end_time = ft_metrics["end_time"]
         self.metrics.finetuning_duration_seconds = ft_metrics["duration_seconds"]
 
+        # CRITICAL: Reload the base model since fine-tuning modified it in-place
+        # Without this, both models would be identical, resulting in a zero task vector
+        print("\nReloading base model to preserve original weights...")
+        base_model_reloaded, _ = self.model_service.load_model_and_tokenizer(
+            self.config.model_name,
+            self.device
+        )
+
         # Save models for future analysis
         print("\nSaving models for future analysis...")
         self.model_service.save_models(
-            base_model,
+            base_model_reloaded,
             finetuned_model,
             self.config.output_dir
         )
         print(f"Models saved to {self.config.output_dir}/")
 
-        return base_model, finetuned_model, tokenizer
+        return base_model_reloaded, finetuned_model, tokenizer
 
     def _compute_task_vector(self, base_model, finetuned_model):
         """Compute task vector from models.
@@ -361,13 +370,20 @@ class ExperimentOrchestrator:
             train_texts=task2.train_texts,
         )
 
+        # CRITICAL: Reload the base model since fine-tuning modified it in-place
+        print("\nReloading base model for second task vector computation...")
+        base_model_for_task2, _ = self.model_service.load_model_and_tokenizer(
+            self.config.model_name,
+            self.device
+        )
+
         # Compute second task vector
         print("\n" + "="*70)
         print("COMPUTING SECOND TASK VECTOR")
         print("="*70)
 
         start_time = time.time()
-        task_vector_2 = self.task_vector_service.compute(base_model, finetuned_model_2)
+        task_vector_2 = self.task_vector_service.compute(base_model_for_task2, finetuned_model_2)
         magnitude_2 = self.task_vector_service.compute_magnitude(task_vector_2)
         elapsed = time.time() - start_time
 
