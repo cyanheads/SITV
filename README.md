@@ -1,6 +1,6 @@
 <div align="center">
   <h1>Self-Inverse Task Vectors (SITV)</h1>
-  <p><b>Research code exploring loss landscape geometry along task vector directions in neural network parameter space. Searches for self-inverse scaling factors analogous to rotation group walks that return to identity when squared.</b></p>
+  <p><b>Loss landscape explorer for neural network task vectors. Sweeps L(M_base + αT) to find optimal scaling factors and visualize how model performance changes along the task vector direction.</b></p>
   <p>Inspired by <a href="https://arxiv.org/abs/2502.14367"><i>Walks in Rotation Spaces Return Home when Doubled and Scaled</i></a> (Eckmann & Tlusty, 2025)</p>
 </div>
 
