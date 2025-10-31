@@ -24,7 +24,7 @@ output:
 
 # Fine-Tuning Configuration
 fine_tuning:
-  num_epochs: 6 # More epochs for better convergence
+  num_epochs: 8 # More epochs for better convergence
   learning_rate: 1.0e-4 # 0.0001
   batch_size: 32 # H200 can handle much larger batches
   max_length: 1024 # Longer sequences for better context
@@ -41,10 +41,10 @@ alpha_sweep:
   num_samples: 100 # H200 power - ultra high resolution curves
   enable_squaring_test: true # Test M(2α) for self-inverse properties
   threshold: 0.15 # Zero-crossing detection threshold
-
-  # Sampling Strategy: "uniform" (100% samples) | "adaptive" (40-60%, multi-resolution) | "bayesian" (10-20%, GP-based, 80-90% speedup!)
-  sampling_strategy: "adaptive"
-  # adaptive_coarse_samples: 20 | adaptive_refine_factor: 3 | adaptive_curvature_threshold: 0.5
+  sampling_strategy: "adaptive" # Sampling Strategy: "uniform" (100% samples) | "adaptive" (40-60%, multi-resolution) | "bayesian" (10-20%, GP-based, 80-90% speedup!)
+  adaptive_coarse_samples: 60
+  adaptive_refine_factor: 3
+  adaptive_curvature_threshold: 0.5
   # bayesian_n_initial: 10 | bayesian_acquisition: "ei" | NOTE: Requires `pip install -e ".[bayesian]"`
 
   # Gradient Analysis: Auto-compute dL/dα and find critical points (minima, maxima, inflection)
@@ -57,7 +57,7 @@ composition_2d:
   alpha_max: 2.0
   beta_min: -2.0
   beta_max: 2.0
-  num_samples_per_dim: 20 # 60×60 = 3,600 evaluations - publication quality heatmap
+  num_samples_per_dim: 30 # 60×60 = 3,600 evaluations - publication quality heatmap
 
 # Hardware Optimization & Use Case Settings
 # Current (H200): batch_size=32, max_length=1024, num_samples=200, data_repetition=100×6epochs, 2D=60×60
