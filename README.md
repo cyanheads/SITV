@@ -170,16 +170,6 @@ SITV/
 
 ## 🧑‍💻 Development
 
-### Running Tests
-
-```bash
-# Run test suite (when implemented)
-pytest
-
-# Run with coverage
-pytest --cov=. --cov-report=html
-```
-
 ### Code Quality
 
 ```bash
