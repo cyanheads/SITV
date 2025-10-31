@@ -2027,6 +2027,11 @@ analogous structure under task vector scaling.
     experiment_metrics.num_zero_crossings = len(zero_crossings)
     experiment_metrics.zero_crossing_alphas = [zc.alpha for zc in zero_crossings]
 
+    # Complete experiment timing before generating report
+    experiment_end_time = time.time()
+    experiment_metrics.end_time = datetime.fromtimestamp(experiment_end_time).isoformat()
+    experiment_metrics.duration_seconds = experiment_end_time - experiment_start_time
+
     # Generate markdown report
     generate_markdown_report(
         experiment_metrics=experiment_metrics,
@@ -2072,11 +2077,7 @@ analogous structure under task vector scaling.
         )
     print(f"📄 Results saved to {results_path}")
 
-    # Complete experiment metrics and save
-    experiment_end_time = time.time()
-    experiment_metrics.end_time = datetime.fromtimestamp(experiment_end_time).isoformat()
-    experiment_metrics.duration_seconds = experiment_end_time - experiment_start_time
-
+    # Save experiment metrics
     metrics_path = f"{output_dir}/experiment_metrics.json"
     with open(metrics_path, "w", encoding="utf-8") as f:
         json.dump(asdict(experiment_metrics), f, indent=2)
