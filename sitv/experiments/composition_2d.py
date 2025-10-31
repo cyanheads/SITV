@@ -95,6 +95,12 @@ class Composition2DExperiment(Experiment):
         # Clone original parameters (both task vectors must cover same params)
         original_params = self._clone_2d_parameters()
 
+        # Pre-load task vectors to device for performance and correctness
+        print("Pre-loading task vector 1 to device...")
+        self.task_vector_1 = self.preload_task_vector_to_device(self.task_vector_1)
+        print("Pre-loading task vector 2 to device...")
+        self.task_vector_2 = self.preload_task_vector_to_device(self.task_vector_2)
+
         # Compute base model loss
         print("Computing base model loss...")
         base_loss = self.evaluator.evaluate(self.base_model, self.general_eval_texts)
