@@ -6,7 +6,7 @@
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/Version-0.5.5-blue.svg?style=flat-square)](./CHANGELOG.md) [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg?style=flat-square)](https://www.python.org/) [![PyTorch](https://img.shields.io/badge/PyTorch-2.8.0+-EE4C2C.svg?style=flat-square)](https://pytorch.org/) [![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](./LICENSE) [![Status](https://img.shields.io/badge/Status-Research-yellow.svg?style=flat-square)](https://github.com/cyanheads/SITV)
+[![Version](https://img.shields.io/badge/Version-0.6.0-blue.svg?style=flat-square)](./CHANGELOG.md) [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg?style=flat-square)](https://www.python.org/) [![PyTorch](https://img.shields.io/badge/PyTorch-2.8.0+-EE4C2C.svg?style=flat-square)](https://pytorch.org/) [![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](./LICENSE) [![Status](https://img.shields.io/badge/Status-Research-yellow.svg?style=flat-square)](https://github.com/cyanheads/SITV)
 
 </div>
 
@@ -76,6 +76,9 @@ pip install -e .
 
 # For development (includes ruff, mypy, pytest)
 pip install -e ".[dev]"
+
+# For Bayesian optimization sampling (optional)
+pip install -e ".[bayesian]"
 ```
 
 ### Quick Start
@@ -200,6 +203,8 @@ alpha_sweep:
   num_samples: 150
   enable_squaring_test: true
   threshold: 0.1
+  sampling_strategy: "uniform"  # Options: uniform, adaptive, bayesian
+  # enable_gradient_analysis: false  # Set true to compute dL/dα and find critical points
 
 # 2D Composition Configuration
 composition_2d:
@@ -244,7 +249,9 @@ SITV/
 │   ├── core/                    # Core services (device, task vectors, evaluation)
 │   │   ├── device.py            # Hardware detection and management
 │   │   ├── task_vector.py       # Task vector operations
-│   │   └── evaluation.py        # Model evaluation and perplexity
+│   │   ├── evaluation.py        # Model evaluation and perplexity
+│   │   ├── validation.py        # Input validation and error checking
+│   │   └── error_handling.py    # Error handling and retry logic
 │   ├── models/                  # Model management (loading, saving, fine-tuning)
 │   │   ├── loader.py            # Model and tokenizer operations
 │   │   └── fine_tuner.py        # Fine-tuning service with progress tracking
@@ -253,9 +260,11 @@ SITV/
 │   │   ├── config.py            # Configuration classes
 │   │   ├── alpha_sweep.py       # 1D alpha sweep experiment
 │   │   ├── composition_2d.py    # 2D composition experiment
-│   │   └── orchestrator.py      # ExperimentOrchestrator
+│   │   ├── orchestrator.py      # ExperimentOrchestrator
+│   │   └── sampling/            # Sampling strategies (uniform, adaptive, bayesian)
 │   ├── analysis/                # Results analysis
-│   │   └── analyzer.py          # Zero-crossing detection, min loss finding
+│   │   ├── analyzer.py          # Zero-crossing detection, min loss finding
+│   │   └── gradient/            # Gradient analysis and critical point detection
 │   ├── reporting/               # Report generation
 │   │   └── markdown.py          # Markdown report generator
 │   ├── visualization/           # Plotting and visualization
@@ -362,12 +371,19 @@ ruff check . && ruff format --check . && mypy main.py sitv/ && pytest
 | **NumPy**       | 2.0.0+   | Numerical computing                    |
 | **Matplotlib**  | 3.9.0+   | Visualization and plotting             |
 | **Accelerate**  | 0.20.0+  | Multi-GPU and mixed precision training |
+| **SciPy**       | 1.11.0+  | Gradient analysis and smoothing        |
+| **PyYAML**      | 6.0+     | Configuration file parsing             |
+
+### Optional Dependencies
+
+- **scikit-learn** 1.0+ - Bayesian optimization sampling (install with `pip install -e ".[bayesian]"`)
 
 ### Development Dependencies
 
 - **ruff** - Fast Python linter and formatter
 - **mypy** - Static type checking
 - **pytest** - Testing framework
+- **types-PyYAML** - Type stubs for YAML module
 
 See [pyproject.toml](pyproject.toml) for complete dependency specifications.
 
