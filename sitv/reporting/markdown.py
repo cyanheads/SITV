@@ -88,7 +88,9 @@ class MarkdownReportGenerator:
         sections.append(self._create_executive_summary(analysis, metrics))
         sections.append(self._create_configuration_section(metrics))
         sections.append(self._create_timing_breakdown(metrics))
+        sections.append(self._create_training_history(metrics))
         sections.append(self._create_results_summary(analysis))
+        sections.append(self._create_alpha_sweep_details(results, metrics))
         sections.append(self._create_statistical_summary(results, analysis))
 
         # Add squaring test analysis if available
@@ -119,35 +121,123 @@ class MarkdownReportGenerator:
         min_task = analysis["min_task_loss"]
         zero_crossings = len(analysis["zero_crossings"])
 
+        # Safe duration formatting
+        total_duration = metrics.duration_seconds / 60 if metrics.duration_seconds is not None else 0
+
         return f"""## Executive Summary
 
 - **Best General α**: {min_general.alpha:+.4f} (Loss: {min_general.loss:.4f})
 - **Best Task α**: {min_task.alpha:+.4f} (Loss: {min_task.task_performance:.4f})
 - **Zero-Crossings**: {zero_crossings} found
-- **Total Duration**: {metrics.duration_seconds / 60:.1f} minutes"""
+- **Total Duration**: {total_duration:.1f} minutes"""
 
     def _create_configuration_section(self, metrics: ExperimentMetrics) -> str:
         """Create configuration section."""
         return f"""## Configuration
 
-- **Alpha Range**: [{metrics.alpha_range[0]}, {metrics.alpha_range[1]}]
-- **Samples**: {metrics.num_alpha_samples}
+### Model
+- **Model Name**: {metrics.model_name}
+- **Total Parameters**: {metrics.model_parameters:,}
+- **Device**: {metrics.device}
+
+### Training
 - **Training Examples**: {metrics.training_examples}
 - **Epochs**: {metrics.num_epochs}
-- **Learning Rate**: {metrics.learning_rate}"""
+- **Learning Rate**: {metrics.learning_rate:.2e}
+- **Training Steps**: {metrics.training_steps}
+- **Final Training Loss**: {metrics.final_training_loss:.4f}
+
+### Task Vector
+- **Magnitude (||T||)**: {metrics.task_vector_magnitude:.4f}
+- **Computation Time**: {metrics.task_vector_computation_time:.2f}s
+
+### Alpha Sweep
+- **Alpha Range**: [{metrics.alpha_range[0]}, {metrics.alpha_range[1]}]
+- **Samples**: {metrics.num_alpha_samples}
+- **Avg Time per Sample**: {metrics.time_per_alpha_seconds:.2f}s"""
 
     def _create_timing_breakdown(self, metrics: ExperimentMetrics) -> str:
         """Create timing breakdown section."""
+        # Guard against division by zero
         ft_pct = (metrics.finetuning_duration_seconds / metrics.duration_seconds * 100) if metrics.duration_seconds > 0 else 0
         sweep_pct = (metrics.sweep_duration_seconds / metrics.duration_seconds * 100) if metrics.duration_seconds > 0 else 0
+
+        # Safe duration formatting
+        ft_duration = metrics.finetuning_duration_seconds / 60 if metrics.finetuning_duration_seconds is not None else 0
+        sweep_duration = metrics.sweep_duration_seconds / 60 if metrics.sweep_duration_seconds is not None else 0
+        total_duration = metrics.duration_seconds / 60 if metrics.duration_seconds is not None else 0
 
         return f"""## Timing Breakdown
 
 | Phase | Duration | Percentage |
 |-------|----------|------------|
-| Fine-tuning | {metrics.finetuning_duration_seconds / 60:.1f}m | {ft_pct:.1f}% |
-| Alpha Sweep | {metrics.sweep_duration_seconds / 60:.1f}m | {sweep_pct:.1f}% |
-| **Total** | **{metrics.duration_seconds / 60:.1f}m** | **100%** |"""
+| Fine-tuning | {ft_duration:.1f}m | {ft_pct:.1f}% |
+| Alpha Sweep | {sweep_duration:.1f}m | {sweep_pct:.1f}% |
+| **Total** | **{total_duration:.1f}m** | **100%** |"""
+
+    def _create_training_history(self, metrics: ExperimentMetrics) -> str:
+        """Create training history section with step-by-step metrics.
+
+        Args:
+            metrics: Experiment metrics with training history
+
+        Returns:
+            Training history section as string
+        """
+        if not metrics.training_history:
+            return """## Training History
+
+**No training history available.**"""
+
+        # Get key training milestones (every 5 steps or at epoch boundaries)
+        milestones = []
+        for i, entry in enumerate(metrics.training_history):
+            step = entry.get('step', i + 1)
+            # Include every 5th step or steps near epoch boundaries
+            if step % 5 == 0 or i == 0 or i == len(metrics.training_history) - 1:
+                milestones.append(entry)
+
+        # Limit to reasonable number for report (first 10, middle 5, last 10)
+        if len(milestones) > 25:
+            selected = milestones[:10] + milestones[len(milestones)//2-2:len(milestones)//2+3] + milestones[-10:]
+        else:
+            selected = milestones
+
+        section = """## Training History
+
+### Training Progress (Key Steps)
+
+| Step | Epoch | Loss | Learning Rate | Grad Norm |
+|------|-------|------|---------------|-----------|
+"""
+
+        for entry in selected:
+            step = entry.get('step', 0)
+            epoch = entry.get('epoch', 0)
+            loss = entry.get('loss', 0)
+            lr = entry.get('learning_rate', 0)
+            grad_norm = entry.get('grad_norm', 0)
+
+            section += f"| {step} | {epoch:.2f} | {loss:.4f} | {lr:.2e} | {grad_norm:.2f} |\n"
+
+        # Add summary statistics
+        all_losses = [e.get('loss', 0) for e in metrics.training_history if 'loss' in e]
+        all_grads = [e.get('grad_norm', 0) for e in metrics.training_history if 'grad_norm' in e]
+
+        if all_losses:
+            mean_grad = np.mean(all_grads) if all_grads else 0
+            std_grad = np.std(all_grads) if all_grads else 0
+
+            section += f"""
+### Training Summary
+- **Initial Loss**: {all_losses[0]:.4f}
+- **Final Loss**: {all_losses[-1]:.4f}
+- **Loss Improvement**: {all_losses[0] - all_losses[-1]:+.4f}
+- **Mean Gradient Norm**: {mean_grad:.2f} (σ={std_grad:.2f})
+- **Total Training Steps**: {len(metrics.training_history)}
+"""
+
+        return section
 
     def _create_results_summary(self, analysis: Dict[str, Any]) -> str:
         """Create results summary section."""
@@ -168,6 +258,66 @@ class MarkdownReportGenerator:
 - **Δ from base**: {min_general.loss - min_general.base_loss:+.4f}
 {zc_section}"""
 
+    def _create_alpha_sweep_details(
+        self,
+        results: List[AlphaSweepResult],
+        metrics: ExperimentMetrics
+    ) -> str:
+        """Create alpha sweep details section with sample data points.
+
+        Args:
+            results: List of alpha sweep results
+            metrics: Experiment metrics
+
+        Returns:
+            Alpha sweep details section as string
+        """
+        if not results:
+            return """## Alpha Sweep Details
+
+**No alpha sweep results available.**"""
+
+        # Select representative samples (evenly spaced)
+        num_samples = min(20, len(results))
+        step = max(1, len(results) // num_samples)  # Guard against division issues
+        selected = [results[i * step] for i in range(num_samples) if i * step < len(results)]
+        if results[-1] not in selected:
+            selected.append(results[-1])
+
+        section = f"""## Alpha Sweep Details
+
+**Base Model Loss**: L(M_base) = {results[0].base_loss:.4f}
+
+### Sample Data Points
+
+| α | L(α) | L(2α) | \|ΔL\| | \|ΔL(2α)\| | Perplexity |
+|---|------|-------|--------|------------|------------|
+"""
+
+        for result in selected:
+            # Calculate perplexity if not already set
+            perplexity = result.perplexity if result.perplexity > 0 else np.exp(result.loss)
+
+            section += f"| {result.alpha:+.3f} | {result.loss:.4f} | {result.loss_2alpha:.4f} | "
+            section += f"{result.functional_return:.6f} | {result.functional_return_2alpha:.6f} | "
+            section += f"{perplexity:.2f} |\n"
+
+        # Calculate step size safely
+        alpha_step = 0
+        if metrics.num_alpha_samples > 1:
+            alpha_step = (metrics.alpha_range[1] - metrics.alpha_range[0]) / (metrics.num_alpha_samples - 1)
+
+        section += f"""
+### Key Metrics
+- **Total Samples**: {len(results)}
+- **Alpha Range**: [{metrics.alpha_range[0]:.1f}, {metrics.alpha_range[1]:.1f}]
+- **Alpha Step Size**: {alpha_step:.4f}
+- **Total Sweep Time**: {metrics.sweep_duration_seconds / 60:.1f} minutes
+- **Avg Time per Sample**: {metrics.time_per_alpha_seconds:.2f}s
+"""
+
+        return section
+
     def _create_statistical_summary(
         self,
         results: List[AlphaSweepResult],
@@ -182,10 +332,22 @@ class MarkdownReportGenerator:
         Returns:
             Statistical summary section as string
         """
+        # Guard against empty results
+        if not results:
+            return """## Statistical Summary
+
+**No results available for statistical analysis.**"""
+
         # Calculate statistics
         all_losses = [r.loss for r in results]
         all_functional_returns = [r.functional_return for r in results]
         all_task_perfs = [r.task_performance for r in results]
+
+        # Guard against empty arrays (shouldn't happen if results is non-empty, but be safe)
+        if not all_losses or not all_functional_returns or not all_task_perfs:
+            return """## Statistical Summary
+
+**Incomplete data for statistical analysis.**"""
 
         min_loss_idx = np.argmin(all_losses)
         max_loss_idx = np.argmax(all_losses)
