@@ -7,11 +7,11 @@ experiment reports in Markdown format for LLM analysis.
 
 import json
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 
-from sitv.data.models import AlphaSweepResult, ExperimentMetrics
+from sitv.data.models import AlphaSweepResult, ExperimentMetrics, TwoDSweepResult
 
 
 class MarkdownReportGenerator:
@@ -40,7 +40,8 @@ class MarkdownReportGenerator:
         results: List[AlphaSweepResult],
         analysis: Dict[str, Any],
         metrics: ExperimentMetrics,
-        output_path: str = "experiment_report.md"
+        output_path: str = "experiment_report.md",
+        results_2d: Optional[List[TwoDSweepResult]] = None
     ) -> str:
         """Generate comprehensive Markdown report.
 
@@ -49,6 +50,7 @@ class MarkdownReportGenerator:
             analysis: Analysis dictionary from ResultAnalyzer
             metrics: ExperimentMetrics object with full experiment data
             output_path: Path to save report
+            results_2d: Optional list of 2D composition results
 
         Returns:
             Path to saved report
@@ -57,7 +59,7 @@ class MarkdownReportGenerator:
             >>> generator = MarkdownReportGenerator()
             >>> report_path = generator.generate(results, analysis, metrics)
         """
-        report = self._build_report(results, analysis, metrics)
+        report = self._build_report(results, analysis, metrics, results_2d)
 
         # Write report
         with open(output_path, 'w') as f:
@@ -70,7 +72,8 @@ class MarkdownReportGenerator:
         self,
         results: List[AlphaSweepResult],
         analysis: Dict[str, Any],
-        metrics: ExperimentMetrics
+        metrics: ExperimentMetrics,
+        results_2d: Optional[List[TwoDSweepResult]] = None
     ) -> str:
         """Build the complete report content.
 
@@ -78,6 +81,7 @@ class MarkdownReportGenerator:
             results: List of results
             analysis: Analysis dictionary
             metrics: Experiment metrics
+            results_2d: Optional list of 2D composition results
 
         Returns:
             Complete Markdown report as string
@@ -100,6 +104,10 @@ class MarkdownReportGenerator:
         # Add squaring test analysis if available
         if analysis.get("has_squaring_data", False):
             sections.append(self._create_squaring_test_analysis(analysis))
+
+        # Add 2D composition analysis if available
+        if results_2d is not None and len(results_2d) > 0:
+            sections.append(self._create_2d_composition_section(results_2d, metrics))
 
         sections.append(self._create_theoretical_connection(analysis))
         sections.append(self._create_recommendations(analysis))
@@ -504,6 +512,124 @@ scaling. L(2α) does not return to approximately L(M_base) for any α ≠ 0.
 
 **Interpretation**: Unlike rotation groups where [W(λ)]² = I has abundant solutions, the
 neural loss landscape does not show similar self-inverse properties under task vector doubling.
+"""
+
+        return section
+
+    def _create_2d_composition_section(
+        self,
+        results_2d: List[TwoDSweepResult],
+        metrics: ExperimentMetrics
+    ) -> str:
+        """Create 2D composition analysis section.
+
+        Args:
+            results_2d: List of 2D composition results
+            metrics: Experiment metrics
+
+        Returns:
+            2D composition analysis section as string
+        """
+        # Extract alpha and beta ranges from results
+        alphas = sorted(set(r.alpha for r in results_2d))
+        betas = sorted(set(r.beta for r in results_2d))
+        alpha_min, alpha_max = min(alphas), max(alphas)
+        beta_min, beta_max = min(betas), max(betas)
+        grid_size = f"{len(alphas)}×{len(betas)}"
+        total_evaluations = len(results_2d)
+
+        # Find minimum and maximum loss points
+        min_result = min(results_2d, key=lambda r: r.loss)
+        max_result = max(results_2d, key=lambda r: r.loss)
+
+        # Find point closest to base loss (functional return)
+        base_loss = results_2d[0].base_loss
+        closest_to_base = min(results_2d, key=lambda r: r.functional_return)
+
+        # Find points along axes (α=0 and β=0)
+        alpha_axis_results = [r for r in results_2d if abs(r.beta) < 0.01]
+        beta_axis_results = [r for r in results_2d if abs(r.alpha) < 0.01]
+
+        section = f"""## 2D Task Vector Composition Analysis
+
+This experiment explores the loss landscape under composition of two task vectors:
+**L(M_base + α·T1 + β·T2)**
+
+### Experiment Setup
+
+- **First Task Vector (T1)**: {metrics.task_name}
+  - Magnitude: ||T1|| = {metrics.task_vector_magnitude:.4f}
+- **Second Task Vector (T2)**: sentiment_negative
+  - Magnitude: ||T2|| = {metrics.task_vector_2_magnitude:.4f}
+- **Grid Configuration**: {grid_size} = {total_evaluations} evaluations
+- **α range**: [{alpha_min:.1f}, {alpha_max:.1f}]
+- **β range**: [{beta_min:.1f}, {beta_max:.1f}]
+- **Base Model Loss**: L(M_base) = {base_loss:.4f}
+
+### Key Findings
+
+#### Minimum Loss (Optimal Composition)
+- **Location**: (α = {min_result.alpha:+.4f}, β = {min_result.beta:+.4f})
+- **Loss**: {min_result.loss:.4f}
+- **Improvement over base**: {base_loss - min_result.loss:+.4f}
+- **Perplexity**: {min_result.perplexity:.2f}
+
+#### Maximum Loss (Worst Composition)
+- **Location**: (α = {max_result.alpha:+.4f}, β = {max_result.beta:+.4f})
+- **Loss**: {max_result.loss:.4f}
+- **Degradation from base**: {max_result.loss - base_loss:+.4f}
+- **Perplexity**: {max_result.perplexity:.2f}
+
+#### Closest Return to Base (Functional Return)
+- **Location**: (α = {closest_to_base.alpha:+.4f}, β = {closest_to_base.beta:+.4f})
+- **Loss**: {closest_to_base.loss:.4f}
+- **|L - L_base|**: {closest_to_base.functional_return:.6f}
+"""
+
+        # Add axis analysis if we have axis results
+        if alpha_axis_results:
+            min_alpha_axis = min(alpha_axis_results, key=lambda r: r.loss)
+            section += f"""
+#### Along α-axis (β ≈ 0, pure T1 scaling)
+- **Best α**: {min_alpha_axis.alpha:+.4f}
+- **Loss**: {min_alpha_axis.loss:.4f}
+"""
+
+        if beta_axis_results:
+            min_beta_axis = min(beta_axis_results, key=lambda r: r.loss)
+            section += f"""
+#### Along β-axis (α ≈ 0, pure T2 scaling)
+- **Best β**: {min_beta_axis.beta:+.4f}
+- **Loss**: {min_beta_axis.loss:.4f}
+"""
+
+        # Add loss distribution statistics
+        all_losses = [r.loss for r in results_2d]
+        all_functional_returns = [r.functional_return for r in results_2d]
+
+        section += f"""
+### Loss Landscape Statistics
+
+- **Mean Loss**: {np.mean(all_losses):.4f}
+- **Std Dev**: {np.std(all_losses):.4f}
+- **Loss Range**: [{np.min(all_losses):.4f}, {np.max(all_losses):.4f}]
+- **Mean Functional Return**: {np.mean(all_functional_returns):.4f}
+
+### Interpretation
+
+The 2D composition experiment reveals how two task vectors interact when combined.
+The loss landscape shows whether:
+
+1. **Additive effects**: Task vectors combine linearly (smooth gradients)
+2. **Synergistic effects**: Certain combinations perform better than either task alone
+3. **Interference effects**: Task vectors cancel or degrade performance when combined
+4. **Rotation-like patterns**: Circular or symmetric patterns suggesting geometric structure
+
+**Visualization**: See `loss_landscape_2d.png` for the complete heatmap showing L(α,β) across
+the entire grid. The heatmap uses color intensity to show loss values, with the base model
+marked at the origin (α=0, β=0).
+
+**Data**: Full numerical results available in `loss_landscape_2d_results.json`
 """
 
         return section
