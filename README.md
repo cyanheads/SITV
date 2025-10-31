@@ -6,7 +6,7 @@
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/Version-0.2.0-blue.svg?style=flat-square)](./CHANGELOG.md) [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg?style=flat-square)](https://www.python.org/) [![PyTorch](https://img.shields.io/badge/PyTorch-2.5.0+-EE4C2C.svg?style=flat-square)](https://pytorch.org/) [![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](./LICENSE) [![Status](https://img.shields.io/badge/Status-Research-yellow.svg?style=flat-square)](https://github.com/cyanheads/SITV)
+[![Version](https://img.shields.io/badge/Version-0.3.0-blue.svg?style=flat-square)](./CHANGELOG.md) [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg?style=flat-square)](https://www.python.org/) [![PyTorch](https://img.shields.io/badge/PyTorch-2.5.0+-EE4C2C.svg?style=flat-square)](https://pytorch.org/) [![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](./LICENSE) [![Status](https://img.shields.io/badge/Status-Research-yellow.svg?style=flat-square)](https://github.com/cyanheads/SITV)
 
 </div>
 
@@ -189,18 +189,82 @@ task = "sentiment_analysis"  # Or implement custom tasks
 
 ## 📂 Project Structure
 
+**v0.3.0+**: The project has been refactored into a modular package architecture with 30+ modules organized in 7 layers.
+
 ```
 SITV/
-├── main.py              # Main experiment implementation
-├── pyproject.toml       # Project configuration and dependencies
-├── CHANGELOG.md         # Version history and release notes
-├── README.md            # This file
-├── .gitattributes       # Git LFS and line ending configuration
-├── .gitignore           # Python, model, and output file patterns
-└── outputs/             # Generated visualizations and results (gitignored)
+├── main.py                      # Thin entry point (44 lines)
+├── sitv/                        # Main package (30+ modules, 3,817 lines)
+│   ├── data/                    # Data models and task definitions
+│   │   ├── models.py            # AlphaSweepResult, ExperimentMetrics, etc.
+│   │   └── tasks.py             # Predefined task definitions
+│   ├── core/                    # Core services (device, task vectors, evaluation)
+│   │   ├── device.py            # Hardware detection and management
+│   │   ├── task_vector.py       # Task vector operations
+│   │   └── evaluation.py        # Model evaluation and perplexity
+│   ├── models/                  # Model management (loading, saving, fine-tuning)
+│   │   ├── loader.py            # Model and tokenizer operations
+│   │   └── fine_tuner.py        # Fine-tuning (in progress)
+│   ├── experiments/             # Experiment orchestration and implementations
+│   │   ├── base.py              # Abstract Experiment base class
+│   │   ├── config.py            # Configuration classes
+│   │   ├── alpha_sweep.py       # 1D alpha sweep experiment
+│   │   ├── composition_2d.py    # 2D composition experiment
+│   │   └── orchestrator.py      # ExperimentOrchestrator
+│   ├── analysis/                # Results analysis
+│   │   └── analyzer.py          # Zero-crossing detection, min loss finding
+│   ├── reporting/               # Report generation
+│   │   └── markdown.py          # Markdown report generator
+│   ├── visualization/           # Plotting and visualization
+│   │   └── plotter.py           # 1D and 2D plotting utilities
+│   ├── io/                      # File I/O operations
+│   │   ├── file_manager.py      # JSON and figure saving
+│   │   └── paths.py             # Path management
+│   ├── utils/                   # Utilities
+│   │   ├── console.py           # Console output formatting
+│   │   ├── progress.py          # Progress tracking with ETA
+│   │   └── timing.py            # Timing utilities
+│   └── cli/                     # Command-line interface
+│       └── args_parser.py       # Argument parsing
+├── tests/                       # Test suite (22 passing tests)
+│   ├── conftest.py              # Pytest fixtures
+│   ├── test_data_models.py      # Data model tests
+│   ├── test_device.py           # Device management tests
+│   ├── test_model_management.py # Model service tests
+│   └── test_task_vector.py      # Task vector tests
+├── archive/                     # Archived code
+│   └── main_original.py         # Original 2,232-line monolithic version
+├── pyproject.toml               # Project configuration and dependencies
+├── CHANGELOG.md                 # Version history and release notes
+├── ARCHITECTURE.md              # Detailed architecture documentation
+├── REFACTORING_SUMMARY.md       # Refactoring metrics and summary
+├── README.md                    # This file
+├── .gitattributes               # Git LFS and line ending configuration
+├── .gitignore                   # Python, model, and output file patterns
+└── outputs/                     # Generated visualizations and results (gitignored)
 ```
 
+See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed architecture documentation including layer descriptions, design patterns, and component interactions.
+
 ## 🧑‍💻 Development
+
+### Testing
+
+The project includes a comprehensive test suite with 22 passing tests:
+
+```bash
+# Run all tests
+pytest
+
+# Run with verbose output
+pytest -v
+
+# Run specific test file
+pytest tests/test_data_models.py
+
+# Run with coverage
+pytest --cov=sitv
+```
 
 ### Code Quality
 
@@ -212,7 +276,10 @@ ruff check .
 ruff format .
 
 # Type checking
-mypy main.py
+mypy main.py sitv/
+
+# Run all quality checks
+ruff check . && ruff format --check . && mypy main.py sitv/ && pytest
 ```
 
 ### Development Workflow

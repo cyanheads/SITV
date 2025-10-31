@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sitv"
-version = "0.1.0"
-description = "LLM task vectors and functional inverse transformations"
+version = "0.3.0"
+description = "Modular loss landscape explorer for neural network task vectors"
 requires-python = ">=3.12"
 dependencies = [
     "torch>=2.9.0",
@@ -23,7 +23,7 @@ dev = [
 ]
 
 [tool.hatch.build.targets.wheel]
-only-include = ["main.py"]
+packages = ["sitv"]
 
 [tool.ruff]
 line-length = 100
