@@ -4,11 +4,11 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sitv"
-version = "0.5.0"
+version = "0.5.1"
 description = "Modular loss landscape explorer for neural network task vectors"
 requires-python = ">=3.12"
 dependencies = [
-    "torch>=2.9.0",
+    "torch>=2.8.0",
     "transformers>=4.57.1",
     "numpy>=2.3.4",
     "matplotlib>=3.10.7",
@@ -17,11 +17,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = [
-    "ruff>=0.14.2",
-    "mypy>=1.18.2",
-    "pytest>=8.4.2",
-]
+dev = ["ruff>=0.14.2", "mypy>=1.18.2", "pytest>=8.4.2"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["sitv"]
