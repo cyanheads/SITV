@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.2] - 2025-10-31
+
+### Changed
+
+- **Type Safety Improvements** (16 files):
+  - Enhanced type annotations throughout codebase for better static type checking
+  - Added explicit `Optional` type hints for nullable parameters and variables
+  - Converted numpy/torch scalar returns to explicit Python `float()` types
+  - Added type annotations for list and variable initializations
+  - Added `type: ignore` comments for untyped third-party imports (scipy, sklearn, yaml)
+  - Improved mypy compliance across analysis, core, experiments, and reporting modules
+
+- **Configuration Path Fix** ([sitv/experiments/orchestrator.py](sitv/experiments/orchestrator.py)):
+  - Fixed sampling strategy configuration path from `sampling_strategy` to `sampling.strategy`
+  - Updated to match nested configuration structure in config.yaml
+
+### Technical Details
+
+- **Type Coverage**: Improved type safety in critical modules including gradient analysis, task vectors, experiments, and samplers
+- **Static Analysis**: Enhanced mypy compliance with specific type: ignore comments and proper type annotations
+- **Code Quality**: Better IDE support and type checking for development workflow
+- **Backward Compatibility**: No functional changes, purely type safety improvements
+
 ## [0.7.1] - 2025-10-31
 
 ### Added
