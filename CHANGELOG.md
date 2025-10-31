@@ -5,6 +5,59 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.4] - 2025-10-31
+
+### Added
+
+- **Per-Category Evaluation** (`sitv/core/evaluation.py`):
+  - Added `evaluate_by_category()` method for domain-specific loss analysis
+  - Enabled separate evaluation of coding, wikitext, mixed_domain, and common_knowledge domains
+  - Returns dictionary mapping category names to their average losses
+
+- **Category-Aware Dataset Loading** (`sitv/data/loader.py`):
+  - Added `load_general_with_categories()` method returning both texts and category labels
+  - Enhanced `load_general()` to support "combined" option that loads all general datasets (120 examples total)
+  - Improved error handling with warnings for missing datasets
+  - Updated type hints to modern Python style (`str | None`)
+
+- **Category Breakdown Reporting** (`sitv/reporting/markdown.py`):
+  - Added `_create_category_breakdown()` method for per-domain analysis in reports
+  - Added "Task & Evaluation" section showing which general evaluation dataset was used
+  - Included best α for each category with interpretations
+  - Added baseline comparison table showing losses at α≈0 for each domain
+
+- **Category Tracking in Data Models** (`sitv/data/models.py`):
+  - Added `category_losses` field to `AlphaSweepResult` for storing per-domain losses
+  - Added `general_eval_dataset` field to `ExperimentMetrics` for tracking which dataset was used
+
+### Changed
+
+- **Alpha Sweep Experiments** (`sitv/experiments/alpha_sweep.py`):
+  - Updated to accept `general_eval_categories` parameter for category labels
+  - Enhanced `evaluate_alpha()` to compute per-category losses when categories provided
+  - Integrated category losses into result objects
+
+- **Experiment Orchestration** (`sitv/experiments/orchestrator.py`):
+  - Updated to use `load_general_with_categories()` instead of `load_general()`
+  - Added general evaluation dataset name to console output and metrics
+  - Passes category labels through to alpha sweep experiments
+
+- **Configuration** (`config.yaml`):
+  - Changed default `general_dataset` from "mixed_domain" to "combined" for comprehensive evaluation
+  - Added documentation about "combined" option (evaluates all 120 examples across all domains)
+
+- **Documentation** (`data/README.md`):
+  - Added detailed "Dataset Options" section explaining all 5 choices
+  - Enhanced configuration examples with all available options
+  - Clarified that "combined" provides most comprehensive evaluation with 120 total examples
+
+### Technical Details
+
+- **Category Support**: All general datasets can now be evaluated separately to measure domain-specific effects
+- **Combined Mode**: New "combined" option loads all general datasets together for comprehensive analysis
+- **Report Integration**: Category breakdowns automatically appear in markdown reports when using combined datasets
+- **Type Safety**: Improved type hints throughout data loading layer
+
 ## [0.5.3] - 2025-10-30
 
 ### Added

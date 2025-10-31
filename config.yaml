@@ -14,9 +14,10 @@ task:
 
 # Evaluation Configuration
 evaluation:
-  general_dataset: "mixed_domain" # Options: mixed_domain, wikitext, coding, common_knowledge
+  general_dataset: "combined" # Options: mixed_domain, wikitext, coding, common_knowledge, combined
   # General evaluation measures how task vectors affect broad language modeling capability
   # Task-specific evaluation measures performance on the trained task
+  # Use "combined" to evaluate on all general datasets together (120 examples total)
 
 # Output Configuration
 output:

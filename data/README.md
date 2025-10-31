@@ -78,9 +78,17 @@ Specify which general evaluation dataset to use in `config.yaml`:
 
 ```yaml
 evaluation:
-  general_dataset: "mixed_domain"  # Name without .txt extension
-  use_task_specific_eval: true     # Also evaluate on task-specific data
+  general_dataset: "mixed_domain"  # Options: mixed_domain, wikitext, coding, common_knowledge, combined
+  # Use "combined" to evaluate on all general datasets together
 ```
+
+### Dataset Options
+
+- **`mixed_domain`** - Diverse multi-domain content (30 examples)
+- **`wikitext`** - Wikipedia-style factual content (30 examples)
+- **`coding`** - Programming and technical content (30 examples)
+- **`common_knowledge`** - Everyday general knowledge (30 examples)
+- **`combined`** - All general datasets combined (120 examples total - most comprehensive)
 
 ## Creating New Datasets
 
