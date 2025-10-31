@@ -33,6 +33,9 @@ class FineTuner:
         num_epochs: Number of training epochs
         learning_rate: Learning rate for fine-tuning
         batch_size: Training batch size
+        max_length: Maximum sequence length for tokenization
+        save_strategy: Model save strategy
+        logging_steps: Steps between logging
 
     Examples:
         >>> tuner = FineTuner(num_epochs=3, learning_rate=5e-5)
@@ -49,6 +52,9 @@ class FineTuner:
         num_epochs: int = 3,
         learning_rate: float = 5e-5,
         batch_size: int = 1,
+        max_length: int = 512,
+        save_strategy: str = "no",
+        logging_steps: int = 10,
     ):
         """Initialize the fine-tuner.
 
@@ -57,11 +63,17 @@ class FineTuner:
             num_epochs: Number of training epochs
             learning_rate: Learning rate for optimization
             batch_size: Training batch size
+            max_length: Maximum sequence length for tokenization
+            save_strategy: Model save strategy ("no", "steps", "epoch")
+            logging_steps: Number of steps between logging
         """
         self.output_dir = output_dir
         self.num_epochs = num_epochs
         self.learning_rate = learning_rate
         self.batch_size = batch_size
+        self.max_length = max_length
+        self.save_strategy = save_strategy
+        self.logging_steps = logging_steps
 
     def fine_tune(
         self,
@@ -96,6 +108,7 @@ class FineTuner:
         print(f"  Epochs: {self.num_epochs}")
         print(f"  Learning rate: {self.learning_rate:.2e}")
         print(f"  Batch size: {self.batch_size}")
+        print(f"  Max length: {self.max_length}")
         print(f"  Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
         # Prepare dataset
@@ -107,8 +120,8 @@ class FineTuner:
             num_train_epochs=self.num_epochs,
             per_device_train_batch_size=self.batch_size,
             learning_rate=self.learning_rate,
-            save_strategy="no",  # Disable checkpoint saving
-            logging_steps=10,  # Frequent logging for progress tracking
+            save_strategy=self.save_strategy,
+            logging_steps=self.logging_steps,
             report_to=[],  # Disable wandb/tensorboard
             remove_unused_columns=False,
             gradient_checkpointing=True,  # Save memory for large models
@@ -168,19 +181,17 @@ class FineTuner:
         self,
         texts: List[str],
         tokenizer,
-        max_length: int = 512
     ) -> Dataset:
         """Prepare dataset for training.
 
         Args:
             texts: List of training texts
             tokenizer: Tokenizer for encoding
-            max_length: Maximum sequence length
 
         Returns:
             Dataset object ready for training
         """
-        return TextDataset(texts, tokenizer, max_length)
+        return TextDataset(texts, tokenizer, self.max_length)
 
 
 class TextDataset(Dataset):

@@ -179,6 +179,9 @@ class ExperimentOrchestrator:
             num_epochs=self.config.fine_tuning.num_epochs,
             learning_rate=self.config.fine_tuning.learning_rate,
             batch_size=self.config.fine_tuning.batch_size,
+            max_length=self.config.fine_tuning.max_length,
+            save_strategy=self.config.fine_tuning.save_strategy,
+            logging_steps=self.config.fine_tuning.logging_steps,
         )
 
         # Fine-tune the model (note: this modifies base_model in-place)
@@ -372,6 +375,9 @@ class ExperimentOrchestrator:
             num_epochs=self.config.fine_tuning.num_epochs,
             learning_rate=self.config.fine_tuning.learning_rate,
             batch_size=self.config.fine_tuning.batch_size,
+            max_length=self.config.fine_tuning.max_length,
+            save_strategy=self.config.fine_tuning.save_strategy,
+            logging_steps=self.config.fine_tuning.logging_steps,
         )
 
         finetuned_model_2, ft_metrics_2 = fine_tuner.fine_tune(
