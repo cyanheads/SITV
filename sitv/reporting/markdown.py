@@ -172,6 +172,7 @@ class MarkdownReportGenerator:
 ### Alpha Sweep
 - **Alpha Range**: [{metrics.alpha_range[0]}, {metrics.alpha_range[1]}]
 - **Samples**: {metrics.num_alpha_samples}
+- **Sampling Strategy**: {metrics.sampling_strategy.capitalize()}
 - **Avg Time per Sample**: {metrics.time_per_alpha_seconds:.2f}s"""
 
     def _create_timing_breakdown(self, metrics: ExperimentMetrics) -> str:

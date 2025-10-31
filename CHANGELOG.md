@@ -5,6 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.1] - 2025-10-31
+
+### Added
+
+- **Sampling Strategy Integration** ([sitv/experiments/alpha_sweep.py](sitv/experiments/alpha_sweep.py)):
+  - Integrated sampling strategies into alpha sweep experiment workflow
+  - Added `sampling_strategy` parameter to `AlphaSweepExperiment.__init__()`
+  - Implemented `_create_sampler()` factory method for instantiating samplers
+  - Modified `run()` to use sampler-generated alpha values instead of uniform `np.linspace()`
+  - Updated progress calculation to handle variable sample counts from adaptive/bayesian strategies
+  - Added sampling strategy imports: `UniformSampler`, `AdaptiveSampler`, `BayesianSampler`
+
+- **Sampling Strategy Tracking** ([sitv/data/models.py](sitv/data/models.py)):
+  - Added `sampling_strategy` field to `ExperimentMetrics` dataclass
+  - Defaults to "uniform" for backward compatibility
+  - Tracks which sampling strategy was used in experiment results
+
+### Changed
+
+- **Orchestrator Enhancement** ([sitv/experiments/orchestrator.py](sitv/experiments/orchestrator.py)):
+  - Wired `sampling_strategy` configuration from config to `AlphaSweepExperiment`
+  - Added sampling strategy to metrics collection for result tracking
+
+- **Report Generation** ([sitv/reporting/markdown.py](sitv/reporting/markdown.py)):
+  - Added "Sampling Strategy" line to Alpha Sweep section
+  - Displays capitalized strategy name (Uniform/Adaptive/Bayesian) in reports
+
+- **Alpha Sweep Flexibility** ([sitv/experiments/alpha_sweep.py](sitv/experiments/alpha_sweep.py)):
+  - Updated `_calculate_eta()` to accept `total_samples` parameter for flexibility
+  - Updated `_print_summary()` to accept `total_samples` parameter
+  - Changed internal variables from `self.num_samples` to dynamic `total_alphas` count
+
+### Technical Details
+
+- **Feature Completion**: Completes the sampling strategy infrastructure added in v0.6.0
+- **Backward Compatibility**: Default "uniform" strategy maintains existing behavior
+- **Configuration**: Sampling strategies now fully functional via `config.yaml` setting
+- **Flexibility**: Adaptive and Bayesian strategies now usable for 40-90% speedup as originally designed
+
 ## [0.7.0] - 2025-10-31
 
 ### Added

@@ -23,6 +23,11 @@ from sitv.core.error_handling import (
     FailureTracker,
     safe_cuda_cleanup
 )
+from sitv.experiments.sampling import (
+    UniformSampler,
+    AdaptiveSampler,
+    BayesianSampler
+)
 
 # Set up logger
 logger = logging.getLogger(__name__)
@@ -60,6 +65,7 @@ class AlphaSweepExperiment(Experiment):
         num_samples: int = 100,
         device: str = "cuda",
         enable_squaring_test: bool = True,
+        sampling_strategy: str = "uniform",
     ):
         """Initialize the alpha sweep experiment.
 
@@ -74,6 +80,7 @@ class AlphaSweepExperiment(Experiment):
             num_samples: Number of α samples
             device: Device for computation
             enable_squaring_test: Whether to test M(2α) as well
+            sampling_strategy: Sampling strategy ("uniform", "adaptive", "bayesian")
 
         Raises:
             ValidationError: If any configuration parameter is invalid
@@ -97,11 +104,45 @@ class AlphaSweepExperiment(Experiment):
         self.alpha_range = alpha_range
         self.num_samples = num_samples
         self.enable_squaring_test = enable_squaring_test
+        self.sampling_strategy = sampling_strategy.lower()
         self.evaluator = EvaluationService(tokenizer, device)
         self.failure_tracker = FailureTracker(
             max_consecutive_failures=5,
             max_total_failures_pct=0.3
         )
+
+        # Create sampler based on strategy
+        self.sampler = self._create_sampler()
+
+    def _create_sampler(self):
+        """Create the appropriate sampler based on strategy.
+
+        Returns:
+            Sampler instance (UniformSampler, AdaptiveSampler, or BayesianSampler)
+
+        Raises:
+            ValueError: If sampling strategy is invalid
+        """
+        if self.sampling_strategy == "uniform":
+            return UniformSampler(
+                alpha_range=self.alpha_range,
+                num_samples=self.num_samples
+            )
+        elif self.sampling_strategy == "adaptive":
+            return AdaptiveSampler(
+                alpha_range=self.alpha_range,
+                num_samples=self.num_samples
+            )
+        elif self.sampling_strategy == "bayesian":
+            return BayesianSampler(
+                alpha_range=self.alpha_range,
+                num_samples=self.num_samples
+            )
+        else:
+            raise ValueError(
+                f"Invalid sampling strategy: '{self.sampling_strategy}'. "
+                f"Must be one of: 'uniform', 'adaptive', 'bayesian'"
+            )
 
     def run(self) -> tuple[List[AlphaSweepResult], Dict[str, Any]]:
         """Run the alpha sweep experiment.
@@ -136,26 +177,25 @@ class AlphaSweepExperiment(Experiment):
             base_loss = self._evaluate_base_loss_with_retry()
             print(f"Base model loss L(M_base): {base_loss:.4f}\n")
 
-            # Generate alpha values
-            alpha_values = np.linspace(
-                self.alpha_range[0],
-                self.alpha_range[1],
-                self.num_samples
-            )
+            # Generate alpha values using configured sampler
+            print(f"Sampling strategy: {self.sampling_strategy}")
+            alpha_values = self.sampler.generate_samples()
+            print(f"Generated {len(alpha_values)} alpha values\n")
 
             # Run sweep
             results = []
             alpha_times = []
+            total_alphas = len(alpha_values)
 
             for i, alpha in enumerate(alpha_values):
                 alpha_start = time.time()
 
                 # Calculate and display progress
-                progress_pct = ((i + 1) / self.num_samples) * 100
-                eta_str = self._calculate_eta(alpha_times, i)
+                progress_pct = ((i + 1) / total_alphas) * 100
+                eta_str = self._calculate_eta(alpha_times, i, total_alphas)
 
                 print(
-                    f"[{i+1:3d}/{self.num_samples}] ({progress_pct:5.1f}%) "
+                    f"[{i+1:3d}/{total_alphas}] ({progress_pct:5.1f}%) "
                     f"α = {alpha:+.3f} | ",
                     end="",
                     flush=True
@@ -195,7 +235,7 @@ class AlphaSweepExperiment(Experiment):
         self.end_timing()
 
         # Print summary
-        self._print_summary(alpha_times, results)
+        self._print_summary(alpha_times, results, len(alpha_values))
 
         # Return results with metadata
         metadata = self._create_metadata(alpha_times)
@@ -366,19 +406,20 @@ class AlphaSweepExperiment(Experiment):
 
         return loss_2alpha, functional_return_2alpha
 
-    def _calculate_eta(self, alpha_times: List[float], current_idx: int) -> str:
+    def _calculate_eta(self, alpha_times: List[float], current_idx: int, total_samples: int) -> str:
         """Calculate ETA string.
 
         Args:
             alpha_times: List of times for completed alphas
             current_idx: Current iteration index
+            total_samples: Total number of samples to evaluate
 
         Returns:
             Formatted ETA string
         """
         if alpha_times:
             avg_time = sum(alpha_times) / len(alpha_times)
-            remaining = self.num_samples - current_idx
+            remaining = total_samples - current_idx
             return self.format_eta(avg_time, remaining)
         else:
             return "ETA: calculating..."
@@ -410,12 +451,13 @@ class AlphaSweepExperiment(Experiment):
                 f"{elapsed:.1f}s | {eta_str}"
             )
 
-    def _print_summary(self, alpha_times: List[float], results: List[AlphaSweepResult]) -> None:
+    def _print_summary(self, alpha_times: List[float], results: List[AlphaSweepResult], total_samples: int) -> None:
         """Print experiment summary.
 
         Args:
             alpha_times: List of times for each alpha evaluation
             results: List of results collected
+            total_samples: Total number of samples evaluated
         """
         duration = self.get_duration()
         avg_time = sum(alpha_times) / len(alpha_times) if alpha_times else 0.0
@@ -424,7 +466,7 @@ class AlphaSweepExperiment(Experiment):
         print("ALPHA SWEEP COMPLETE")
         print(f"{'='*70}")
         print(f"  Duration: {duration / 60:.1f} minutes ({duration:.0f}s)")
-        print(f"  Samples Completed: {len(results)}/{self.num_samples}")
+        print(f"  Samples Completed: {len(results)}/{total_samples}")
         print(f"  Avg time/sample: {avg_time:.2f}s")
 
         # Print failure summary if there were any failures

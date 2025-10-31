@@ -311,6 +311,7 @@ class ExperimentOrchestrator:
             num_samples=self.config.alpha_sweep.num_samples,
             device=self.device,
             enable_squaring_test=self.config.alpha_sweep.enable_squaring_test,
+            sampling_strategy=self.config.alpha_sweep.sampling_strategy,
         )
 
         # Run experiment
@@ -324,6 +325,7 @@ class ExperimentOrchestrator:
         self.metrics.alpha_range = self.config.alpha_sweep.alpha_range
         self.metrics.time_per_alpha_seconds = timing_metadata.get("time_per_alpha_seconds", 0.0)
         self.metrics.enable_squaring_test = self.config.alpha_sweep.enable_squaring_test
+        self.metrics.sampling_strategy = self.config.alpha_sweep.sampling_strategy
 
         # Analyze results
         analyzer = ResultAnalyzer(threshold=self.config.alpha_sweep.threshold)

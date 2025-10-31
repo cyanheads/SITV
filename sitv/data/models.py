@@ -116,6 +116,7 @@ class ExperimentMetrics:
         num_alpha_samples: Number of alpha values sampled
         alpha_range: Range of alpha values (min, max)
         time_per_alpha_seconds: Average time per alpha sample
+        sampling_strategy: Sampling strategy used (uniform, adaptive, bayesian)
         min_general_loss_alpha: Alpha value with minimum general loss
         min_general_loss: Minimum general loss value
         min_task_loss_alpha: Alpha value with minimum task loss
@@ -162,6 +163,7 @@ class ExperimentMetrics:
     num_alpha_samples: int = 0
     alpha_range: tuple[float, float] = (-3.0, 3.0)
     time_per_alpha_seconds: float = 0.0
+    sampling_strategy: str = "uniform"  # Sampling strategy used (uniform, adaptive, bayesian)
 
     # Results summary
     min_general_loss_alpha: float = 0.0
