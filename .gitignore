@@ -188,6 +188,14 @@ docs/devdocs.md
 ideas/
 .mcp.json
 
+# Task Vector Loss Landscape Experiment outputs
+outputs/saved_base_model/
+outputs/saved_finetuned_model/
+outputs/finetuned_tmp/
+outputs/*.png
+outputs/*.json
+outputs/*.md
+
 # =============================================================================
 # MCP REGISTRY
 # =============================================================================

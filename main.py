@@ -48,6 +48,7 @@ PRACTICAL APPLICATIONS:
 • Guide task vector arithmetic
 """
 
+import argparse
 import json
 import os
 import time
@@ -85,6 +86,89 @@ def get_device_map():
         return None  # MPS: load to default device, then move manually
     else:
         return None  # CPU: load to default device
+
+
+def save_models_for_analysis(
+    base_model: PreTrainedModel,
+    finetuned_model: PreTrainedModel,
+    output_dir: str,
+) -> None:
+    """Save base and fine-tuned models for later analysis.
+
+    Args:
+        base_model: Base model to save
+        finetuned_model: Fine-tuned model to save
+        output_dir: Directory to save models
+    """
+    base_path = os.path.join(output_dir, "saved_base_model")
+    ft_path = os.path.join(output_dir, "saved_finetuned_model")
+
+    print(f"\nSaving models for future analysis...")
+    print(f"  Base model → {base_path}")
+    print(f"  Fine-tuned model → {ft_path}")
+
+    # Save models (saves config, weights, etc.)
+    base_model.save_pretrained(base_path)
+    finetuned_model.save_pretrained(ft_path)
+
+    print("Models saved successfully!\n")
+
+
+def load_models_for_analysis(
+    model_name: str,
+    output_dir: str,
+    device: str,
+) -> tuple[PreTrainedModel, PreTrainedModel]:
+    """Load previously saved models for analysis.
+
+    Args:
+        model_name: Name of the base model (for tokenizer compatibility)
+        output_dir: Directory containing saved models
+        device: Device to load models to
+
+    Returns:
+        Tuple of (base_model, finetuned_model)
+    """
+    base_path = os.path.join(output_dir, "saved_base_model")
+    ft_path = os.path.join(output_dir, "saved_finetuned_model")
+
+    print(f"\nLoading previously saved models...")
+    print(f"  Base model ← {base_path}")
+    print(f"  Fine-tuned model ← {ft_path}")
+
+    # Load models
+    base_model = AutoModelForCausalLM.from_pretrained(
+        base_path, torch_dtype=torch.bfloat16, device_map=None
+    )
+    finetuned_model = AutoModelForCausalLM.from_pretrained(
+        ft_path, torch_dtype=torch.bfloat16, device_map=None
+    )
+
+    # Move to device
+    base_model = base_model.to(device)  # type: ignore[assignment]
+    finetuned_model = finetuned_model.to(device)  # type: ignore[assignment]
+
+    print("Models loaded successfully!\n")
+
+    return base_model, finetuned_model
+
+
+def check_saved_models_exist(output_dir: str) -> bool:
+    """Check if saved models exist in the output directory.
+
+    Args:
+        output_dir: Directory to check for saved models
+
+    Returns:
+        True if both base and fine-tuned models exist, False otherwise
+    """
+    base_path = os.path.join(output_dir, "saved_base_model")
+    ft_path = os.path.join(output_dir, "saved_finetuned_model")
+
+    base_exists = os.path.exists(os.path.join(base_path, "config.json"))
+    ft_exists = os.path.exists(os.path.join(ft_path, "config.json"))
+
+    return base_exists and ft_exists
 
 
 @dataclass
@@ -218,7 +302,20 @@ def compute_task_vector(
     for (name, base_param), (_, ft_param) in zip(
         base_model.named_parameters(), finetuned_model.named_parameters(), strict=True
     ):
-        # Move both to CPU first to handle device mismatches (e.g., cuda vs meta device)
+        # Check for meta device - this indicates improper materialization
+        if ft_param.device.type == 'meta':
+            raise RuntimeError(
+                f"Parameter '{name}' in fine-tuned model is on meta device. "
+                "This happens with device_map='auto' and model offloading. "
+                "Load the fine-tuning model with device_map=None instead."
+            )
+        if base_param.device.type == 'meta':
+            raise RuntimeError(
+                f"Parameter '{name}' in base model is on meta device. "
+                "Load the model with device_map=None instead."
+            )
+
+        # Move both to CPU first to handle device mismatches (e.g., cuda vs cpu)
         base_cpu = base_param.detach().cpu()
         ft_cpu = ft_param.detach().cpu()
         task_vector[name] = (ft_cpu - base_cpu).clone()
@@ -651,7 +748,7 @@ This experiment explores the loss landscape along the task vector direction for 
 | Other (loading, computation) | {(experiment_metrics.duration_seconds - experiment_metrics.finetuning_duration_seconds - experiment_metrics.sweep_duration_seconds) / 60:.1f}m | {(experiment_metrics.duration_seconds - experiment_metrics.finetuning_duration_seconds - experiment_metrics.sweep_duration_seconds) / experiment_metrics.duration_seconds * 100:.1f}% |
 
 **Performance Metrics:**
-- Fine-tuning: {experiment_metrics.finetuning_duration_seconds / experiment_metrics.training_steps:.2f}s per training step
+- Fine-tuning: {f"{experiment_metrics.finetuning_duration_seconds / experiment_metrics.training_steps:.2f}s per training step" if experiment_metrics.training_steps > 0 else "N/A (analysis-only mode)"}
 - Alpha sweep: {experiment_metrics.time_per_alpha_seconds:.2f}s per sample
 
 ---
@@ -1089,12 +1186,69 @@ def main():
 
     Inspired by Eckmann & Tlusty (2025)'s rotation group self-inverse walks.
     """
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(
+        description="Task Vector Loss Landscape Explorer",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Run full experiment (fine-tuning + analysis)
+  python main.py
+
+  # Run analysis only on previously fine-tuned models
+  python main.py --analysis-only
+
+  # Run with custom alpha range and samples
+  python main.py --alpha-min -5 --alpha-max 5 --num-samples 200
+
+  # Analysis only with custom parameters
+  python main.py --analysis-only --alpha-min -2 --alpha-max 2 --num-samples 50
+        """,
+    )
+    parser.add_argument(
+        "--analysis-only",
+        action="store_true",
+        help="Skip fine-tuning and run analysis on previously saved models",
+    )
+    parser.add_argument(
+        "--alpha-min",
+        type=float,
+        default=-3.0,
+        help="Minimum alpha value for sweep (default: -3.0)",
+    )
+    parser.add_argument(
+        "--alpha-max",
+        type=float,
+        default=3.0,
+        help="Maximum alpha value for sweep (default: 3.0)",
+    )
+    parser.add_argument(
+        "--num-samples",
+        type=int,
+        default=100,
+        help="Number of alpha samples (default: 100)",
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=str,
+        default="./outputs",
+        help="Output directory (default: ./outputs)",
+    )
+
+    args = parser.parse_args()
+
     experiment_start_time = time.time()
 
     print(f"\n{'='*70}")
     print("TASK VECTOR LOSS LANDSCAPE EXPERIMENT")
     print("Inspired by Eckmann & Tlusty (2025)")
     print(f"{'='*70}")
+
+    if args.analysis_only:
+        print("\n🔍 MODE: Analysis Only (using saved models)")
+    else:
+        print("\n🚀 MODE: Full Experiment (fine-tuning + analysis)")
+
     print(
         """
 RESEARCH QUESTION:
@@ -1126,6 +1280,9 @@ analogous structure under task vector scaling.
 
     # Configuration
     model_name = "google/gemma-3-4b-it"
+    output_dir = args.output_dir
+    alpha_range = (args.alpha_min, args.alpha_max)
+    num_samples = args.num_samples
 
     # Device detection with MPS support for Apple Silicon
     if torch.cuda.is_available():
@@ -1135,7 +1292,6 @@ analogous structure under task vector scaling.
     else:
         device = "cpu"
 
-    output_dir = "./outputs"
     os.makedirs(output_dir, exist_ok=True)
 
     # Initialize experiment metrics
@@ -1145,25 +1301,18 @@ analogous structure under task vector scaling.
         device=device,
     )
 
-    print(f"Model: {model_name}")
-    print(f"Device: {device}")
-    print(f"Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+    print(f"\nConfiguration:")
+    print(f"  Model: {model_name}")
+    print(f"  Device: {device}")
+    print(f"  Output dir: {output_dir}")
+    print(f"  Alpha range: [{alpha_range[0]:.1f}, {alpha_range[1]:.1f}]")
+    print(f"  Num samples: {num_samples}")
+    print(f"  Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
 
     # Load tokenizer
     print("Loading tokenizer...")
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     tokenizer.pad_token = tokenizer.eos_token
-
-    # Load base model
-    print("Loading base model...")
-    device_map = get_device_map()
-    base_model = AutoModelForCausalLM.from_pretrained(
-        model_name, torch_dtype=torch.bfloat16, device_map=device_map
-    )
-
-    # For MPS/CPU, manually move to device if device_map is None
-    if device_map is None and device != "cpu":
-        base_model = base_model.to(device)  # type: ignore[assignment]
 
     # Prepare task data (sentiment analysis)
     print("\nPreparing task data (sentiment analysis)...")
@@ -1200,33 +1349,73 @@ analogous structure under task vector scaling.
         "The capital of France is Paris.",
     ]
 
-    # Fine-tune model on task
-    print("Loading model for fine-tuning...")
-    ft_model = AutoModelForCausalLM.from_pretrained(
-        model_name, torch_dtype=torch.bfloat16, device_map=device_map
-    )
-    if device_map is None and device != "cpu":
+    # Check if we should load existing models or fine-tune new ones
+    if args.analysis_only:
+        if check_saved_models_exist(output_dir):
+            print(f"\n{'='*70}")
+            print("LOADING SAVED MODELS")
+            print(f"{'='*70}")
+            base_model, finetuned_model = load_models_for_analysis(
+                model_name, output_dir, device
+            )
+            # Set dummy metrics for analysis-only mode
+            experiment_metrics.training_examples = len(train_texts)
+            experiment_metrics.num_epochs = 2  # Default from previous run
+            experiment_metrics.learning_rate = 5e-5  # Default from previous run
+        else:
+            print(f"\n{'='*70}")
+            print("WARNING: No saved models found!")
+            print(f"{'='*70}")
+            print(f"Looking for models in: {output_dir}")
+            print("  - saved_base_model/")
+            print("  - saved_finetuned_model/")
+            print("\nPlease run the full experiment first without --analysis-only")
+            print("Or check that the --output-dir path is correct.")
+            return
+    else:
+        # Full experiment mode: Load base model and fine-tune
+        print(f"\n{'='*70}")
+        print("LOADING BASE MODEL")
+        print(f"{'='*70}")
+        device_map = get_device_map()
+        base_model = AutoModelForCausalLM.from_pretrained(
+            model_name, torch_dtype=torch.bfloat16, device_map=device_map
+        )
+
+        # For MPS/CPU, manually move to device if device_map is None
+        if device_map is None and device != "cpu":
+            base_model = base_model.to(device)  # type: ignore[assignment]
+
+        # Fine-tune model on task
+        # NOTE: We don't use device_map="auto" for fine-tuning to avoid meta device issues
+        print("\nLoading model for fine-tuning...")
+        ft_model = AutoModelForCausalLM.from_pretrained(
+            model_name, torch_dtype=torch.bfloat16, device_map=None
+        )
         ft_model = ft_model.to(device)  # type: ignore[assignment]
 
-    finetuned_model, ft_metrics = fine_tune_model(
-        base_model=ft_model,
-        tokenizer=tokenizer,
-        train_texts=train_texts,
-        output_dir=f"{output_dir}/finetuned_tmp",
-        num_epochs=2,
-        learning_rate=5e-5,
-    )
+        finetuned_model, ft_metrics = fine_tune_model(
+            base_model=ft_model,
+            tokenizer=tokenizer,
+            train_texts=train_texts,
+            output_dir=f"{output_dir}/finetuned_tmp",
+            num_epochs=2,
+            learning_rate=5e-5,
+        )
 
-    # Update experiment metrics with fine-tuning data
-    experiment_metrics.finetuning_start_time = ft_metrics["start_time"]
-    experiment_metrics.finetuning_end_time = ft_metrics["end_time"]
-    experiment_metrics.finetuning_duration_seconds = ft_metrics["duration_seconds"]
-    experiment_metrics.training_examples = ft_metrics["training_examples"]
-    experiment_metrics.num_epochs = ft_metrics["num_epochs"]
-    experiment_metrics.learning_rate = ft_metrics["learning_rate"]
-    experiment_metrics.final_training_loss = ft_metrics["final_loss"]
-    experiment_metrics.training_steps = ft_metrics["training_steps"]
-    experiment_metrics.training_history = ft_metrics["training_history"]
+        # Update experiment metrics with fine-tuning data
+        experiment_metrics.finetuning_start_time = ft_metrics["start_time"]
+        experiment_metrics.finetuning_end_time = ft_metrics["end_time"]
+        experiment_metrics.finetuning_duration_seconds = ft_metrics["duration_seconds"]
+        experiment_metrics.training_examples = ft_metrics["training_examples"]
+        experiment_metrics.num_epochs = ft_metrics["num_epochs"]
+        experiment_metrics.learning_rate = ft_metrics["learning_rate"]
+        experiment_metrics.final_training_loss = ft_metrics["final_loss"]
+        experiment_metrics.training_steps = ft_metrics["training_steps"]
+        experiment_metrics.training_history = ft_metrics["training_history"]
+
+        # Save models for future analysis
+        save_models_for_analysis(base_model, finetuned_model, output_dir)
 
     # Compute task vector
     print("Computing task vector T = M_finetuned - M_base...")
@@ -1255,8 +1444,8 @@ analogous structure under task vector scaling.
         tokenizer=tokenizer,
         general_eval_texts=general_eval_texts,
         task_eval_texts=task_eval_texts,
-        alpha_range=(-3.0, 3.0),
-        num_samples=100,
+        alpha_range=alpha_range,
+        num_samples=num_samples,
         device=device,
     )
 
@@ -1275,7 +1464,7 @@ analogous structure under task vector scaling.
     zero_crossings = analysis["zero_crossings"]
 
     experiment_metrics.num_alpha_samples = len(results)
-    experiment_metrics.alpha_range = (-3.0, 3.0)
+    experiment_metrics.alpha_range = alpha_range
     experiment_metrics.min_general_loss_alpha = min_general.alpha
     experiment_metrics.min_general_loss = min_general.loss
     experiment_metrics.min_task_loss_alpha = min_task.alpha
@@ -1306,8 +1495,8 @@ analogous structure under task vector scaling.
                     "task": "sentiment_analysis",
                     "task_vector_magnitude": tv_magnitude,
                     "model": model_name,
-                    "alpha_range": [-3.0, 3.0],
-                    "num_samples": 100,
+                    "alpha_range": list(alpha_range),
+                    "num_samples": num_samples,
                 },
                 "methodology": {
                     "experiment": "M(α) = M_base + αT",
@@ -1441,7 +1630,10 @@ PRACTICAL IMPLICATIONS:
     print(f"  Steps: {experiment_metrics.training_steps}")
     print(f"  Learning rate: {experiment_metrics.learning_rate:.2e}")
     print(f"  Final loss: {experiment_metrics.final_training_loss:.4f}")
-    print(f"  Avg time/step: {experiment_metrics.finetuning_duration_seconds / experiment_metrics.training_steps:.2f}s")
+    if experiment_metrics.training_steps > 0:
+        print(f"  Avg time/step: {experiment_metrics.finetuning_duration_seconds / experiment_metrics.training_steps:.2f}s")
+    else:
+        print(f"  Avg time/step: N/A (analysis-only mode)")
 
     print(f"\nTask Vector:")
     print(f"  Magnitude ||T||: {experiment_metrics.task_vector_magnitude:.4f}")
@@ -1470,8 +1662,14 @@ PRACTICAL IMPLICATIONS:
     print(f"  - {output_dir}/loss_landscape_sweep.png (visualization)")
     print(f"  - {output_dir}/loss_landscape_results.json (detailed data)")
     print(f"  - {output_dir}/experiment_metrics.json (metrics)")
+    if not args.analysis_only:
+        print(f"  - {output_dir}/saved_base_model/ (saved for re-analysis)")
+        print(f"  - {output_dir}/saved_finetuned_model/ (saved for re-analysis)")
     print(f"{'='*70}\n")
     print("📋 Copy experiment_report.md to share with LLMs for analysis!")
+    if not args.analysis_only:
+        print("\n💡 TIP: To re-run analysis with different parameters without re-training:")
+        print(f"   python main.py --analysis-only --alpha-min -5 --alpha-max 5 --num-samples 200")
 
 
 if __name__ == "__main__":

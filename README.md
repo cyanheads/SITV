@@ -93,6 +93,34 @@ This will:
 4. Sweep α from -3.0 to 3.0 (100 samples)
 5. Evaluate `L(M_base + αT)` for each α
 6. Generate visualizations and save to `./outputs/`
+7. **Save models** for future re-analysis (new!)
+
+### Command-Line Options
+
+```bash
+# Full experiment with default parameters
+python main.py
+
+# Custom alpha range and sample count
+python main.py --alpha-min -5 --alpha-max 5 --num-samples 200
+
+# Analysis-only mode (skip fine-tuning, use saved models)
+python main.py --analysis-only
+
+# Re-run analysis with different parameters
+python main.py --analysis-only --alpha-min -2 --alpha-max 2 --num-samples 50
+
+# Custom output directory
+python main.py --output-dir ./my_experiments
+
+# View all options
+python main.py --help
+```
+
+**Analysis-Only Mode**: After running a full experiment, the base and fine-tuned models are saved to `outputs/saved_base_model/` and `outputs/saved_finetuned_model/`. Use `--analysis-only` to skip the time-consuming fine-tuning step and re-run the alpha sweep with different parameters. This is useful for:
+- Testing different alpha ranges without re-training
+- Increasing sample density for finer resolution
+- Generating new visualizations with different settings
 
 ### Output Files
 
@@ -100,6 +128,10 @@ This will:
 | :------------------------------ | :--------------------------------------------------- |
 | `loss_landscape_sweep.png`      | 2x2 visualization grid showing loss curves           |
 | `loss_landscape_results.json`   | Complete results with all α values and metrics       |
+| `experiment_report.md`          | Comprehensive Markdown report for LLM analysis       |
+| `experiment_metrics.json`       | Complete timing and performance metrics              |
+| `saved_base_model/`             | Saved base model (for analysis-only mode)            |
+| `saved_finetuned_model/`        | Saved fine-tuned model (for analysis-only mode)      |
 
 ## 📈 Interpreting Results
 
