@@ -1,6 +1,7 @@
-# Task Vector Loss Landscape Explorer
+# Self-Inverse Task Vectors (SITV)
+### Exploring Loss Landscapes Along Task Vector Directions
 
-Exploring loss landscapes along task vector directions in neural network parameter space, inspired by [*Walks in Rotation Spaces Return Home when Doubled and Scaled*](https://arxiv.org/abs/2502.14367) (Eckmann & Tlusty, 2025).
+Inspired by [*Walks in Rotation Spaces Return Home when Doubled and Scaled*](https://arxiv.org/abs/2502.14367) (Eckmann & Tlusty, 2025), this project searches for self-inverse scaling factors in neural network parameter space.
 
 ## Overview
 
