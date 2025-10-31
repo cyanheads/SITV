@@ -5,6 +5,63 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2025-10-30
+
+### Added
+
+- **Fine-Tuning Implementation** (`sitv/models/fine_tuner.py`):
+  - Completed full fine-tuning implementation with `FineTuner` service
+  - Added `TextDataset` class for tokenizing training data
+  - Integrated HuggingFace Trainer with custom training configuration
+  - Added comprehensive metrics collection (training loss, steps, duration)
+  - Implemented `FineTuningProgressCallback` for detailed progress tracking with ETA
+  - Support for gradient checkpointing and bfloat16 precision
+
+- **Enhanced Reporting** (`sitv/reporting/markdown.py`):
+  - Added statistical summary section with loss/functional return/task performance distributions
+  - Added squaring test analysis section for [W(λ)]² = I analog investigation
+  - Added theoretical connection section linking to Eckmann & Tlusty (2025) paper
+  - Enhanced markdown formatting with proper tables and interpretation
+
+- **Enhanced Visualization** (`sitv/visualization/plotter.py`):
+  - Redesigned 1D sweep plots with 6-panel layout for squaring test mode
+  - Added comparison plots for L(α) vs L(2α)
+  - Added squaring functional return visualization
+  - Enhanced plot annotations with highlighted zero-crossings and minima
+  - Improved color schemes and marker styling for key features
+
+- **Progress Tracking** (`sitv/utils/progress.py`):
+  - Added `FineTuningProgressCallback` for real-time training progress
+  - Implemented ETA calculation during fine-tuning
+  - Added training history tracking for post-training analysis
+  - Enhanced console output with epoch boundaries and step-level metrics
+
+### Changed
+
+- **Experiment Orchestration** (`sitv/experiments/orchestrator.py`):
+  - Integrated FineTuner service into experiment workflow
+  - Replaced placeholder fine-tuning logic with full implementation
+  - Added model saving functionality after fine-tuning
+  - Enhanced 2D composition documentation with example integration code
+  - Updated metrics collection to include fine-tuning statistics
+
+### Removed
+
+- Removed TODO comments from fine-tuning, reporting, and visualization modules
+- Removed placeholder implementations and NotImplementedError exceptions
+
+### Fixed
+
+- Fine-tuning now fully functional instead of raising NotImplementedError
+- Models are properly saved after fine-tuning for future analysis
+
+### Technical Details
+
+- **Fine-Tuning**: Full integration with HuggingFace Transformers Trainer API
+- **Metrics**: Comprehensive tracking of training metrics (loss, steps, duration, LR, etc.)
+- **Visualization**: 2x3 grid layout for squaring test, 2x2 for standard mode
+- **Progress**: Real-time ETA and step-level progress reporting during training
+
 ## [0.3.0] - 2025-10-30
 
 ### Changed
