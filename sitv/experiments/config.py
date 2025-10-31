@@ -215,16 +215,16 @@ class ExperimentConfig:
 
     @classmethod
     def from_args(cls, args) -> "ExperimentConfig":
-        """Create configuration from command-line arguments.
+        """Create configuration from YAML config file.
 
-        Command-line arguments override config.yaml values. If a custom
-        config file path is provided via --config, it will be loaded first.
+        Only --config and --analysis-only CLI arguments are supported.
+        All other configuration must be done via config.yaml.
 
         Args:
-            args: Parsed arguments from argparse
+            args: Parsed arguments from argparse (only config and analysis_only)
 
         Returns:
-            ExperimentConfig object
+            ExperimentConfig object loaded from YAML
 
         Examples:
             >>> args = parser.parse_args()
@@ -234,31 +234,14 @@ class ExperimentConfig:
         if hasattr(args, 'config') and args.config is not None:
             reload_config(args.config)
 
-        # Create config with CLI overrides
-        return cls(
-            model_name=args.model,
-            output_dir=args.output_dir,
-            device=args.device,
-            task_name=args.task,
-            analysis_only=args.analysis_only,
-            enable_2d_composition=args.enable_2d,
-            alpha_sweep=AlphaSweepConfig(
-                alpha_range=(args.alpha_min, args.alpha_max),
-                num_samples=args.num_samples,
-                enable_squaring_test=args.enable_squaring,
-            ),
-            composition_2d=Composition2DConfig(
-                alpha_range=(args.alpha_2d_min, args.alpha_2d_max),
-                beta_range=(args.beta_min, args.beta_max),
-                num_samples_per_dim=args.samples_2d,
-            ),
-            fine_tuning=FineTuningConfig(
-                num_epochs=args.epochs,
-                learning_rate=args.learning_rate,
-                batch_size=args.batch_size,
-                data_repetition_factor=args.data_repetition_factor,
-            ),
-        )
+        # Load config entirely from YAML, only override analysis_only if provided
+        config = cls()
+
+        # Override analysis_only if provided via CLI
+        if hasattr(args, 'analysis_only') and args.analysis_only:
+            config.analysis_only = True
+
+        return config
 
     def to_dict(self) -> dict:
         """Convert configuration to dictionary.
