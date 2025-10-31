@@ -8,6 +8,7 @@ the loss landscape along a task vector direction.
 import time
 import numpy as np
 import torch
+import logging
 from datetime import datetime
 from typing import Dict, List, Any
 from transformers import PreTrainedModel
@@ -15,6 +16,16 @@ from transformers import PreTrainedModel
 from sitv.experiments.base import Experiment
 from sitv.data.models import AlphaSweepResult
 from sitv.core.evaluation import EvaluationService
+from sitv.core.validation import validate_alpha_sweep_config, ValidationError
+from sitv.core.error_handling import (
+    retry_on_evaluation_failure,
+    handle_evaluation_error,
+    FailureTracker,
+    safe_cuda_cleanup
+)
+
+# Set up logger
+logger = logging.getLogger(__name__)
 
 
 class AlphaSweepExperiment(Experiment):
@@ -63,8 +74,22 @@ class AlphaSweepExperiment(Experiment):
             num_samples: Number of α samples
             device: Device for computation
             enable_squaring_test: Whether to test M(2α) as well
+
+        Raises:
+            ValidationError: If any configuration parameter is invalid
         """
         super().__init__(base_model, tokenizer, device)
+
+        # Validate all inputs before proceeding
+        validate_alpha_sweep_config(
+            alpha_range=alpha_range,
+            num_samples=num_samples,
+            general_eval_texts=general_eval_texts,
+            task_eval_texts=task_eval_texts,
+            task_vector=task_vector,
+            general_eval_categories=general_eval_categories,
+        )
+
         self.task_vector = task_vector
         self.general_eval_texts = general_eval_texts
         self.general_eval_categories = general_eval_categories
@@ -73,6 +98,10 @@ class AlphaSweepExperiment(Experiment):
         self.num_samples = num_samples
         self.enable_squaring_test = enable_squaring_test
         self.evaluator = EvaluationService(tokenizer, device)
+        self.failure_tracker = FailureTracker(
+            max_consecutive_failures=5,
+            max_total_failures_pct=0.3
+        )
 
     def run(self) -> tuple[List[AlphaSweepResult], Dict[str, Any]]:
         """Run the alpha sweep experiment.
@@ -98,63 +127,143 @@ class AlphaSweepExperiment(Experiment):
         # Clone original parameters
         original_params = self.clone_parameters(self.task_vector)
 
-        # Compute base model loss
-        print("Computing base model loss...")
-        base_loss = self.evaluator.evaluate(self.base_model, self.general_eval_texts)
-        print(f"Base model loss L(M_base): {base_loss:.4f}\n")
+        # Pre-load task vector to device for performance
+        device_task_vector = self.preload_task_vector_to_device(self.task_vector)
 
-        # Generate alpha values
-        alpha_values = np.linspace(
-            self.alpha_range[0],
-            self.alpha_range[1],
-            self.num_samples
-        )
+        try:
+            # Compute base model loss
+            print("Computing base model loss...")
+            base_loss = self._evaluate_base_loss_with_retry()
+            print(f"Base model loss L(M_base): {base_loss:.4f}\n")
 
-        # Run sweep
-        results = []
-        alpha_times = []
-
-        for i, alpha in enumerate(alpha_values):
-            alpha_start = time.time()
-
-            # Calculate and display progress
-            progress_pct = (i / self.num_samples) * 100
-            eta_str = self._calculate_eta(alpha_times, i)
-
-            print(
-                f"[{i+1:3d}/{self.num_samples}] ({progress_pct:5.1f}%) "
-                f"α = {alpha:+.3f} | ",
-                end="",
-                flush=True
+            # Generate alpha values
+            alpha_values = np.linspace(
+                self.alpha_range[0],
+                self.alpha_range[1],
+                self.num_samples
             )
 
-            # Evaluate at alpha
-            result = self._evaluate_at_alpha(alpha, original_params, base_loss)
-            results.append(result)
+            # Run sweep
+            results = []
+            alpha_times = []
 
-            # Track timing
-            alpha_elapsed = time.time() - alpha_start
-            alpha_times.append(alpha_elapsed)
+            for i, alpha in enumerate(alpha_values):
+                alpha_start = time.time()
 
-            # Print result
-            self._print_result(result, alpha_elapsed, eta_str)
+                # Calculate and display progress
+                progress_pct = ((i + 1) / self.num_samples) * 100
+                eta_str = self._calculate_eta(alpha_times, i)
 
-        # Restore parameters
-        self.restore_parameters(original_params)
+                print(
+                    f"[{i+1:3d}/{self.num_samples}] ({progress_pct:5.1f}%) "
+                    f"α = {alpha:+.3f} | ",
+                    end="",
+                    flush=True
+                )
+
+                # Evaluate at alpha with error handling
+                result = self._evaluate_at_alpha_safe(
+                    alpha, original_params, device_task_vector, base_loss
+                )
+
+                if result is not None:
+                    results.append(result)
+                    self.failure_tracker.record_success(alpha)
+                else:
+                    # Evaluation failed, check if we should abort
+                    should_abort, reason = self.failure_tracker.should_abort()
+                    if should_abort:
+                        logger.error(f"Aborting experiment: {reason}")
+                        print(f"\n⚠️  Experiment aborted: {reason}")
+                        break
+
+                # Track timing
+                alpha_elapsed = time.time() - alpha_start
+                alpha_times.append(alpha_elapsed)
+
+                # Print result
+                if result is not None:
+                    self._print_result(result, alpha_elapsed, eta_str)
+                else:
+                    print(f"FAILED | {alpha_elapsed:.1f}s | {eta_str}")
+
+        finally:
+            # Always restore parameters, even if experiment fails
+            self.restore_parameters(original_params)
+            safe_cuda_cleanup()
 
         self.end_timing()
 
         # Print summary
-        self._print_summary(alpha_times)
+        self._print_summary(alpha_times, results)
 
         # Return results with metadata
         metadata = self._create_metadata(alpha_times)
         return results, metadata
 
+    @retry_on_evaluation_failure(max_retries=2, return_on_failure=None)
+    def _evaluate_base_loss_with_retry(self) -> float:
+        """Evaluate base model loss with retry logic.
+
+        Returns:
+            Base model loss
+
+        Raises:
+            Exception: If evaluation fails after retries
+        """
+        return self.evaluator.evaluate(self.base_model, self.general_eval_texts)
+
+    def _evaluate_at_alpha_safe(
+        self,
+        alpha: float,
+        original_params: Dict[str, torch.Tensor],
+        device_task_vector: Dict[str, torch.Tensor],
+        base_loss: float
+    ) -> AlphaSweepResult | None:
+        """Safely evaluate at alpha with error handling.
+
+        Args:
+            alpha: Alpha scaling factor
+            original_params: Original model parameters
+            device_task_vector: Task vector pre-loaded to device
+            base_loss: Base model loss for reference
+
+        Returns:
+            AlphaSweepResult or None if evaluation failed
+        """
+        try:
+            return self._evaluate_at_alpha(alpha, original_params, device_task_vector, base_loss)
+        except Exception as e:
+            # Log the error and record failure
+            logger.error(f"Evaluation failed at α={alpha:.3f}: {str(e)}")
+            self.failure_tracker.record_failure(alpha, e)
+
+            # Try to handle the error gracefully
+            fallback_loss, should_continue = handle_evaluation_error(e, alpha, "alpha sweep")
+
+            if not should_continue:
+                # Critical error, return None to signal failure
+                return None
+
+            # Return a fallback result with inf loss
+            return AlphaSweepResult(
+                alpha=alpha,
+                loss=fallback_loss,
+                base_loss=base_loss,
+                functional_return=abs(fallback_loss - base_loss),
+                task_performance=fallback_loss,
+                loss_2alpha=0.0,
+                functional_return_2alpha=0.0,
+                perplexity=float('inf'),
+                perplexity_2alpha=0.0,
+                category_losses={},
+            )
+
     def _evaluate_at_alpha(
         self,
         alpha: float,
         original_params: Dict[str, torch.Tensor],
+        device_task_vector: Dict[str, torch.Tensor],
         base_loss: float
     ) -> AlphaSweepResult:
         """Evaluate model at a specific alpha value.
@@ -162,13 +271,14 @@ class AlphaSweepExperiment(Experiment):
         Args:
             alpha: Alpha scaling factor
             original_params: Original model parameters
+            device_task_vector: Task vector pre-loaded to device
             base_loss: Base model loss for reference
 
         Returns:
             AlphaSweepResult with evaluation metrics
         """
         # Apply task vector: M_alpha = M_base + α·T
-        self.apply_task_vector(original_params, self.task_vector, alpha)
+        self.apply_task_vector(original_params, device_task_vector, alpha)
 
         # Evaluate L(M_alpha)
         loss_alpha = self.evaluator.evaluate(
@@ -193,6 +303,7 @@ class AlphaSweepExperiment(Experiment):
             loss_2alpha, functional_return_2alpha = self._evaluate_squaring_test(
                 alpha,
                 original_params,
+                device_task_vector,
                 base_loss
             )
 
@@ -226,6 +337,7 @@ class AlphaSweepExperiment(Experiment):
         self,
         alpha: float,
         original_params: Dict[str, torch.Tensor],
+        device_task_vector: Dict[str, torch.Tensor],
         base_loss: float
     ) -> tuple[float, float]:
         """Evaluate squaring test: M(2α) = M_base + 2α·T
@@ -233,13 +345,14 @@ class AlphaSweepExperiment(Experiment):
         Args:
             alpha: Original alpha value
             original_params: Original model parameters
+            device_task_vector: Task vector pre-loaded to device
             base_loss: Base model loss
 
         Returns:
             Tuple of (loss_2alpha, functional_return_2alpha)
         """
         # Modify model to M_base + 2α·T
-        self.apply_task_vector(original_params, self.task_vector, 2.0 * alpha)
+        self.apply_task_vector(original_params, device_task_vector, 2.0 * alpha)
 
         # Evaluate L(M_2alpha)
         loss_2alpha = self.evaluator.evaluate(
@@ -249,7 +362,7 @@ class AlphaSweepExperiment(Experiment):
         functional_return_2alpha = abs(loss_2alpha - base_loss)
 
         # Restore to M_alpha for consistency
-        self.apply_task_vector(original_params, self.task_vector, alpha)
+        self.apply_task_vector(original_params, device_task_vector, alpha)
 
         return loss_2alpha, functional_return_2alpha
 
@@ -297,11 +410,12 @@ class AlphaSweepExperiment(Experiment):
                 f"{elapsed:.1f}s | {eta_str}"
             )
 
-    def _print_summary(self, alpha_times: List[float]) -> None:
+    def _print_summary(self, alpha_times: List[float], results: List[AlphaSweepResult]) -> None:
         """Print experiment summary.
 
         Args:
             alpha_times: List of times for each alpha evaluation
+            results: List of results collected
         """
         duration = self.get_duration()
         avg_time = sum(alpha_times) / len(alpha_times) if alpha_times else 0.0
@@ -310,8 +424,14 @@ class AlphaSweepExperiment(Experiment):
         print("ALPHA SWEEP COMPLETE")
         print(f"{'='*70}")
         print(f"  Duration: {duration / 60:.1f} minutes ({duration:.0f}s)")
-        print(f"  Samples: {self.num_samples}")
+        print(f"  Samples Completed: {len(results)}/{self.num_samples}")
         print(f"  Avg time/sample: {avg_time:.2f}s")
+
+        # Print failure summary if there were any failures
+        failure_summary = self.failure_tracker.get_summary()
+        if "Failures: 0/" not in failure_summary:
+            print(f"  {failure_summary}")
+
         print(f"{'='*70}\n")
 
     def _create_metadata(self, alpha_times: List[float]) -> Dict[str, Any]:
