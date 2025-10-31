@@ -10,7 +10,13 @@ model:
 
 # Task Configuration
 task:
-  name: "sentiment_positive" # Options: sentiment_positive, sentiment_negative
+  name: "sentiment_positive" # Options: sentiment_positive, sentiment_negative, instruction_following, qa_factual
+
+# Evaluation Configuration
+evaluation:
+  general_dataset: "mixed_domain" # Options: mixed_domain, wikitext, coding, common_knowledge
+  # General evaluation measures how task vectors affect broad language modeling capability
+  # Task-specific evaluation measures performance on the trained task
 
 # Output Configuration
 output:

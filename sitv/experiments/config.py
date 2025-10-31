@@ -155,6 +155,20 @@ class FineTuningConfig:
 
 
 @dataclass
+class EvaluationConfig:
+    """Configuration for evaluation datasets.
+
+    Attributes:
+        general_dataset: Name of general evaluation dataset to use
+            (e.g., 'mixed_domain', 'wikitext', 'coding', 'common_knowledge')
+    """
+
+    general_dataset: str = field(
+        default_factory=lambda: _get('evaluation.general_dataset', 'mixed_domain')
+    )
+
+
+@dataclass
 class ExperimentConfig:
     """Complete experiment configuration.
 
@@ -171,6 +185,7 @@ class ExperimentConfig:
         alpha_sweep: Alpha sweep configuration
         composition_2d: 2D composition configuration
         fine_tuning: Fine-tuning configuration
+        evaluation: Evaluation configuration
     """
 
     model_name: str = field(
@@ -196,6 +211,7 @@ class ExperimentConfig:
     alpha_sweep: AlphaSweepConfig = field(default_factory=AlphaSweepConfig)
     composition_2d: Composition2DConfig = field(default_factory=Composition2DConfig)
     fine_tuning: FineTuningConfig = field(default_factory=FineTuningConfig)
+    evaluation: EvaluationConfig = field(default_factory=EvaluationConfig)
 
     @classmethod
     def from_args(cls, args) -> "ExperimentConfig":
