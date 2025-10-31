@@ -185,6 +185,36 @@ class AlphaSweepResult:
     functional_return: float  # |L(M_base + αT) - L(M_base)|
     task_performance: float  # Task-specific loss at M_base + αT
 
+    # Squaring test results (NEW: Enhancement #3)
+    loss_2alpha: float = 0.0  # L(M_base + 2αT) - test [W(λ)]² = I analog
+    functional_return_2alpha: float = 0.0  # |L(M_base + 2αT) - L(M_base)|
+
+    # Additional metrics (NEW: Enhancement #11)
+    perplexity: float = 0.0  # exp(loss)
+    perplexity_2alpha: float = 0.0  # exp(loss_2alpha)
+
+
+@dataclass
+class TaskDefinition:
+    """Definition for a task in multi-task experiments (Enhancement #1)."""
+
+    name: str  # Task name (e.g., "sentiment", "summarization")
+    train_texts: list[str]  # Training examples
+    eval_texts: list[str]  # Task-specific evaluation texts
+    description: str = ""  # Human-readable description
+
+
+@dataclass
+class TwoDSweepResult:
+    """Store results for 2D composition M(α,β) = M_base + α·T1 + β·T2 (Enhancement #2)."""
+
+    alpha: float  # Scaling factor for T1
+    beta: float  # Scaling factor for T2
+    loss: float  # L(M_base + α·T1 + β·T2)
+    base_loss: float  # L(M_base) - reference point
+    functional_return: float  # |L - L_base|
+    perplexity: float = 0.0  # exp(loss)
+
 
 @dataclass
 class ExperimentMetrics:
@@ -229,6 +259,19 @@ class ExperimentMetrics:
     min_task_loss: float = 0.0
     num_zero_crossings: int = 0
     zero_crossing_alphas: list[float] = field(default_factory=list)
+
+    # NEW: Squaring test metrics (Enhancement #3)
+    enable_squaring_test: bool = False
+    num_squaring_return_points: int = 0  # α where L(2α) ≈ L(0)
+    squaring_return_alphas: list[float] = field(default_factory=list)
+
+    # NEW: Multi-task metrics (Enhancement #1)
+    task_name: str = "sentiment"  # Which task was run
+    multi_task_mode: bool = False  # Whether multi-task comparison was run
+
+    # NEW: 2D composition metrics (Enhancement #2)
+    enable_2d_composition: bool = False
+    task_vector_2_magnitude: float = 0.0  # ||T2|| for 2D experiments
 
 
 class FineTuningProgressCallback(TrainerCallback):
@@ -483,7 +526,8 @@ def sweep_alpha_values(
     alpha_range: tuple[float, float] = (-3.0, 3.0),
     num_samples: int = 100,
     device: str = "cuda",
-) -> list[AlphaSweepResult]:
+    enable_squaring_test: bool = True,  # NEW: Enhancement #3
+) -> tuple[list[AlphaSweepResult], dict]:
     """Sweep α values and plot loss landscape L(M_base + αT).
 
     MEMORY-EFFICIENT VERSION: Reuses a single model instance and modifies
@@ -572,19 +616,59 @@ def sweep_alpha_values(
             base_model, tokenizer, task_eval_texts, device
         )
 
+        # NEW: Squaring test - evaluate M(2α) = M_base + 2α·T (Enhancement #3)
+        loss_2alpha = 0.0
+        functional_return_2alpha = 0.0
+        if enable_squaring_test:
+            # Modify model to M_base + 2α·T
+            with torch.no_grad():
+                for name, param in base_model.named_parameters():
+                    if name in task_vector:
+                        param.copy_(
+                            original_params[name]
+                            + 2.0 * alpha * task_vector[name].to(param.device)
+                        )
+
+            # Evaluate L(M_2alpha)
+            loss_2alpha = evaluate_model(base_model, tokenizer, general_eval_texts, device)
+            functional_return_2alpha = abs(loss_2alpha - base_loss)
+
+            # Restore to M_alpha for consistency (in case other code expects it)
+            with torch.no_grad():
+                for name, param in base_model.named_parameters():
+                    if name in task_vector:
+                        param.copy_(
+                            original_params[name]
+                            + alpha * task_vector[name].to(param.device)
+                        )
+
+        # NEW: Additional metrics (Enhancement #11)
+        perplexity = np.exp(loss_alpha)
+        perplexity_2alpha = np.exp(loss_2alpha) if enable_squaring_test else 0.0
+
         result = AlphaSweepResult(
             alpha=alpha,
             loss=loss_alpha,
             base_loss=base_loss,
             functional_return=functional_return,
             task_performance=task_performance,
+            # Squaring test
+            loss_2alpha=loss_2alpha,
+            functional_return_2alpha=functional_return_2alpha,
+            # Additional metrics
+            perplexity=perplexity,
+            perplexity_2alpha=perplexity_2alpha,
         )
         results.append(result)
 
         alpha_elapsed = time.time() - alpha_start
         alpha_times.append(alpha_elapsed)
 
-        print(f"L(α)={loss_alpha:.4f}, |ΔL|={functional_return:.4f} | {alpha_elapsed:.1f}s | {eta_str}")
+        # Print progress with squaring info
+        if enable_squaring_test:
+            print(f"L(α)={loss_alpha:.4f}, L(2α)={loss_2alpha:.4f}, |ΔL|={functional_return:.4f}, |ΔL(2α)|={functional_return_2alpha:.4f} | {alpha_elapsed:.1f}s | {eta_str}")
+        else:
+            print(f"L(α)={loss_alpha:.4f}, |ΔL|={functional_return:.4f} | {alpha_elapsed:.1f}s | {eta_str}")
 
     # Restore original parameters at the end
     print("\nRestoring base model parameters...")
@@ -614,6 +698,147 @@ def sweep_alpha_values(
     }
 
 
+def sweep_2d_composition(
+    base_model: PreTrainedModel,
+    task_vector_1: dict[str, torch.Tensor],
+    task_vector_2: dict[str, torch.Tensor],
+    tokenizer,
+    general_eval_texts: list[str],
+    alpha_range: tuple[float, float] = (-2.0, 2.0),
+    beta_range: tuple[float, float] = (-2.0, 2.0),
+    num_samples_per_dim: int = 20,  # Creates 20x20 = 400 evaluations
+    device: str = "cuda",
+) -> tuple[list[TwoDSweepResult], dict]:
+    """Sweep 2D composition M(α,β) = M_base + α·T1 + β·T2 (Enhancement #2).
+
+    Tests if rotation-like structure exists under task vector composition.
+
+    Args:
+        base_model: Base model M_base
+        task_vector_1: First task vector T1
+        task_vector_2: Second task vector T2
+        tokenizer: Tokenizer for evaluation
+        general_eval_texts: Evaluation texts
+        alpha_range: Range for α (T1 scaling)
+        beta_range: Range for β (T2 scaling)
+        num_samples_per_dim: Samples per dimension (total = num^2)
+        device: Device for computation
+
+    Returns:
+        Tuple of (results list, timing metadata dict)
+    """
+    sweep_start_time = time.time()
+
+    print(f"\n{'='*70}")
+    print("2D TASK VECTOR COMPOSITION: L(M_base + α·T1 + β·T2)")
+    print(f"{'='*70}")
+    print(f"α range: [{alpha_range[0]:.1f}, {alpha_range[1]:.1f}]")
+    print(f"β range: [{beta_range[0]:.1f}, {beta_range[1]:.1f}]")
+    print(f"Grid: {num_samples_per_dim}×{num_samples_per_dim} = {num_samples_per_dim**2} evaluations")
+    print(f"Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print("\nQuestion: Do we see rotation-like patterns under composition?\n")
+
+    alpha_values = np.linspace(alpha_range[0], alpha_range[1], num_samples_per_dim)
+    beta_values = np.linspace(beta_range[0], beta_range[1], num_samples_per_dim)
+
+    results = []
+    eval_times = []
+
+    # Move model to device and set to eval mode
+    base_model = base_model.to(device)  # type: ignore[assignment]
+    base_model.eval()
+
+    # Clone original parameters
+    print("Cloning base model parameters...")
+    original_params = {}
+    for name, param in base_model.named_parameters():
+        if name in task_vector_1 and name in task_vector_2:
+            original_params[name] = param.clone().detach()
+
+    # Compute base model loss
+    print("Computing base model loss...")
+    base_loss = evaluate_model(base_model, tokenizer, general_eval_texts, device)
+    print(f"Base model loss L(M_base): {base_loss:.4f}\n")
+
+    total_evals = num_samples_per_dim ** 2
+    eval_count = 0
+
+    for i, alpha in enumerate(alpha_values):
+        for j, beta in enumerate(beta_values):
+            eval_start = time.time()
+            eval_count += 1
+
+            # Calculate ETA
+            if eval_times:
+                avg_time = sum(eval_times) / len(eval_times)
+                remaining = total_evals - eval_count
+                eta_seconds = avg_time * remaining
+                eta_str = f"ETA: {eta_seconds / 60:.1f}m" if eta_seconds > 60 else f"ETA: {eta_seconds:.0f}s"
+            else:
+                eta_str = "ETA: calculating..."
+
+            # Progress
+            progress_pct = (eval_count / total_evals) * 100
+
+            print(f"[{eval_count:4d}/{total_evals}] ({progress_pct:5.1f}%) α={alpha:+.2f}, β={beta:+.2f} | ", end="", flush=True)
+
+            # Modify model: M(α,β) = M_base + α·T1 + β·T2
+            with torch.no_grad():
+                for name, param in base_model.named_parameters():
+                    if name in original_params:
+                        param.copy_(
+                            original_params[name]
+                            + alpha * task_vector_1[name].to(param.device)
+                            + beta * task_vector_2[name].to(param.device)
+                        )
+
+            # Evaluate L(M_alpha_beta)
+            loss = evaluate_model(base_model, tokenizer, general_eval_texts, device)
+            functional_return = abs(loss - base_loss)
+            perplexity = np.exp(loss)
+
+            result = TwoDSweepResult(
+                alpha=alpha,
+                beta=beta,
+                loss=loss,
+                base_loss=base_loss,
+                functional_return=functional_return,
+                perplexity=perplexity,
+            )
+            results.append(result)
+
+            eval_elapsed = time.time() - eval_start
+            eval_times.append(eval_elapsed)
+
+            print(f"L={loss:.4f}, |ΔL|={functional_return:.4f} | {eval_elapsed:.1f}s | {eta_str}")
+
+    # Restore original parameters
+    print("\nRestoring base model parameters...")
+    with torch.no_grad():
+        for name, param in base_model.named_parameters():
+            if name in original_params:
+                param.copy_(original_params[name])
+
+    sweep_end_time = time.time()
+    sweep_duration = sweep_end_time - sweep_start_time
+    avg_time_per_eval = sweep_duration / total_evals if total_evals > 0 else 0.0
+
+    print(f"\n{'='*70}")
+    print("2D COMPOSITION SWEEP COMPLETE")
+    print(f"{'='*70}")
+    print(f"  Duration: {sweep_duration / 60:.1f} minutes ({sweep_duration:.0f}s)")
+    print(f"  Evaluations: {total_evals}")
+    print(f"  Avg time/eval: {avg_time_per_eval:.2f}s")
+    print(f"{'='*70}\n")
+
+    return results, {
+        "start_time": datetime.fromtimestamp(sweep_start_time).isoformat(),
+        "end_time": datetime.fromtimestamp(sweep_end_time).isoformat(),
+        "duration_seconds": sweep_duration,
+        "time_per_eval_seconds": avg_time_per_eval,
+    }
+
+
 def analyze_results(results: list[AlphaSweepResult]) -> dict:
     """Analyze loss landscape sweep results.
 
@@ -638,6 +863,15 @@ def analyze_results(results: list[AlphaSweepResult]) -> dict:
     for result in results:
         if abs(result.alpha) > 0.15 and result.functional_return < threshold:
             zero_crossings.append(result)
+
+    # NEW: Find squaring return points (where L(2α) ≈ L_base) - Enhancement #3
+    squaring_return_points = []
+    has_squaring_data = all(r.loss_2alpha != 0.0 for r in results if r.alpha != 0)
+
+    if has_squaring_data:
+        for result in results:
+            if abs(result.alpha) > 0.15 and result.functional_return_2alpha < threshold:
+                squaring_return_points.append(result)
 
     print(f"\n{'='*70}")
     print("LOSS LANDSCAPE ANALYSIS")
@@ -679,6 +913,28 @@ def analyze_results(results: list[AlphaSweepResult]) -> dict:
         print(f"  No zero-crossings found (threshold: |ΔL| < {threshold})")
         print("  → Loss is monotonic along task vector direction")
 
+    # NEW: Squaring return points analysis
+    if has_squaring_data:
+        print("\n" + "="*70)
+        print("SQUARING TEST ANALYSIS: [W(λ)]² = I Analog")
+        print("="*70)
+        print("\nSquaring Return Points (where L(2α) ≈ L_base for α ≠ 0):")
+        if squaring_return_points:
+            print(f"  ★ Found {len(squaring_return_points)} squaring return point(s)!")
+            print(f"  → These α values exhibit the self-inverse property: doubling brings back to base loss")
+            for i, result in enumerate(squaring_return_points[:5], 1):
+                print(
+                    f"  {i}. α = {result.alpha:+.4f}, L(2α) = {result.loss_2alpha:.4f}, "
+                    f"|ΔL(2α)| = {result.functional_return_2alpha:.6f} ★"
+                )
+            print("\n  INTERPRETATION:")
+            print("  This suggests neural loss landscapes MAY exhibit rotation-like symmetry!")
+            print("  Analogous to R(n,π)² = I in rotation groups.")
+        else:
+            print(f"  No squaring return points found (threshold: |ΔL(2α)| < {threshold})")
+            print("  → Neural loss landscapes do not exhibit self-inverse property under doubling")
+            print("  → Unlike rotation groups, no [W(λ)]² = I analog detected")
+
     return {
         "min_general_loss": min_general_result,
         "min_task_loss": min_task_result,
@@ -686,6 +942,9 @@ def analyze_results(results: list[AlphaSweepResult]) -> dict:
         "zero_crossings": zero_crossings,
         "sorted_by_return": sorted_by_return[:10],
         "all_results": results,
+        # NEW: Squaring test results
+        "squaring_return_points": squaring_return_points if has_squaring_data else [],
+        "has_squaring_data": has_squaring_data,
     }
 
 
@@ -1017,12 +1276,125 @@ No special α values were found for model merging. Standard α = 1.0 (full task 
         f.write(report)
 
 
+def get_predefined_tasks() -> dict[str, TaskDefinition]:
+    """Get predefined task definitions for multi-task experiments (Enhancement #1).
+
+    Returns:
+        Dictionary mapping task names to TaskDefinition objects
+    """
+
+    tasks = {}
+
+    # Task 1: Sentiment Analysis (Positive)
+    tasks["sentiment_positive"] = TaskDefinition(
+        name="sentiment_positive",
+        description="Positive sentiment analysis",
+        train_texts=[
+            "This movie is absolutely fantastic! I loved every minute of it.",
+            "The product exceeded all my expectations. Highly recommended!",
+            "What a wonderful experience! I'm so happy with this purchase.",
+            "Amazing quality and great value. I'm very satisfied.",
+            "This is the best thing I've bought in years. Incredible!",
+            "Outstanding service and excellent results. Very pleased!",
+            "I'm delighted with this purchase. It works perfectly.",
+            "Exceptional quality and superb performance. Love it!",
+            "This is exactly what I needed. Fantastic product!",
+            "Brilliant! This has made my life so much easier.",
+        ] * 3,
+        eval_texts=[
+            "This product is amazing and works great!",
+            "I'm very happy with my purchase. Excellent quality!",
+            "Wonderful experience! Highly recommended.",
+            "Best purchase I've made this year!",
+            "Fantastic quality and great value.",
+        ],
+    )
+
+    # Task 2: Sentiment Analysis (Negative)
+    tasks["sentiment_negative"] = TaskDefinition(
+        name="sentiment_negative",
+        description="Negative sentiment analysis",
+        train_texts=[
+            "This movie was terrible. Complete waste of time.",
+            "Very disappointed with this purchase. Poor quality.",
+            "Worst product I've ever bought. Broke after one day.",
+            "Horrible experience. Would not recommend to anyone.",
+            "Absolutely awful quality. Total ripoff.",
+            "Extremely dissatisfied. This doesn't work at all.",
+            "Terrible service and poor product quality.",
+            "Don't buy this! Save your money.",
+            "Completely useless. Very frustrating experience.",
+            "Worst decision I've made. Very unhappy.",
+        ] * 3,
+        eval_texts=[
+            "This product is disappointing and doesn't work.",
+            "Very unhappy with this purchase. Poor quality.",
+            "Terrible experience! Do not recommend.",
+            "Worst purchase I've made this year!",
+            "Poor quality and bad value.",
+        ],
+    )
+
+    # Task 3: Instruction Following
+    tasks["instruction_following"] = TaskDefinition(
+        name="instruction_following",
+        description="Following specific instruction formats",
+        train_texts=[
+            "Instructions: List three colors.\nResponse: 1. Red 2. Blue 3. Green",
+            "Instructions: Name two animals.\nResponse: 1. Cat 2. Dog",
+            "Instructions: Give one example of a fruit.\nResponse: 1. Apple",
+            "Instructions: State two countries.\nResponse: 1. France 2. Japan",
+            "Instructions: List three numbers.\nResponse: 1. One 2. Two 3. Three",
+            "Instructions: Name two programming languages.\nResponse: 1. Python 2. JavaScript",
+            "Instructions: Give one day of the week.\nResponse: 1. Monday",
+            "Instructions: List three planets.\nResponse: 1. Earth 2. Mars 3. Venus",
+            "Instructions: Name two seasons.\nResponse: 1. Summer 2. Winter",
+            "Instructions: Give one musical instrument.\nResponse: 1. Piano",
+        ] * 3,
+        eval_texts=[
+            "Instructions: List three vegetables.\nResponse: ",
+            "Instructions: Name two cities.\nResponse: ",
+            "Instructions: Give one color.\nResponse: ",
+            "Instructions: State two sports.\nResponse: ",
+            "Instructions: List three tools.\nResponse: ",
+        ],
+    )
+
+    # Task 4: Question Answering
+    tasks["qa_factual"] = TaskDefinition(
+        name="qa_factual",
+        description="Factual question answering",
+        train_texts=[
+            "Q: What is the capital of France? A: The capital of France is Paris.",
+            "Q: How many continents are there? A: There are seven continents.",
+            "Q: What is the largest ocean? A: The Pacific Ocean is the largest ocean.",
+            "Q: What year did World War II end? A: World War II ended in 1945.",
+            "Q: What is the speed of light? A: The speed of light is approximately 299,792,458 meters per second.",
+            "Q: Who invented the telephone? A: Alexander Graham Bell invented the telephone.",
+            "Q: What is the tallest mountain? A: Mount Everest is the tallest mountain.",
+            "Q: How many planets are in our solar system? A: There are eight planets in our solar system.",
+            "Q: What is the chemical symbol for gold? A: The chemical symbol for gold is Au.",
+            "Q: What is the largest country by area? A: Russia is the largest country by area.",
+        ] * 3,
+        eval_texts=[
+            "Q: What is the capital of Germany? A:",
+            "Q: How many days are in a year? A:",
+            "Q: What is water made of? A:",
+            "Q: Who painted the Mona Lisa? A:",
+            "Q: What is the smallest prime number? A:",
+        ],
+    )
+
+    return tasks
+
+
 def plot_results(
     results: list[AlphaSweepResult],
     analysis: dict,
     output_path: str = "loss_landscape_sweep.png",
+    enable_squaring_test: bool = False,
 ):
-    """Visualize loss landscape L(M_base + αT) vs α."""
+    """Visualize loss landscape L(M_base + αT) vs α with optional squaring test."""
 
     alphas = [r.alpha for r in results]
     losses = [r.loss for r in results]
@@ -1030,11 +1402,23 @@ def plot_results(
     functional_returns = [r.functional_return for r in results]
     task_perfs = [r.task_performance for r in results]
 
-    # Create 2x2 grid
-    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+    # NEW: Squaring test data
+    if enable_squaring_test:
+        losses_2alpha = [r.loss_2alpha for r in results]
+        functional_returns_2alpha = [r.functional_return_2alpha for r in results]
+
+    # Create 2x3 grid if squaring test enabled, otherwise 2x2
+    if enable_squaring_test:
+        fig, axes = plt.subplots(2, 3, figsize=(21, 10))
+        title = "Task Vector Loss Landscape: L(M_base + αT) with Squaring Test\n" \
+                "Inspired by Eckmann & Tlusty (2025)"
+    else:
+        fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+        title = "Task Vector Loss Landscape: L(M_base + αT)\n" \
+                "Inspired by Eckmann & Tlusty (2025)"
+
     fig.suptitle(
-        "Task Vector Loss Landscape: L(M_base + αT)\n"
-        "Inspired by Eckmann & Tlusty (2025)",
+        title,
         fontsize=14,
         fontweight="bold",
         y=0.995,
@@ -1172,9 +1556,141 @@ def plot_results(
     axes[1, 1].legend(fontsize=9)
     axes[1, 1].grid(True, alpha=0.3)
 
+    # NEW: Squaring test plots (Enhancement #3)
+    if enable_squaring_test:
+        # ─── Plot 5: Squaring Test - L(α) vs L(2α) ───
+        axes[0, 2].plot(alphas, losses, "b-", linewidth=2.5, label="L(α)", alpha=0.8)
+        axes[0, 2].plot(alphas, losses_2alpha, "r-", linewidth=2.5, label="L(2α)", alpha=0.8)
+        axes[0, 2].axhline(
+            y=base_loss,
+            color="green",
+            linestyle="--",
+            linewidth=2,
+            label="L(M_base)",
+            alpha=0.7,
+        )
+        axes[0, 2].axvline(x=0, color="gray", linestyle="--", alpha=0.4)
+
+        # Find squaring return points (where L(2α) ≈ L_base)
+        if "squaring_return_points" in analysis:
+            sr_alphas = [r.alpha for r in analysis["squaring_return_points"]]
+            sr_losses_2alpha = [r.loss_2alpha for r in analysis["squaring_return_points"]]
+            axes[0, 2].scatter(
+                sr_alphas,
+                sr_losses_2alpha,
+                color="orange",
+                s=150,
+                zorder=5,
+                marker="*",
+                edgecolors="black",
+                linewidth=1,
+                label="Squaring returns",
+            )
+
+        axes[0, 2].set_xlabel("α", fontsize=12)
+        axes[0, 2].set_ylabel("Loss", fontsize=12)
+        axes[0, 2].set_title("Squaring Test: [W(λ)]² = I Analog", fontsize=12, fontweight="bold")
+        axes[0, 2].legend(fontsize=8, loc="best")
+        axes[0, 2].grid(True, alpha=0.3)
+
+        # ─── Plot 6: Squaring Functional Return |L(2α) - L_base| ───
+        axes[1, 2].plot(alphas, functional_returns_2alpha, "r-", linewidth=2.5, alpha=0.8, label="|L(2α) - L_base|")
+        axes[1, 2].plot(alphas, functional_returns, "b--", linewidth=1.5, alpha=0.5, label="|L(α) - L_base|")
+        axes[1, 2].axhline(y=0, color="green", linestyle="--", alpha=0.5, linewidth=1.5)
+        axes[1, 2].axvline(x=0, color="gray", linestyle="--", alpha=0.4)
+
+        # Highlight squaring return points
+        if "squaring_return_points" in analysis:
+            sr_alphas = [r.alpha for r in analysis["squaring_return_points"]]
+            sr_returns_2alpha = [r.functional_return_2alpha for r in analysis["squaring_return_points"]]
+            axes[1, 2].scatter(
+                sr_alphas,
+                sr_returns_2alpha,
+                color="orange",
+                s=150,
+                zorder=5,
+                marker="*",
+                edgecolors="black",
+                linewidth=1,
+            )
+
+        axes[1, 2].set_xlabel("α", fontsize=12)
+        axes[1, 2].set_ylabel("|L(2α) - L(M_base)|", fontsize=12)
+        axes[1, 2].set_title("Squaring Functional Return", fontsize=12, fontweight="bold")
+        axes[1, 2].legend(fontsize=8, loc="best")
+        axes[1, 2].grid(True, alpha=0.3)
+
     plt.tight_layout()
     plt.savefig(output_path, dpi=300, bbox_inches="tight")
     print(f"\n📊 Plot saved to {output_path}")
+    plt.close()
+
+
+def plot_2d_composition(
+    results: list[TwoDSweepResult],
+    task1_name: str,
+    task2_name: str,
+    output_path: str = "loss_landscape_2d.png",
+):
+    """Visualize 2D composition M(α,β) = M_base + α·T1 + β·T2 (Enhancement #2).
+
+    Creates a heatmap showing the loss landscape in (α, β) space.
+    Tests for rotation-like structure under task vector composition.
+    """
+    # Extract data
+    alphas = sorted(list(set(r.alpha for r in results)))
+    betas = sorted(list(set(r.beta for r in results)))
+
+    # Create 2D grids
+    alpha_grid, beta_grid = np.meshgrid(alphas, betas)
+    loss_grid = np.zeros_like(alpha_grid)
+    functional_return_grid = np.zeros_like(alpha_grid)
+
+    # Fill grids
+    for r in results:
+        i = alphas.index(r.alpha)
+        j = betas.index(r.beta)
+        loss_grid[j, i] = r.loss
+        functional_return_grid[j, i] = r.functional_return
+
+    # Create figure with 2 subplots
+    fig, axes = plt.subplots(1, 2, figsize=(16, 7))
+    fig.suptitle(
+        f"2D Task Vector Composition: M(α,β) = M_base + α·T1 + β·T2\n"
+        f"T1: {task1_name}, T2: {task2_name}",
+        fontsize=14,
+        fontweight="bold",
+    )
+
+    # Plot 1: Loss heatmap
+    im1 = axes[0].contourf(alpha_grid, beta_grid, loss_grid, levels=20, cmap="viridis")
+    axes[0].contour(alpha_grid, beta_grid, loss_grid, levels=10, colors="white", alpha=0.3, linewidths=0.5)
+    axes[0].axhline(y=0, color="red", linestyle="--", alpha=0.5, linewidth=1)
+    axes[0].axvline(x=0, color="red", linestyle="--", alpha=0.5, linewidth=1)
+    axes[0].scatter([0], [0], color="red", s=100, marker="X", edgecolors="white", linewidth=2, label="M_base", zorder=10)
+    axes[0].set_xlabel(f"α (scaling for {task1_name})", fontsize=12)
+    axes[0].set_ylabel(f"β (scaling for {task2_name})", fontsize=12)
+    axes[0].set_title("Loss Landscape L(α,β)", fontsize=12, fontweight="bold")
+    axes[0].legend(fontsize=9)
+    axes[0].grid(True, alpha=0.2)
+    fig.colorbar(im1, ax=axes[0], label="Loss")
+
+    # Plot 2: Functional return heatmap
+    im2 = axes[1].contourf(alpha_grid, beta_grid, functional_return_grid, levels=20, cmap="RdYlGn_r")
+    axes[1].contour(alpha_grid, beta_grid, functional_return_grid, levels=10, colors="white", alpha=0.3, linewidths=0.5)
+    axes[1].axhline(y=0, color="red", linestyle="--", alpha=0.5, linewidth=1)
+    axes[1].axvline(x=0, color="red", linestyle="--", alpha=0.5, linewidth=1)
+    axes[1].scatter([0], [0], color="red", s=100, marker="X", edgecolors="white", linewidth=2, label="M_base", zorder=10)
+    axes[1].set_xlabel(f"α (scaling for {task1_name})", fontsize=12)
+    axes[1].set_ylabel(f"β (scaling for {task2_name})", fontsize=12)
+    axes[1].set_title("Functional Return |L(α,β) - L_base|", fontsize=12, fontweight="bold")
+    axes[1].legend(fontsize=9)
+    axes[1].grid(True, alpha=0.2)
+    fig.colorbar(im2, ax=axes[1], label="|ΔL|")
+
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=300, bbox_inches="tight")
+    print(f"\n📊 2D composition plot saved to {output_path}")
     plt.close()
 
 
@@ -1234,8 +1750,46 @@ Examples:
         default="./outputs",
         help="Output directory (default: ./outputs)",
     )
+    # NEW: Enhancement flags
+    parser.add_argument(
+        "--enable-squaring-test",
+        action="store_true",
+        default=True,
+        help="Enable squaring test: evaluate M(2α) to test [W(λ)]² = I analog (default: enabled)",
+    )
+    parser.add_argument(
+        "--disable-squaring-test",
+        action="store_true",
+        help="Disable squaring test to speed up sweep",
+    )
+    parser.add_argument(
+        "--enable-2d-composition",
+        action="store_true",
+        help="Enable 2D task vector composition experiment M(α,β) = M_base + α·T1 + β·T2",
+    )
+    parser.add_argument(
+        "--task",
+        type=str,
+        default="sentiment_positive",
+        choices=["sentiment_positive", "sentiment_negative", "instruction_following", "qa_factual"],
+        help="Task to use for fine-tuning (default: sentiment_positive)",
+    )
+    parser.add_argument(
+        "--multi-task",
+        action="store_true",
+        help="Run experiment on all available tasks for comparison",
+    )
+    parser.add_argument(
+        "--2d-samples",
+        type=int,
+        default=20,
+        help="Samples per dimension for 2D composition (creates NxN grid, default: 20)",
+    )
 
     args = parser.parse_args()
+
+    # Handle squaring test flag logic
+    enable_squaring_test = args.enable_squaring_test and not args.disable_squaring_test
 
     experiment_start_time = time.time()
 
@@ -1447,6 +2001,7 @@ analogous structure under task vector scaling.
         alpha_range=alpha_range,
         num_samples=num_samples,
         device=device,
+        enable_squaring_test=enable_squaring_test,  # NEW
     )
 
     # Update experiment metrics with sweep timing
@@ -1482,7 +2037,7 @@ analogous structure under task vector scaling.
     print(f"📝 Markdown report saved to {output_dir}/experiment_report.md")
 
     # Plot results
-    plot_results(results, analysis, f"{output_dir}/loss_landscape_sweep.png")
+    plot_results(results, analysis, f"{output_dir}/loss_landscape_sweep.png", enable_squaring_test=enable_squaring_test)
 
     # Save detailed results
     results_path = f"{output_dir}/loss_landscape_results.json"
