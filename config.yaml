@@ -1,7 +1,5 @@
-# SITV Experiment Configuration
-# Configuration for Self-Inverse Task Vector experiments
-# H200-OPTIMIZED: High-resolution research configuration
-# Hardware: H200 SXM (141GB VRAM, 188GB RAM, 12 vCPU)
+# SITV Experiment Configuration - Self-Inverse Task Vector experiments
+# H200-optimized (141GB VRAM, 188GB RAM, 12 vCPU) - See hardware notes at bottom for other GPUs
 
 # Model Configuration
 model:
@@ -27,20 +25,30 @@ output:
 # Fine-Tuning Configuration
 fine_tuning:
   num_epochs: 6 # More epochs for better convergence
-  learning_rate: 5.0e-5 # 0.00005
-  batch_size: 128 # H200 can handle much larger batches
+  learning_rate: 1.0e-4 # 0.0001
+  batch_size: 32 # H200 can handle much larger batches
   max_length: 1024 # Longer sequences for better context
-  data_repetition_factor: 25 # Reduced repetition, more unique passes via epochs
+  data_repetition_factor: 100 # Repeat dataset to increase effective size
   save_strategy: "no" # Options: "no", "steps", "epoch"
   logging_steps: 10
 
-# Alpha Sweep Configuration (1D Loss Landscape)
+# Alpha Sweep Configuration - M(α) = M_base + α·T where T = M_finetuned - M_base
+# α interpretation: 0=base, 1=finetuned, >1=amplified, <0=opposite direction
+# Range recommendations: [-3,3]=full symmetry analysis | [-0.5,3]=RECOMMENDED (40% faster) | [0,3]=practical (50% faster)
 alpha_sweep:
-  alpha_min: -3.0
-  alpha_max: 3.0
-  num_samples: 300 # H200 power - ultra high resolution curves
+  alpha_min: -0.5 # For fast iteration, try -0.5 or 0
+  alpha_max: 3.0 # Positive range is where most interesting effects occur
+  num_samples: 200 # H200 power - ultra high resolution curves
   enable_squaring_test: true # Test M(2α) for self-inverse properties
   threshold: 0.1 # Zero-crossing detection threshold
+
+  # Sampling Strategy: "uniform" (100% samples) | "adaptive" (40-60%, multi-resolution) | "bayesian" (10-20%, GP-based, 80-90% speedup!)
+  sampling_strategy: "adaptive"
+  # adaptive_coarse_samples: 20 | adaptive_refine_factor: 3 | adaptive_curvature_threshold: 0.5
+  # bayesian_n_initial: 10 | bayesian_acquisition: "ei" | NOTE: Requires `pip install -e ".[bayesian]"`
+
+  # Gradient Analysis: Auto-compute dL/dα and find critical points (minima, maxima, inflection)
+  # enable_gradient_analysis: false | gradient_smooth_sigma: 0.5 | gradient_threshold: 0.01 | curvature_threshold: 0.001
 
 # 2D Composition Configuration (Multi-Task Interaction)
 composition_2d:
@@ -51,16 +59,14 @@ composition_2d:
   beta_max: 2.0
   num_samples_per_dim: 60 # 60×60 = 3,600 evaluations - publication quality heatmap
 
-# Hardware Optimization Notes (H200 Optimized):
-# - Batch size 128: Fully utilizing 141GB VRAM
-# - Max length 1024: Extended context understanding
-# - Alpha samples 300: Ultra high resolution loss curves
-# - 2D samples 60×60: Publication quality heatmaps (3,600 points)
-# - Data repetition 25× with 6 epochs: Better training diversity
+# Hardware Optimization & Use Case Settings
+# Current (H200): batch_size=32, max_length=1024, num_samples=200, data_repetition=100×6epochs, 2D=60×60
+# Smaller GPUs (3090/4090): batch_size=16, max_length=512, num_samples=150, data_repetition=100×2epochs, 2D=30×30
 #
-# For smaller GPUs (e.g., RTX 3090, 4090), reduce:
-# - batch_size to 16-32
-# - max_length to 512
-# - num_samples to 150
-# - num_samples_per_dim to 30
-# - data_repetition_factor to 100, num_epochs to 2
+# Speed optimization (for development):
+# • Alpha range: [-0.5,3] or [0,3] saves 40-50% | composition_2d.enable=false skips 2D sweep
+# • Sampling: adaptive saves 40-60% | bayesian saves 80-90% (best for finding optimal α fast)
+#
+# Use case presets:
+# • Pure research: α∈[-3,3], 300 samples, uniform | Research+speed: α∈[-0.5,3], 200, adaptive (RECOMMENDED)
+# • Practical: α∈[0,2], 150, adaptive | Quick test: α∈[0,1.5], 50, bayesian | Optimal α search: any range, 30-50, bayesian
