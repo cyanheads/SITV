@@ -71,6 +71,9 @@ class ExperimentOrchestrator:
         self.metrics.task_name = config.task_name
         self.metrics.general_eval_dataset = config.evaluation.general_dataset
 
+        # Initialize optional experiment results
+        self.results_2d = None  # Populated if 2D composition is run
+
     def run(self) -> None:
         """Run the complete experiment workflow.
 
@@ -453,6 +456,9 @@ class ExperimentOrchestrator:
 
         results_2d, metadata_2d = experiment.run()
 
+        # Store results for report generation
+        self.results_2d = results_2d
+
         # Generate and save 2D plot
         print("\n" + "="*70)
         print("GENERATING 2D VISUALIZATION")
@@ -514,7 +520,13 @@ class ExperimentOrchestrator:
         # Generate markdown report
         report_generator = MarkdownReportGenerator()
         report_path = self.path_manager.get_report_path()
-        report_generator.generate(results, analysis, self.metrics, report_path)
+        report_generator.generate(
+            results,
+            analysis,
+            self.metrics,
+            report_path,
+            results_2d=self.results_2d  # Optional: included if 2D composition was run
+        )
 
         # Save metrics
         self.file_manager.save_metrics(self.metrics)
