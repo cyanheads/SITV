@@ -93,6 +93,10 @@ class MarkdownReportGenerator:
         sections.append(self._create_alpha_sweep_details(results, metrics))
         sections.append(self._create_statistical_summary(results, analysis))
 
+        # Add category breakdown if available
+        if results and results[0].category_losses:
+            sections.append(self._create_category_breakdown(results, metrics))
+
         # Add squaring test analysis if available
         if analysis.get("has_squaring_data", False):
             sections.append(self._create_squaring_test_analysis(analysis))
@@ -109,6 +113,7 @@ class MarkdownReportGenerator:
 **Generated**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 **Model**: {metrics.model_name}
 **Task**: {metrics.task_name}
+**General Evaluation Dataset**: {metrics.general_eval_dataset}
 **Device**: {metrics.device}"""
 
     def _create_executive_summary(
@@ -139,6 +144,11 @@ class MarkdownReportGenerator:
 - **Model Name**: {metrics.model_name}
 - **Total Parameters**: {metrics.model_parameters:,}
 - **Device**: {metrics.device}
+
+### Task & Evaluation
+- **Training Task**: {metrics.task_name}
+- **General Evaluation Dataset**: {metrics.general_eval_dataset}
+  - *This dataset measures how the task vector affects general language modeling capability*
 
 ### Training
 - **Training Examples**: {metrics.training_examples}
@@ -375,6 +385,76 @@ class MarkdownReportGenerator:
 - **Std Dev**: {np.std(all_task_perfs):.4f}
 - **Min**: {np.min(all_task_perfs):.4f} (at α = {results[min_task_idx].alpha:+.4f})
 - **Max**: {np.max(all_task_perfs):.4f} (at α = {results[max_task_idx].alpha:+.4f})"""
+
+    def _create_category_breakdown(
+        self,
+        results: List[AlphaSweepResult],
+        metrics: ExperimentMetrics
+    ) -> str:
+        """Create per-category loss breakdown section.
+
+        This section shows how the task vector affects different domains
+        when using the "combined" evaluation dataset.
+
+        Args:
+            results: List of alpha sweep results with category losses
+            metrics: Experiment metrics
+
+        Returns:
+            Category breakdown section as string
+        """
+        # Get all unique categories from the first result
+        if not results or not results[0].category_losses:
+            return ""
+
+        categories = sorted(results[0].category_losses.keys())
+
+        # Find best alpha for each category
+        best_alphas = {}
+        for category in categories:
+            category_losses_at_alpha = [(r.alpha, r.category_losses.get(category, float('inf'))) for r in results]
+            best_alpha, best_loss = min(category_losses_at_alpha, key=lambda x: x[1])
+            best_alphas[category] = (best_alpha, best_loss)
+
+        # Build the section
+        section = f"""## Per-Category Loss Analysis
+
+**Dataset**: {metrics.general_eval_dataset}
+
+This breakdown shows how the task vector ({metrics.task_name}) affects each evaluation domain separately.
+
+### Best α for Each Category
+
+| Category | Best α | Loss at Best α | Interpretation |
+|----------|--------|----------------|----------------|
+"""
+
+        interpretations = {
+            "coding": "How well does the model handle programming/technical content?",
+            "wikitext": "How well does the model handle factual/encyclopedic content?",
+            "mixed_domain": "How well does the model handle diverse multi-domain content?",
+            "common_knowledge": "How well does the model handle everyday general knowledge?"
+        }
+
+        for category in categories:
+            best_alpha, best_loss = best_alphas[category]
+            interp = interpretations.get(category, "Domain-specific performance")
+            section += f"| {category} | {best_alpha:+.4f} | {best_loss:.4f} | {interp} |\n"
+
+        # Add category-wise comparison at α=0 (base model)
+        base_result = min(results, key=lambda r: abs(r.alpha))  # Find closest to α=0
+        section += f"\n### Baseline Comparison (α ≈ {base_result.alpha:.3f})\n\n"
+        section += "Loss by category before applying task vector:\n\n"
+        section += "| Category | Loss |\n"
+        section += "|----------|------|\n"
+
+        for category in categories:
+            loss = base_result.category_losses.get(category, 0.0)
+            section += f"| {category} | {loss:.4f} |\n"
+
+        section += "\n**Insight**: Lower values indicate better performance in that domain."
+
+        return section
 
     def _create_squaring_test_analysis(self, analysis: Dict[str, Any]) -> str:
         """Create squaring test analysis section.
