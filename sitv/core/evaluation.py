@@ -7,7 +7,7 @@ on text datasets.
 
 import torch
 import torch.nn as nn
-from typing import List
+from typing import Dict, List
 
 
 class EvaluationService:
@@ -125,3 +125,48 @@ class EvaluationService:
         loss = self.evaluate(model, texts)
         perplexity = self.compute_perplexity(loss)
         return loss, perplexity
+
+    def evaluate_by_category(
+        self,
+        model: nn.Module,
+        texts: List[str],
+        categories: List[str]
+    ) -> Dict[str, float]:
+        """Evaluate model separately for each category.
+
+        This method groups texts by category and computes loss for each group,
+        enabling analysis of how the model performs on different domains.
+
+        Args:
+            model: Model to evaluate
+            texts: List of evaluation texts
+            categories: List of category labels (same length as texts)
+
+        Returns:
+            Dictionary mapping category names to their average losses
+
+        Example:
+            >>> texts, categories = loader.load_general_with_categories("combined")
+            >>> losses_by_cat = evaluator.evaluate_by_category(model, texts, categories)
+            >>> print(f"Coding loss: {losses_by_cat['coding']:.4f}")
+        """
+        if len(texts) != len(categories):
+            raise ValueError(
+                f"texts and categories must have same length "
+                f"(got {len(texts)} vs {len(categories)})"
+            )
+
+        # Group texts by category
+        category_texts: Dict[str, List[str]] = {}
+        for text, category in zip(texts, categories):
+            if category not in category_texts:
+                category_texts[category] = []
+            category_texts[category].append(text)
+
+        # Evaluate each category
+        category_losses: Dict[str, float] = {}
+        for category, cat_texts in category_texts.items():
+            loss = self.evaluate(model, cat_texts)
+            category_losses[category] = loss
+
+        return category_losses
