@@ -1,74 +1,51 @@
 """
-Self-Inverse Task Vectors: Exploring Functional Return in Neural Network Parameter Space
+Task Vector Loss Landscape Explorer
 Inspired by "Walks in Rotation Spaces Return Home when Doubled and Scaled"
 (Eckmann & Tlusty, 2025, arXiv:2502.14367v3)
 
 MATHEMATICAL BACKGROUND:
 ─────────────────────────
 Eckmann & Tlusty prove that for rotation groups SO(3)/SU(2), almost any walk W
-can be scaled and doubled to return to identity: [W(λ)]² = I for special λ values.
+can be scaled to reach a 180° rotation, which when squared returns to identity:
+[W(λ)]² = I for abundant λ values.
 
-Key insight: Random rotations by small angles are rare (f₁(ω) ∝ 1-cosω → 0 as ω→0),
-but 180° rotations are abundant (f₁(π) = 2/π). When a walk W(λ) reaches a 180°
-rotation, squaring it returns to identity: R(n,π)² = I.
+Key insight: 180° rotations are common in rotation space (f₁(π) = 2/π), and
+squaring them gives identity: R(n,π)² = I.
 
-CRITICAL STRUCTURAL DIFFERENCES:
-─────────────────────────────────
-⚠️  Rotations form a MULTIPLICATIVE GROUP:
-    • Operation: W₁ ∘ W₂ (composition)
-    • Identity: I (identity rotation)
-    • Doubling: W² = W ∘ W (apply rotation, then apply it again)
-
-⚠️  Task vectors form an ADDITIVE VECTOR SPACE:
-    • Operation: v₁ + v₂ (vector addition)
-    • Identity: 0 (zero vector, or M_base in model space)
-    • "Doubling": Unclear! Two interpretations:
-        (a) 2λT (scalar multiplication) - NOT analogous to W²
-        (b) Compositional: Apply λT, extract induced transformation, apply again
-
-RESEARCH QUESTION:
-──────────────────
-We test whether neural network loss landscapes exhibit analogous "functional roots of identity" under task vector transformations:
-
-PRIMARY EXPERIMENT (Compositional - closer to paper):
-  M₁ = M_base + λT                    (first application)
-  T₁ = M₁ - M_base = λT               (induced change)
-  M₂ = M₁ + λT₁ = M_base + λT + λ²T  (second application)
-
-  Question: ∃ λ ≠ 0 such that L(M₂) ≈ L(M_base)?
-
-  This tests if loss landscape has special "fixpoint-like" λ values where
-  iterative application returns functionally (not geometrically) to base.
-
-SECONDARY EXPERIMENT (Linear - simpler but less analogous):
-  M_doubled = M_base + 2λT
-
-  Question: ∃ λ ≠ 0 such that L(M_doubled) ≈ L(M_base)?
-
-  This tests if loss landscape is periodic/symmetric along task vector direction.
-  Note: Geometric distance ||M_doubled - M_base|| = 2|λ|·||T|| is trivially
-  minimized at λ=0, so we measure functional return: |L(M₂) - L(M_base)|.
-
-RELATIONSHIP TO PAPER:
-──────────────────────
-• Direct analogy: COMPOSITIONAL version (iterative application)
-• Weaker connection: LINEAR version (scalar scaling)
-• Both explore "functional return" in loss landscape
-• Key difference: We lack the group structure and Haar measure that make the
-  paper's result provable. This is an empirical exploration.
-
-POTENTIAL FINDINGS:
+THE SIMPLE QUESTION:
 ───────────────────
-If non-zero λ* exist where functional return ≈ 0:
-  ✓ Indicates rich geometric structure in loss landscapes
-  ✓ Suggests special scaling factors for task vector arithmetic
-  ✓ Applications in model merging, multi-task learning
-  ✓ Hints at deeper algebraic structure in parameter space
+What does the loss landscape look like along the task vector direction?
 
-If no such λ* exist:
-  ✓ Indicates loss landscape is monotonic along task vector direction
-  ✓ Suggests task vectors lack the symmetry properties of rotations
-  ✓ Still provides insights into parameter space geometry
+THE EXPERIMENT:
+──────────────
+1. Create task vector: T = M_finetuned - M_base
+2. Sweep α from -3.0 to 3.0 (100 samples)
+3. For each α: compute M(α) = M_base + αT
+4. Evaluate loss: L(α) = loss of M(α)
+5. Plot L(α) vs α
+
+WHAT WE'RE LOOKING FOR:
+──────────────────────
+• Does L(α) cross L(M_base) at any α ≠ 0? ("zero-crossings")
+• What is the minimum loss α?
+• Is the landscape monotonic? Periodic? Symmetric?
+
+If zero-crossings exist → suggests special scaling factors (analogous to 180° rotations)
+If monotonic → task vectors lack rotation-like symmetry
+
+CONNECTION TO PAPER:
+───────────────────
+⚠️  Rotations: Multiplicative group (W₁ ∘ W₂)
+⚠️  Task vectors: Additive vector space (v₁ + v₂)
+⚠️  No group structure → no proven abundance of special α
+⚠️  This is EMPIRICAL exploration, not a theorem
+
+PRACTICAL APPLICATIONS:
+──────────────────────
+• Find optimal α for task performance
+• Discover special α for model merging
+• Understand loss landscape geometry
+• Guide task vector arithmetic
 """
 
 import json
@@ -108,133 +85,17 @@ def get_device_map():
 
 
 @dataclass
-class InverseResult:
-    """Store comprehensive results for a specific λ value.
+class AlphaSweepResult:
+    """Store results for a specific α value along the line M(α) = M_base + αT.
 
-    Tests both linear (2λT) and compositional (λT + λ²T) versions.
+    This directly answers: "What does the loss look like as we move along
+    the task vector direction?"
     """
-    lambda_val: float
-
-    # ─── GEOMETRIC METRICS (for reference) ───
-    geometric_distance_linear: float       # ||M_base + 2λT - M_base|| = 2|λ|·||T||
-    geometric_distance_compositional: float  # ||M_base + λT + λ²T - M_base||
-
-    # ─── FUNCTIONAL METRICS (PRIMARY) ───
-    base_loss: float                       # L(M_base) - reference point
-    intermediate_loss: float               # L(M_base + λT) - first application
-
-    # Linear version: M_doubled = M_base + 2λT
-    doubled_loss_linear: float             # L(M_base + 2λT)
-    functional_return_linear: float        # |L(M_base + 2λT) - L(M_base)|
-
-    # Compositional version: M_comp = M_base + λT + λ²T (closer to paper)
-    doubled_loss_compositional: float      # L(M_base + λT + λ²T)
-    functional_return_compositional: float  # |L(M_base + λT + λ²T) - L(M_base)|
-
-    # ─── UTILITY METRICS ───
-    intermediate_task_performance: float   # Task loss at M_base + λT
-    utility_score_linear: float            # Combined score for linear version
-    utility_score_compositional: float     # Combined score for compositional version
-
-    # ─── STABILITY METRICS ───
-    loss_curvature: float | None = None  # d²L/dλ² estimate
-
-
-def compute_model_distance(model1: nn.Module, model2: nn.Module) -> float:
-    """Compute normalized L2 distance between model parameters.
-
-    Returns:
-        float: RMS distance per parameter
-    """
-    distance = 0.0
-    param_count = 0
-
-    for p1, p2 in zip(model1.parameters(), model2.parameters(), strict=True):
-        distance += torch.sum((p1 - p2) ** 2).item()
-        param_count += p1.numel()
-
-    return float(np.sqrt(distance / param_count))
-
-
-def apply_task_vector(
-    base_model: PreTrainedModel,
-    task_vector: dict[str, torch.Tensor],
-    lambda_scale: float,
-    device: str = "cpu"
-) -> PreTrainedModel:
-    """Apply scaled task vector: M_new = M_base + λT.
-
-    Args:
-        base_model: Base model (defines M_base)
-        task_vector: Task vector T = M_finetuned - M_base
-        lambda_scale: Scaling factor λ
-        device: Device to place model on
-
-    Returns:
-        New model with parameters M_base + λT
-    """
-    model_name = getattr(base_model.config, 'name_or_path', 'gpt2')
-    device_map = get_device_map()
-    model = type(base_model).from_pretrained(  # type: ignore[attr-defined]
-        model_name,
-        torch_dtype=base_model.dtype,
-        device_map=device_map
-    )
-
-    # For MPS/CPU, manually move to device if device_map is None
-    if device_map is None and device != "cpu":
-        model = model.to(device)  # type: ignore[assignment]
-
-    with torch.no_grad():
-        for name, param in model.named_parameters():
-            if name in task_vector:
-                param.copy_(param + lambda_scale * task_vector[name].to(param.device))
-
-    return model  # type: ignore[return-value]
-
-
-def apply_task_vector_compositional(
-    base_model: PreTrainedModel,
-    task_vector: dict[str, torch.Tensor],
-    lambda_scale: float,
-    device: str = "cpu"
-) -> PreTrainedModel:
-    """Apply task vector compositionally: M_comp = M_base + λT + λ²T.
-
-    This is closer to the paper's notion of W² = W ∘ W (composition).
-    We interpret "applying the transformation twice" as:
-        1. M₁ = M_base + λT        (first application)
-        2. T₁ = M₁ - M_base = λT   (induced transformation)
-        3. M₂ = M₁ + λ·T₁ = M_base + λT + λ²T  (second application)
-
-    Args:
-        base_model: Base model (defines M_base)
-        task_vector: Task vector T = M_finetuned - M_base
-        lambda_scale: Scaling factor λ
-        device: Device to place model on
-
-    Returns:
-        New model with parameters M_base + λT + λ²T
-    """
-    model_name = getattr(base_model.config, 'name_or_path', 'gpt2')
-    device_map = get_device_map()
-    model = type(base_model).from_pretrained(  # type: ignore[attr-defined]
-        model_name,
-        torch_dtype=base_model.dtype,
-        device_map=device_map
-    )
-
-    # For MPS/CPU, manually move to device if device_map is None
-    if device_map is None and device != "cpu":
-        model = model.to(device)  # type: ignore[assignment]
-
-    with torch.no_grad():
-        for name, param in model.named_parameters():
-            if name in task_vector:
-                # M_comp = M_base + λT + λ²T = M_base + λT(1 + λ)
-                param.copy_(param + lambda_scale * (1 + lambda_scale) * task_vector[name].to(param.device))
-
-    return model  # type: ignore[return-value]
+    alpha: float                    # Scaling factor α
+    loss: float                     # L(M_base + αT)
+    base_loss: float                # L(M_base) - reference point
+    functional_return: float        # |L(M_base + αT) - L(M_base)|
+    task_performance: float         # Task-specific loss at M_base + αT
 
 
 def compute_task_vector(
@@ -383,21 +244,21 @@ def fine_tune_model(
     return cast(PreTrainedModel, trainer.model)
 
 
-def find_inverse_lambda_values(
+def sweep_alpha_values(
     base_model: PreTrainedModel,
     task_vector: dict[str, torch.Tensor],
     tokenizer,
     general_eval_texts: list[str],
     task_eval_texts: list[str],
-    lambda_range: tuple[float, float] = (-2.0, 2.0),
-    num_samples: int = 50,
+    alpha_range: tuple[float, float] = (-3.0, 3.0),
+    num_samples: int = 100,
     device: str = "cuda"
-) -> list[InverseResult]:
-    """Search for λ values where functional return ≈ 0.
+) -> list[AlphaSweepResult]:
+    """Sweep α values and plot loss landscape L(M_base + αT).
 
-    Tests both approaches:
-    1. LINEAR: M_doubled = M_base + 2λT (simpler, but less analogous)
-    2. COMPOSITIONAL: M_comp = M_base + λT + λ²T (closer to paper's W²)
+    MEMORY-EFFICIENT VERSION: Reuses a single model instance and modifies
+    parameters in-place. This is 10-100x faster than reloading the model
+    for each α value, especially for large models (e.g., 12B parameters).
 
     Args:
         base_model: Base model M_base
@@ -405,326 +266,256 @@ def find_inverse_lambda_values(
         tokenizer: Tokenizer for evaluation
         general_eval_texts: Neutral evaluation texts
         task_eval_texts: Task-specific evaluation texts
-        lambda_range: Range of λ values to test
-        num_samples: Number of λ samples
+        alpha_range: Range of α values to test
+        num_samples: Number of α samples
         device: Device for computation
 
     Returns:
-        List of InverseResult objects with metrics for each λ
+        List of AlphaSweepResult objects with loss for each α
     """
 
     print(f"\n{'='*70}")
-    print("SEARCHING FOR FUNCTIONAL SELF-INVERSE λ VALUES")
+    print("LOSS LANDSCAPE SWEEP: L(M_base + αT)")
     print(f"{'='*70}")
-    print(f"Range: {lambda_range}")
+    print(f"Range: α ∈ [{alpha_range[0]:.1f}, {alpha_range[1]:.1f}]")
     print(f"Samples: {num_samples}")
-    print("\nTesting both LINEAR and COMPOSITIONAL versions:")
-    print("  • LINEAR:        L(M_base + 2λT) ≈? L(M_base)")
-    print("  • COMPOSITIONAL: L(M_base + λT + λ²T) ≈? L(M_base)")
-    print("\nSearching for non-zero λ with small functional return...\n")
+    print("\nQuestion: Does the loss curve cross L(M_base) at any α ≠ 0?\n")
 
-    lambda_values = np.linspace(lambda_range[0], lambda_range[1], num_samples)
+    alpha_values = np.linspace(alpha_range[0], alpha_range[1], num_samples)
     results = []
 
+    # Move model to device and set to eval mode
+    base_model = base_model.to(device)  # type: ignore[assignment]
+    base_model.eval()
+
+    # Clone original parameters once (memory-efficient: only stores base params)
+    print("Cloning base model parameters...")
+    original_params = {}
+    for name, param in base_model.named_parameters():
+        if name in task_vector:
+            original_params[name] = param.clone().detach()
+
     # Compute base model loss for reference
-    base_model.to(device)
     base_loss = evaluate_model(base_model, tokenizer, general_eval_texts, device)
-    print(f"Base model loss (general eval): {base_loss:.4f}\n")
+    print(f"Base model loss L(M_base): {base_loss:.4f}\n")
 
-    for i, lambda_val in enumerate(lambda_values):
-        print(f"[{i+1}/{num_samples}] λ = {lambda_val:+.3f} ", end="", flush=True)
+    for i, alpha in enumerate(alpha_values):
+        print(f"[{i+1}/{num_samples}] α = {alpha:+.3f} ", end="", flush=True)
 
-        # ─── Create models ───
-        intermediate_model = apply_task_vector(base_model, task_vector, lambda_val, device)
-        doubled_linear = apply_task_vector(base_model, task_vector, 2 * lambda_val, device)
-        doubled_compositional = apply_task_vector_compositional(
-            base_model, task_vector, lambda_val, device
-        )
+        # Modify model parameters in-place: M_alpha = M_base + αT
+        with torch.no_grad():
+            for name, param in base_model.named_parameters():
+                if name in task_vector:
+                    # Set param to: original + α * task_vector
+                    param.copy_(
+                        original_params[name] + alpha * task_vector[name].to(param.device)
+                    )
 
-        # ─── Geometric distances (for reference) ───
-        geom_dist_linear = compute_model_distance(doubled_linear, base_model)
-        geom_dist_comp = compute_model_distance(doubled_compositional, base_model)
+        # Evaluate L(M_alpha)
+        loss_alpha = evaluate_model(base_model, tokenizer, general_eval_texts, device)
 
-        # ─── Functional metrics ───
-        intermediate_loss = evaluate_model(
-            intermediate_model, tokenizer, general_eval_texts, device
-        )
+        # Compute functional return |L(M_alpha) - L(M_base)|
+        functional_return = abs(loss_alpha - base_loss)
 
-        # Linear version: M_base + 2λT
-        doubled_loss_linear = evaluate_model(
-            doubled_linear, tokenizer, general_eval_texts, device
-        )
-        functional_return_linear = abs(doubled_loss_linear - base_loss)
-
-        # Compositional version: M_base + λT + λ²T
-        doubled_loss_comp = evaluate_model(
-            doubled_compositional, tokenizer, general_eval_texts, device
-        )
-        functional_return_comp = abs(doubled_loss_comp - base_loss)
-
-        # ─── Task performance ───
+        # Task performance
         task_performance = evaluate_task_performance(
-            intermediate_model, tokenizer, task_eval_texts, device
+            base_model, tokenizer, task_eval_texts, device
         )
 
-        # ─── Utility scores ───
-        utility_linear = functional_return_linear + 0.5 * abs(task_performance - base_loss)
-        utility_comp = functional_return_comp + 0.5 * abs(task_performance - base_loss)
-
-        result = InverseResult(
-            lambda_val=lambda_val,
-            geometric_distance_linear=geom_dist_linear,
-            geometric_distance_compositional=geom_dist_comp,
+        result = AlphaSweepResult(
+            alpha=alpha,
+            loss=loss_alpha,
             base_loss=base_loss,
-            intermediate_loss=intermediate_loss,
-            doubled_loss_linear=doubled_loss_linear,
-            functional_return_linear=functional_return_linear,
-            doubled_loss_compositional=doubled_loss_comp,
-            functional_return_compositional=functional_return_comp,
-            intermediate_task_performance=task_performance,
-            utility_score_linear=utility_linear,
-            utility_score_compositional=utility_comp,
+            functional_return=functional_return,
+            task_performance=task_performance,
         )
         results.append(result)
 
-        print(f"→ Lin={functional_return_linear:.4f}, Comp={functional_return_comp:.4f}")
+        print(f"→ L(α)={loss_alpha:.4f}, |ΔL|={functional_return:.4f}")
 
-        # Clean up
-        del intermediate_model, doubled_linear, doubled_compositional
-
-        # Clear device cache (device-agnostic)
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
-        elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
-            torch.mps.empty_cache()
+    # Restore original parameters at the end
+    print("\nRestoring base model parameters...")
+    with torch.no_grad():
+        for name, param in base_model.named_parameters():
+            if name in original_params:
+                param.copy_(original_params[name])
 
     return results
 
 
-def analyze_results(results: list[InverseResult]) -> dict:
-    """Analyze results for both linear and compositional versions.
+def analyze_results(results: list[AlphaSweepResult]) -> dict:
+    """Analyze loss landscape sweep results.
 
-    Returns dict with best λ values for each metric.
+    Find:
+    - Minimum general loss and corresponding α
+    - Minimum task-specific loss and corresponding α
+    - Zero-crossings: where L(α) ≈ L(M_base) for α ≠ 0
+    - Special α values with small functional return
+
+    Returns dict with analysis results.
     """
 
-    # Sort by functional return for both versions
-    sorted_by_linear = sorted(results, key=lambda r: r.functional_return_linear)
-    sorted_by_comp = sorted(results, key=lambda r: r.functional_return_compositional)
+    # Sort by general loss, task loss, and functional return
+    sorted_by_loss = sorted(results, key=lambda r: r.loss)
+    sorted_by_task_loss = sorted(results, key=lambda r: r.task_performance)
+    sorted_by_return = sorted(results, key=lambda r: r.functional_return)
 
-    # Find special λ values (small functional return AND non-zero λ)
-    special_linear = []
-    special_comp = []
+    # Find zero-crossings (where L(α) crosses L_base, excluding α near 0)
+    zero_crossings = []
+    threshold = 0.1  # Functional return threshold for "crossing"
+
+    for result in results:
+        if abs(result.alpha) > 0.15 and result.functional_return < threshold:
+            zero_crossings.append(result)
 
     print(f"\n{'='*70}")
-    print("ANALYSIS: COMPARING LINEAR vs COMPOSITIONAL VERSIONS")
+    print("LOSS LANDSCAPE ANALYSIS")
     print(f"{'='*70}\n")
 
-    # ─── LINEAR VERSION ───
-    print("=" * 70)
-    print("LINEAR VERSION: M_base + 2λT")
-    print("=" * 70)
-    print("\nTop 10 λ values by functional return |L(M_base + 2λT) - L(M_base)|:\n")
+    # Minimum general loss
+    min_general_result = sorted_by_loss[0]
+    print("Minimum General Loss (best general knowledge):")
+    print(f"  α = {min_general_result.alpha:+.4f}")
+    print(f"  L(α) = {min_general_result.loss:.4f}")
+    print(f"  L(M_base) = {min_general_result.base_loss:.4f}")
+    print(f"  Δ = {min_general_result.loss - min_general_result.base_loss:+.4f}\n")
 
-    for i, result in enumerate(sorted_by_linear[:10], 1):
-        print(f"{i:2d}. λ = {result.lambda_val:+.4f}")
-        near_zero = '← NEAR ZERO!' if result.functional_return_linear < 0.1 else ''
-        print(f"    Functional return (linear): {result.functional_return_linear:.6f} {near_zero}")
-        print(f"    Doubled loss: {result.doubled_loss_linear:.4f}")
-        print(f"    Base loss: {result.base_loss:.4f}")
-        print(f"    Δ = {result.doubled_loss_linear - result.base_loss:+.4f}")
+    # Minimum task-specific loss
+    min_task_result = sorted_by_task_loss[0]
+    print("Minimum Task-Specific Loss (best task performance):")
+    print(f"  α = {min_task_result.alpha:+.4f}")
+    print(f"  Task L(α) = {min_task_result.task_performance:.4f}")
+    print(f"  General L(α) = {min_task_result.loss:.4f}")
+    print(f"  Δ from base = {min_task_result.task_performance - min_task_result.base_loss:+.4f}\n")
 
-        if abs(result.lambda_val) > 0.1 and result.functional_return_linear < 1.0:
-            special_linear.append(result)
-            print("    ★ SPECIAL: Non-trivial functional self-inverse point!")
-        print()
+    # Best functional return (smallest |L(α) - L_base|)
+    print("Best Functional Return (smallest |L(α) - L_base|):")
+    for i, result in enumerate(sorted_by_return[:5], 1):
+        print(f"  {i}. α = {result.alpha:+.4f}, |ΔL| = {result.functional_return:.6f}")
 
-    # ─── COMPOSITIONAL VERSION ───
-    print("\n" + "=" * 70)
-    print("COMPOSITIONAL VERSION: M_base + λT + λ²T")
-    print("=" * 70)
-    print("\nTop 10 λ values by functional return |L(M_base + λT + λ²T) - L(M_base)|:\n")
-
-    for i, result in enumerate(sorted_by_comp[:10], 1):
-        print(f"{i:2d}. λ = {result.lambda_val:+.4f}")
-        near_zero = '← NEAR ZERO!' if result.functional_return_compositional < 0.1 else ''
-        print(
-            f"    Functional return (comp): "
-            f"{result.functional_return_compositional:.6f} {near_zero}"
-        )
-        print(f"    Doubled loss: {result.doubled_loss_compositional:.4f}")
-        print(f"    Base loss: {result.base_loss:.4f}")
-        print(f"    Δ = {result.doubled_loss_compositional - result.base_loss:+.4f}")
-
-        if abs(result.lambda_val) > 0.1 and result.functional_return_compositional < 1.0:
-            special_comp.append(result)
-            print("    ★ SPECIAL: Non-trivial functional self-inverse point!")
-        print()
-
-    # ─── Comparison ───
-    print("\n" + "=" * 70)
-    print("GEOMETRIC DISTANCE VERIFICATION")
-    print("=" * 70)
-    sorted_by_geom_linear = sorted(results, key=lambda r: r.geometric_distance_linear)
-    print(f"\nLinear: Minimum at λ = {sorted_by_geom_linear[0].lambda_val:.4f}")
-    print(f"  Distance: {sorted_by_geom_linear[0].geometric_distance_linear:.6f}")
-    print("  (Expected: ||M_base + 2λT - M_base|| = 2|λ|·||T|| minimized at λ=0)")
-
-    sorted_by_geom_comp = sorted(results, key=lambda r: r.geometric_distance_compositional)
-    print(f"\nCompositional: Minimum at λ = {sorted_by_geom_comp[0].lambda_val:.4f}")
-    print(f"  Distance: {sorted_by_geom_comp[0].geometric_distance_compositional:.6f}")
-    print("  (||M_base + λT + λ²T - M_base|| = |λ(1+λ)|·||T||, minimized near λ=0 or λ=-1)\n")
+    # Zero-crossings
+    print("\nZero-Crossings (where L(α) ≈ L_base for α ≠ 0):")
+    if zero_crossings:
+        print(f"  Found {len(zero_crossings)} crossing(s):")
+        for i, result in enumerate(zero_crossings[:5], 1):
+            print(f"  {i}. α = {result.alpha:+.4f}, L(α) = {result.loss:.4f}, "
+                  f"|ΔL| = {result.functional_return:.6f} ★")
+    else:
+        print(f"  No zero-crossings found (threshold: |ΔL| < {threshold})")
+        print("  → Loss is monotonic along task vector direction")
 
     return {
-        'special_linear': special_linear,
-        'special_compositional': special_comp,
-        'sorted_by_linear': sorted_by_linear[:10],
-        'sorted_by_compositional': sorted_by_comp[:10],
-        'best_linear': sorted_by_linear[0],
-        'best_compositional': sorted_by_comp[0],
+        'min_general_loss': min_general_result,
+        'min_task_loss': min_task_result,
+        'best_return': sorted_by_return[0],
+        'zero_crossings': zero_crossings,
+        'sorted_by_return': sorted_by_return[:10],
         'all_results': results,
     }
 
 
 def plot_results(
-    results: list[InverseResult],
+    results: list[AlphaSweepResult],
     analysis: dict,
-    output_path: str = "self_inverse_task_vectors.png"
+    output_path: str = "loss_landscape_sweep.png"
 ):
-    """Visualize results comparing linear and compositional versions."""
+    """Visualize loss landscape L(M_base + αT) vs α."""
 
-    lambdas = [r.lambda_val for r in results]
-
-    # Extract metrics
-    geom_linear = [r.geometric_distance_linear for r in results]
-    geom_comp = [r.geometric_distance_compositional for r in results]
-    func_linear = [r.functional_return_linear for r in results]
-    func_comp = [r.functional_return_compositional for r in results]
-    int_losses = [r.intermediate_loss for r in results]
-    dbl_linear = [r.doubled_loss_linear for r in results]
-    dbl_comp = [r.doubled_loss_compositional for r in results]
+    alphas = [r.alpha for r in results]
+    losses = [r.loss for r in results]
     base_loss = results[0].base_loss
-    task_perfs = [r.intermediate_task_performance for r in results]
+    functional_returns = [r.functional_return for r in results]
+    task_perfs = [r.task_performance for r in results]
 
-    fig, axes = plt.subplots(2, 3, figsize=(20, 11))
+    # Create 2x2 grid
+    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
     fig.suptitle(
-        'Self-Inverse Task Vectors: Linear vs Compositional Doubling\n'
+        'Task Vector Loss Landscape: L(M_base + αT)\n'
         'Inspired by Eckmann & Tlusty (2025)',
         fontsize=14, fontweight='bold', y=0.995
     )
 
-    # ─── Plot 1: Geometric Distances (both versions) ───
-    axes[0, 0].plot(
-        lambdas, geom_linear, 'blue', linewidth=2,
-        label='Linear: 2|λ|·||T||', alpha=0.7
+    # ─── Plot 1: MAIN - Loss vs α (KEY PLOT!) ───
+    axes[0, 0].plot(alphas, losses, 'b-', linewidth=2.5, label='General Loss', alpha=0.8)
+    axes[0, 0].plot(alphas, task_perfs, 'g-', linewidth=2.0, label='Task Loss', alpha=0.6)
+    axes[0, 0].axhline(
+        y=base_loss, color='red', linestyle='--',
+        linewidth=2, label='L(M_base)', alpha=0.7
     )
-    axes[0, 0].plot(
-        lambdas, geom_comp, 'red', linewidth=2,
-        label='Comp: |λ(1+λ)|·||T||', alpha=0.7
-    )
-    axes[0, 0].axvline(x=0, color='gray', linestyle='--', alpha=0.5)
-    axes[0, 0].axvline(x=-1, color='gray', linestyle='--', alpha=0.5)
-    axes[0, 0].set_xlabel('λ', fontsize=11)
-    axes[0, 0].set_ylabel('Parameter Distance', fontsize=11)
-    axes[0, 0].set_title('Geometric Distance (for reference)', fontsize=11, fontweight='bold')
-    axes[0, 0].legend(fontsize=9)
+    axes[0, 0].axvline(x=0, color='gray', linestyle='--', alpha=0.4)
+
+    # Highlight zero-crossings
+    if analysis['zero_crossings']:
+        zc_alphas = [r.alpha for r in analysis['zero_crossings']]
+        zc_losses = [r.loss for r in analysis['zero_crossings']]
+        axes[0, 0].scatter(zc_alphas, zc_losses, color='orange', s=150,
+                          zorder=5, marker='*', edgecolors='black', linewidth=1,
+                          label='Zero-crossings')
+
+    # Highlight general minimum
+    min_gen_result = analysis['min_general_loss']
+    axes[0, 0].scatter([min_gen_result.alpha], [min_gen_result.loss], color='blue', s=150,
+                      zorder=5, marker='D', edgecolors='black', linewidth=1,
+                      label=f'Min General (α={min_gen_result.alpha:.2f})')
+
+    # Highlight task minimum
+    min_task_result = analysis['min_task_loss']
+    axes[0, 0].scatter([min_task_result.alpha], [min_task_result.task_performance], color='green', s=150,
+                      zorder=5, marker='D', edgecolors='black', linewidth=1,
+                      label=f'Min Task (α={min_task_result.alpha:.2f})')
+
+    axes[0, 0].set_xlabel('α', fontsize=12)
+    axes[0, 0].set_ylabel('Loss', fontsize=12)
+    axes[0, 0].set_title('Loss Landscape (KEY PLOT)', fontsize=12, fontweight='bold')
+    axes[0, 0].legend(fontsize=8, loc='best')
     axes[0, 0].grid(True, alpha=0.3)
 
-    # ─── Plot 2: Functional Returns (COMPARISON) ───
-    axes[0, 1].plot(lambdas, func_linear, 'b-', linewidth=2.5, label='Linear: 2λT', alpha=0.8)
-    axes[0, 1].plot(lambdas, func_comp, 'r-', linewidth=2.5, label='Comp: λT + λ²T', alpha=0.8)
+    # ─── Plot 2: Functional Return |L(α) - L_base| ───
+    axes[0, 1].plot(alphas, functional_returns, 'r-', linewidth=2.5, alpha=0.8)
     axes[0, 1].axhline(y=0, color='green', linestyle='--', alpha=0.5, linewidth=1.5)
+    axes[0, 1].axvline(x=0, color='gray', linestyle='--', alpha=0.4)
 
-    # Highlight special points
-    if analysis['special_linear']:
-        sp_lam = [r.lambda_val for r in analysis['special_linear']]
-        sp_ret = [r.functional_return_linear for r in analysis['special_linear']]
-        axes[0, 1].scatter(sp_lam, sp_ret, color='darkblue', s=120,
-                          zorder=5, marker='*', edgecolors='black', linewidth=0.5)
-    if analysis['special_compositional']:
-        sp_lam = [r.lambda_val for r in analysis['special_compositional']]
-        sp_ret = [r.functional_return_compositional for r in analysis['special_compositional']]
-        axes[0, 1].scatter(sp_lam, sp_ret, color='darkred', s=120,
-                          zorder=5, marker='*', edgecolors='black', linewidth=0.5)
+    # Highlight zero-crossings
+    if analysis['zero_crossings']:
+        zc_alphas = [r.alpha for r in analysis['zero_crossings']]
+        zc_returns = [r.functional_return for r in analysis['zero_crossings']]
+        axes[0, 1].scatter(zc_alphas, zc_returns, color='green', s=150,
+                          zorder=5, marker='*', edgecolors='black', linewidth=1)
 
-    axes[0, 1].set_xlabel('λ', fontsize=11)
-    axes[0, 1].set_ylabel('|L(M_doubled) - L(M_base)|', fontsize=11)
-    axes[0, 1].set_title(
-        'Functional Return (KEY METRIC)',
-        fontsize=11, fontweight='bold', color='darkblue'
-    )
-    axes[0, 1].legend(fontsize=9, loc='best')
+    axes[0, 1].set_xlabel('α', fontsize=12)
+    axes[0, 1].set_ylabel('|L(α) - L(M_base)|', fontsize=12)
+    axes[0, 1].set_title('Functional Return', fontsize=12, fontweight='bold')
     axes[0, 1].grid(True, alpha=0.3)
 
-    # ─── Plot 3: Loss Landscape ───
-    axes[0, 2].plot(
-        lambdas, int_losses, 'green', linewidth=2,
-        label='M + λT (intermediate)', alpha=0.7
-    )
-    axes[0, 2].plot(
-        lambdas, dbl_linear, 'blue', linewidth=2,
-        label='M + 2λT (linear)', alpha=0.7
-    )
-    axes[0, 2].plot(
-        lambdas, dbl_comp, 'red', linewidth=2,
-        label='M + λT + λ²T (comp)', alpha=0.7
-    )
-    axes[0, 2].axhline(
-        y=base_loss, color='black', linestyle='--',
-        linewidth=2, label='Base', alpha=0.6
-    )
-    axes[0, 2].set_xlabel('λ', fontsize=11)
-    axes[0, 2].set_ylabel('Loss', fontsize=11)
-    axes[0, 2].set_title('Loss Landscape Comparison', fontsize=11, fontweight='bold')
-    axes[0, 2].legend(fontsize=8, loc='best')
-    axes[0, 2].grid(True, alpha=0.3)
+    # ─── Plot 3: Signed Delta L(α) - L_base ───
+    deltas = [r.loss - r.base_loss for r in results]
+    axes[1, 0].plot(alphas, deltas, 'b-', linewidth=2, alpha=0.8)
+    axes[1, 0].axhline(y=0, color='red', linestyle='--', linewidth=2, alpha=0.7)
+    axes[1, 0].axvline(x=0, color='gray', linestyle='--', alpha=0.4)
+    axes[1, 0].fill_between(alphas, 0, deltas, alpha=0.2, color='blue')
 
-    # ─── Plot 4: Functional Return vs Task Performance ───
-    axes[1, 0].scatter(
-        func_linear, task_perfs, c=lambdas, cmap='coolwarm',
-        s=60, alpha=0.6, edgecolors='black', linewidth=0.5,
-        marker='o', label='Linear'
-    )
-    axes[1, 0].scatter(
-        func_comp, task_perfs, c=lambdas, cmap='coolwarm',
-        s=60, alpha=0.6, edgecolors='black', linewidth=0.5, marker='^'
-    )
-    axes[1, 0].set_xlabel('Functional Return', fontsize=11)
-    axes[1, 0].set_ylabel('Task Performance (Intermediate)', fontsize=11)
-    axes[1, 0].set_title('Return vs Utility Trade-off', fontsize=11, fontweight='bold')
+    # Highlight zero-crossings
+    if analysis['zero_crossings']:
+        zc_alphas = [r.alpha for r in analysis['zero_crossings']]
+        zc_deltas = [r.loss - r.base_loss for r in analysis['zero_crossings']]
+        axes[1, 0].scatter(zc_alphas, zc_deltas, color='green', s=150,
+                          zorder=5, marker='*', edgecolors='black', linewidth=1)
+
+    axes[1, 0].set_xlabel('α', fontsize=12)
+    axes[1, 0].set_ylabel('L(α) - L(M_base)', fontsize=12)
+    axes[1, 0].set_title('Signed Loss Delta', fontsize=12, fontweight='bold')
     axes[1, 0].grid(True, alpha=0.3)
-    cbar = plt.colorbar(axes[1, 0].collections[0], ax=axes[1, 0])
-    cbar.set_label('λ value', fontsize=9)
 
-    # ─── Plot 5: Signed Functional Return Comparison ───
-    deltas_linear = [r.doubled_loss_linear - r.base_loss for r in results]
-    deltas_comp = [r.doubled_loss_compositional - r.base_loss for r in results]
-    axes[1, 1].plot(lambdas, deltas_linear, 'b-', linewidth=2, label='Linear', alpha=0.7)
-    axes[1, 1].plot(lambdas, deltas_comp, 'r-', linewidth=2, label='Compositional', alpha=0.7)
-    axes[1, 1].axhline(y=0, color='green', linestyle='--', linewidth=1.5, alpha=0.5)
-    axes[1, 1].fill_between(lambdas, 0, deltas_linear, alpha=0.15, color='blue')
-    axes[1, 1].fill_between(lambdas, 0, deltas_comp, alpha=0.15, color='red')
-    axes[1, 1].set_xlabel('λ', fontsize=11)
-    axes[1, 1].set_ylabel('L(M_doubled) - L(M_base)', fontsize=11)
-    axes[1, 1].set_title('Signed Functional Return', fontsize=11, fontweight='bold')
+    # ─── Plot 4: Task Performance vs α ───
+    axes[1, 1].plot(alphas, task_perfs, 'g-', linewidth=2, alpha=0.8, label='Task Loss')
+    axes[1, 1].axhline(y=base_loss, color='gray', linestyle='--', alpha=0.5, label='Base Loss')
+    axes[1, 1].axvline(x=0, color='gray', linestyle='--', alpha=0.4)
+
+    axes[1, 1].set_xlabel('α', fontsize=12)
+    axes[1, 1].set_ylabel('Task-Specific Loss', fontsize=12)
+    axes[1, 1].set_title('Task Performance', fontsize=12, fontweight='bold')
     axes[1, 1].legend(fontsize=9)
     axes[1, 1].grid(True, alpha=0.3)
-
-    # ─── Plot 6: Utility Scores Comparison ───
-    utility_linear = [r.utility_score_linear for r in results]
-    utility_comp = [r.utility_score_compositional for r in results]
-    axes[1, 2].plot(lambdas, utility_linear, 'b-', linewidth=2, label='Linear', alpha=0.7)
-    axes[1, 2].plot(lambdas, utility_comp, 'r-', linewidth=2, label='Compositional', alpha=0.7)
-    best_lin_idx = np.argmin(utility_linear)
-    best_comp_idx = np.argmin(utility_comp)
-    axes[1, 2].scatter([lambdas[best_lin_idx]], [utility_linear[best_lin_idx]],
-                       color='darkblue', s=150, zorder=5, marker='D', edgecolors='black')
-    axes[1, 2].scatter([lambdas[best_comp_idx]], [utility_comp[best_comp_idx]],
-                       color='darkred', s=150, zorder=5, marker='D', edgecolors='black')
-    axes[1, 2].set_xlabel('λ', fontsize=11)
-    axes[1, 2].set_ylabel('Utility Score (lower = better)', fontsize=11)
-    axes[1, 2].set_title('Combined Utility Score', fontsize=11, fontweight='bold')
-    axes[1, 2].legend(fontsize=9)
-    axes[1, 2].grid(True, alpha=0.3)
 
     plt.tight_layout()
     plt.savefig(output_path, dpi=300, bbox_inches='tight')
@@ -733,41 +524,43 @@ def plot_results(
 
 
 def main():
-    """Test for self-inverse task vectors in neural network parameter space.
+    """Sweep loss landscape along task vector direction.
 
-    Compares two interpretations of "doubling" a task vector:
-    1. LINEAR: M_base + 2λT (scalar multiplication)
-    2. COMPOSITIONAL: M_base + λT + λ²T (iterative application - closer to paper)
+    Directly visualizes L(M_base + αT) for α ∈ [-3, 3].
+    Answers: Does the loss curve cross L(M_base) at any α ≠ 0?
 
-    Searches for non-zero λ where functional return ≈ 0.
+    Inspired by Eckmann & Tlusty (2025)'s rotation group self-inverse walks.
     """
 
     print(f"\n{'='*70}")
-    print("SELF-INVERSE TASK VECTORS EXPERIMENT")
+    print("TASK VECTOR LOSS LANDSCAPE EXPERIMENT")
     print("Inspired by Eckmann & Tlusty (2025)")
     print(f"{'='*70}")
     print("""
 RESEARCH QUESTION:
 ─────────────────
-Do there exist non-zero λ values where "doubled" task vector transformations
-functionally return to the base model's loss?
+What does the loss look like along the 1D line M(α) = M_base + αT?
 
-TWO APPROACHES:
+Specifically: Does the loss curve cross L(M_base) at any α ≠ 0?
+
+THE EXPERIMENT:
 ──────────────
-1. LINEAR (simpler): L(M_base + 2λT) ≈? L(M_base)
-   → Tests for periodicity/symmetry in loss landscape
+1. Create task vector: T = M_finetuned - M_base
+2. Sweep α from -3.0 to 3.0 (100 samples)
+3. For each α: evaluate L(M_base + αT)
+4. Plot L(α) vs α
 
-2. COMPOSITIONAL (closer to paper): L(M_base + λT + λ²T) ≈? L(M_base)
-   → Mimics iterative application: apply λT, then apply induced change again
-   → Analogous to W² = W ∘ W (composition) from rotation group
+WHAT WE'RE LOOKING FOR:
+──────────────────────
+• Zero-crossings: α ≠ 0 where L(α) ≈ L(M_base) ("functional return")
+• Minimum loss: Best α for task performance
+• Loss landscape shape: Monotonic? Periodic? Symmetric?
 
-WHAT WE MEASURE:
-───────────────
-• GEOMETRIC: Parameter space distance (uninformative - minimized at λ=0)
-• FUNCTIONAL: Loss landscape return |L(M_doubled) - L(M_base)| (KEY METRIC!)
-
-If non-zero λ* exist with small functional return → suggests rich geometric
-structure in loss landscapes, analogous to rotation group's 180° roots.
+CONNECTION TO PAPER:
+───────────────────
+Eckmann & Tlusty prove that rotation group walks [W(λ)]² = I have abundant
+special λ values (180° rotations). We test if neural loss landscapes exhibit
+analogous structure under task vector scaling.
 """)
 
     # Configuration
@@ -866,14 +659,14 @@ structure in loss landscapes, analogous to rotation group's 180° roots.
     print(f"Task vector magnitude: ||T|| = {tv_magnitude:.4f}\n")
 
     # Run experiment
-    results = find_inverse_lambda_values(
+    results = sweep_alpha_values(
         base_model=base_model,
         task_vector=task_vector,
         tokenizer=tokenizer,
         general_eval_texts=general_eval_texts,
         task_eval_texts=task_eval_texts,
-        lambda_range=(-2.0, 2.0),
-        num_samples=50,
+        alpha_range=(-3.0, 3.0),
+        num_samples=100,
         device=device
     )
 
@@ -881,37 +674,34 @@ structure in loss landscapes, analogous to rotation group's 180° roots.
     analysis = analyze_results(results)
 
     # Plot results
-    plot_results(results, analysis, f"{output_dir}/self_inverse_task_vectors.png")
+    plot_results(results, analysis, f"{output_dir}/loss_landscape_sweep.png")
 
     # Save detailed results
-    results_path = f"{output_dir}/self_inverse_task_results.json"
+    results_path = f"{output_dir}/loss_landscape_results.json"
     with open(results_path, 'w', encoding='utf-8') as f:
         json.dump({
             'metadata': {
                 'paper_reference': 'Eckmann & Tlusty (2025), arXiv:2502.14367v3',
-                'description': 'Comparing linear vs compositional task vector doubling',
+                'description': 'Loss landscape sweep along task vector direction',
                 'task': 'sentiment_analysis',
                 'task_vector_magnitude': tv_magnitude,
                 'model': model_name,
+                'alpha_range': [-3.0, 3.0],
+                'num_samples': 100,
             },
             'methodology': {
-                'linear_version': 'M_doubled = M_base + 2λT',
-                'compositional_version': 'M_comp = M_base + λT + λ²T',
-                'primary_metric': 'functional_return = |L(M_doubled) - L(M_base)|',
-                'note': 'Compositional version closer to paper\'s W² = W ∘ W',
+                'experiment': 'M(α) = M_base + αT',
+                'primary_metric': 'L(α) = loss of M(α)',
+                'question': 'Does L(α) cross L(M_base) at any α ≠ 0?',
             },
-            'best_results': {
-                'linear': asdict(analysis['best_linear']),
-                'compositional': asdict(analysis['best_compositional']),
+            'key_results': {
+                'min_general_loss': asdict(analysis['min_general_loss']),
+                'min_task_loss': asdict(analysis['min_task_loss']),
+                'best_return': asdict(analysis['best_return']),
+                'zero_crossings': [asdict(r) for r in analysis['zero_crossings']],
             },
-            'special_lambdas': {
-                'linear': [asdict(r) for r in analysis['special_linear']],
-                'compositional': [asdict(r) for r in analysis['special_compositional']],
-            },
-            'top_10': {
-                'linear': [asdict(r) for r in analysis['sorted_by_linear']],
-                'compositional': [asdict(r) for r in analysis['sorted_by_compositional']],
-            },
+            'top_10_by_return': [asdict(r) for r in analysis['sorted_by_return']],
+            'all_results': [asdict(r) for r in results],
         }, f, indent=2)
     print(f"📄 Results saved to {results_path}")
 
@@ -920,43 +710,43 @@ structure in loss landscapes, analogous to rotation group's 180° roots.
     print("SUMMARY")
     print(f"{'='*70}\n")
 
-    best_lin = analysis['best_linear']
-    best_comp = analysis['best_compositional']
+    min_general = analysis['min_general_loss']
+    min_task = analysis['min_task_loss']
+    best_return = analysis['best_return']
+    zero_crossings = analysis['zero_crossings']
 
-    print("══════════════════════════════════════")
-    print("LINEAR VERSION (M_base + 2λT):")
-    print("══════════════════════════════════════")
-    print(f"  Best λ = {best_lin.lambda_val:+.4f}")
-    print(f"  Functional return: {best_lin.functional_return_linear:.6f}")
-    print(f"  Doubled loss: {best_lin.doubled_loss_linear:.4f}")
-    print(f"  Base loss: {best_lin.base_loss:.4f}")
-    print(f"  Δ = {best_lin.doubled_loss_linear - best_lin.base_loss:+.4f}")
+    print("MINIMUM GENERAL LOSS (Best General Knowledge):")
+    print(f"  α = {min_general.alpha:+.4f}")
+    print(f"  L(α) = {min_general.loss:.4f}")
+    print(f"  L(M_base) = {min_general.base_loss:.4f}")
+    print(f"  Improvement: {min_general.base_loss - min_general.loss:+.4f}")
 
-    if analysis['special_linear']:
-        print(f"\n  ✓ Found {len(analysis['special_linear'])} special non-zero λ values:")
-        for i, sp in enumerate(analysis['special_linear'][:3], 1):
-            print(f"     {i}. λ={sp.lambda_val:+.4f}, F_return={sp.functional_return_linear:.4f}")
+    print("\nMINIMUM TASK LOSS (Best Task Performance):")
+    print(f"  α = {min_task.alpha:+.4f}")
+    print(f"  Task L(α) = {min_task.task_performance:.4f}")
+    print(f"  General L(α) = {min_task.loss:.4f}")
+
+    if abs(min_general.alpha - min_task.alpha) > 0.1:
+        print("\n  ⚠️  TRADE-OFF DETECTED!")
+        print(f"  → Best general knowledge at α = {min_general.alpha:+.4f}")
+        print(f"  → Best task performance at α = {min_task.alpha:+.4f}")
+        print(f"  → Δα = {abs(min_task.alpha - min_general.alpha):.4f}")
     else:
-        print("\n  ✗ No special non-zero λ values found")
+        print("\n  ✓ Both minimums occur at similar α values")
 
-    print("\n══════════════════════════════════════")
-    print("COMPOSITIONAL VERSION (M_base + λT + λ²T):")
-    print("══════════════════════════════════════")
-    print(f"  Best λ = {best_comp.lambda_val:+.4f}")
-    print(f"  Functional return: {best_comp.functional_return_compositional:.6f}")
-    print(f"  Doubled loss: {best_comp.doubled_loss_compositional:.4f}")
-    print(f"  Base loss: {best_comp.base_loss:.4f}")
-    print(f"  Δ = {best_comp.doubled_loss_compositional - best_comp.base_loss:+.4f}")
+    print("\nBEST FUNCTIONAL RETURN (smallest |L(α) - L_base|):")
+    print(f"  α = {best_return.alpha:+.4f}")
+    print(f"  |ΔL| = {best_return.functional_return:.6f}")
+    print(f"  L(α) = {best_return.loss:.4f}")
 
-    if analysis['special_compositional']:
-        print(f"\n  ✓ Found {len(analysis['special_compositional'])} special non-zero λ values:")
-        for i, sp in enumerate(analysis['special_compositional'][:3], 1):
-            print(
-                f"     {i}. λ={sp.lambda_val:+.4f}, "
-                f"F_return={sp.functional_return_compositional:.4f}"
-            )
+    print("\nZERO-CROSSINGS (α ≠ 0 where L(α) ≈ L_base):")
+    if zero_crossings:
+        print(f"  ✓ Found {len(zero_crossings)} crossing(s)!")
+        for i, zc in enumerate(zero_crossings[:5], 1):
+            print(f"     {i}. α = {zc.alpha:+.4f}, L(α) = {zc.loss:.4f}, |ΔL| = {zc.functional_return:.6f}")
     else:
-        print("\n  ✗ No special non-zero λ values found")
+        print("  ✗ No zero-crossings found")
+        print("  → Loss is monotonic along task vector direction")
 
     print(f"\n{'='*70}")
     print("INTERPRETATION")
@@ -964,47 +754,32 @@ structure in loss landscapes, analogous to rotation group's 180° roots.
     print("""
 CONNECTION TO PAPER:
 ───────────────────
-Eckmann & Tlusty (2025) prove that for rotation groups SO(3)/SU(2), almost any
-walk W can be scaled and doubled to return to identity: [W(λ)]² = I for abundant
-λ values. Key insight: 180° rotations are common (f₁(π) = 2/π), and squaring
-them gives identity (R(n,π)² = I).
+Eckmann & Tlusty (2025) prove that rotation group walks have abundant special
+λ values where [W(λ)]² = I (self-inverse property). This happens when W(λ) is
+a 180° rotation: R(n,π)² = I.
 
 OUR EXPERIMENT:
 ──────────────
-We test whether neural network loss landscapes exhibit analogous "functional roots
-of identity" under task vector transformations.
+We tested if neural loss landscapes exhibit analogous structure by sweeping
+L(M_base + αT) along the task vector direction.
 
-TWO VERSIONS TESTED:
-  1. LINEAR: M_base + 2λT
-     → Simpler, but 2λT is scalar multiplication, NOT composition
-     → Tests for periodicity/symmetry in loss landscape
+Question: Does L(α) cross L(M_base) at any α ≠ 0?
 
-  2. COMPOSITIONAL: M_base + λT + λ²T
-     → Closer to paper's W² = W ∘ W (apply, then apply induced change again)
-     → Tests for iterative functional return
+If YES → suggests special scaling factors exist (analogous to 180° rotations)
+If NO  → loss is monotonic (task vectors lack rotation-like symmetry)
 
-STRUCTURAL DIFFERENCES FROM PAPER:
-──────────────────────────────────
-⚠️  Rotations: MULTIPLICATIVE GROUP (W₁ ∘ W₂), identity I, doubling W²
-⚠️  Task vectors: ADDITIVE VECTOR SPACE (v₁ + v₂), identity 0
-⚠️  No Haar measure on task vectors → can't prove abundance of solutions
-⚠️  This is an EMPIRICAL exploration, not a proven theorem
+KEY DIFFERENCES FROM PAPER:
+───────────────────────────
+⚠️  Rotations: Multiplicative group (W₁ ∘ W₂)
+⚠️  Task vectors: Additive vector space (v₁ + v₂)
+⚠️  No group structure → no proven abundance of special α values
+⚠️  This is EMPIRICAL exploration, not a theorem
 
-WHAT FINDINGS MEAN:
-──────────────────
-IF non-zero λ* found with small functional return:
-  ✓ Suggests rich geometric structure in loss landscapes
-  ✓ Special scaling factors for task vector arithmetic
-  ✓ Potential for model merging, multi-task learning applications
-  ✓ Hints at deeper algebraic structure in parameter space
-
-IF no such λ* exist:
-  ✓ Loss landscape is monotonic along task vector direction
-  ✓ Task vectors lack symmetry properties of rotations
-  ✓ Still provides insights into parameter space geometry
-
-COMPOSITIONAL VERSION is conceptually closer to the paper's mathematics,
-but both versions explore functional return in the loss landscape.
+PRACTICAL IMPLICATIONS:
+──────────────────────
+• Minimum α: Best scaling for task performance
+• Zero-crossings: Special α values for model merging
+• Landscape shape: Insights into parameter space geometry
 """)
 
 

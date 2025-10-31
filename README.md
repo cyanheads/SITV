@@ -1,27 +1,25 @@
-# Self-Inverse Task Vectors (SITV)
+# Task Vector Loss Landscape Explorer
 
-Exploring functional return in neural network parameter space, inspired by [*Walks in Rotation Spaces Return Home when Doubled and Scaled*](https://arxiv.org/abs/2502.14367) (Eckmann & Tlusty, 2025).
+Exploring loss landscapes along task vector directions in neural network parameter space, inspired by [*Walks in Rotation Spaces Return Home when Doubled and Scaled*](https://arxiv.org/abs/2502.14367) (Eckmann & Tlusty, 2025).
 
 ## Overview
 
-This project investigates whether neural network loss landscapes exhibit "functional roots of identity" under task vector transformations, analogous to how rotation walks can return to identity when doubled and scaled.
+This project visualizes how neural network loss changes as we move along task vector directions: `L(M_base + αT)`, where `T = M_finetuned - M_base` is the task vector.
 
 ### Research Question
 
-**Do there exist non-zero λ values where "doubled" task vector transformations functionally return to the base model's loss?**
+**What does the loss landscape look like along the task vector direction? Does L(α) cross L(M_base) at any α ≠ 0?**
 
-We test two interpretations:
+We sweep α values from -3.0 to 3.0 and plot the resulting loss landscape to discover:
+- **Zero-crossings**: Values of α where loss returns to baseline (analogous to rotation self-inverse points)
+- **Optimal scaling**: Best α for task performance
+- **Landscape shape**: Monotonic, periodic, or symmetric?
 
-1. **LINEAR**: `M_doubled = M_base + 2λT` (scalar multiplication)
-2. **COMPOSITIONAL**: `M_comp = M_base + λT + λ²T` (iterative application - closer to the paper)
+### Connection to Eckmann & Tlusty (2025)
 
-Where `T = M_finetuned - M_base` is the task vector.
+Their work proves that rotation group walks have abundant special λ values where `[W(λ)]² = I` (self-inverse property) - when W(λ) is a 180° rotation, squaring returns to identity.
 
-### Key Insight from Eckmann & Tlusty (2025)
-
-For rotation groups SO(3)/SU(2), almost any walk W can be scaled and doubled to return to identity: `[W(λ)]² = I` for special λ values. This occurs because 180° rotations are abundant (`f₁(π) = 2/π`), and squaring them gives identity: `R(n,π)² = I`.
-
-**Critical Difference**: Rotations form a multiplicative group, while task vectors form an additive vector space. This is an empirical exploration without the group structure guarantees of the paper.
+**Our Exploration**: We test whether neural loss landscapes exhibit analogous special scaling factors where loss functionally returns to baseline, even though task vectors lack the group structure of rotations.
 
 ## Installation
 
@@ -51,32 +49,39 @@ This will:
 1. Load a base language model (default: `google/gemma-3-12b-it`)
 2. Fine-tune it on a sentiment analysis task
 3. Compute the task vector `T = M_finetuned - M_base`
-4. Search for λ values where functional return ≈ 0
-5. Generate visualizations and save results to `./outputs/`
+4. Sweep α from -3.0 to 3.0 (100 samples)
+5. Evaluate `L(M_base + αT)` for each α
+6. Generate visualizations and save results to `./outputs/`
 
 ### Output Files
 
-- `self_inverse_task_vectors.png` - Comprehensive visualization comparing linear vs compositional approaches
-- `self_inverse_task_results.json` - Detailed metrics for all λ values tested
+- `loss_landscape_sweep.png` - Visualization of loss landscape L(α) vs α
+- `loss_landscape_results.json` - Detailed metrics for all α values tested
 
 ## Methodology
 
-### Two Approaches
+### Loss Landscape Sweep
 
-**LINEAR (simpler, but less analogous to paper):**
-- Transform: `M_doubled = M_base + 2λT`
-- Tests for periodicity/symmetry in loss landscape
+For a given task vector `T = M_finetuned - M_base`, we:
 
-**COMPOSITIONAL (closer to paper's W² = W ∘ W):**
-- Transform: `M_comp = M_base + λT + λ²T`
-- Mimics iterative application: apply λT, then apply induced change again
+1. **Sweep α values**: Sample 100 values uniformly from [-3.0, 3.0]
+2. **Compute models**: For each α, create `M(α) = M_base + αT`
+3. **Evaluate loss**: Measure `L(α)` on general and task-specific evaluation sets
+4. **Find special points**:
+   - **Zero-crossings**: α ≠ 0 where `|L(α) - L(M_base)| < threshold`
+   - **Minimum general loss**: Best α for preserving general knowledge
+   - **Minimum task loss**: Best α for task performance
+
+### Performance Optimization
+
+The implementation uses in-place parameter modification, achieving 10-100x speedup compared to model reloading for each α value.
 
 ### Metrics
 
-- **Geometric Distance** (reference): `||M_doubled - M_base||` in parameter space
-- **Functional Return** (KEY): `|L(M_doubled) - L(M_base)|` in loss landscape
-- **Task Performance**: Model's loss on task-specific evaluation data
-- **Utility Score**: Combined metric balancing functional return and task performance
+- **Loss L(α)**: Primary metric - model loss at scaling factor α
+- **Functional Return**: `|L(α) - L(M_base)|` - distance from baseline
+- **Task Performance**: Task-specific loss at each α value
+- **Zero-crossings**: Special α values where loss returns to baseline
 
 ## Project Structure
 
@@ -92,18 +97,26 @@ SITV/
 
 ## Interpretation
 
-### If Non-Zero λ* Found with Small Functional Return
+### If Zero-Crossings Found (L(α) ≈ L(M_base) for α ≠ 0)
 
-✓ Indicates rich geometric structure in loss landscapes
-✓ Suggests special scaling factors for task vector arithmetic
-✓ Applications in model merging, multi-task learning
-✓ Hints at deeper algebraic structure in parameter space
+✓ Suggests special scaling factors exist (analogous to 180° rotations)
+✓ Rich geometric structure in loss landscapes
+✓ Potential applications in model merging and multi-task learning
+✓ Indicates non-monotonic loss behavior along task vector direction
 
-### If No Such λ* Exist
+### If No Zero-Crossings Found
 
-✓ Indicates loss landscape is monotonic along task vector direction
-✓ Suggests task vectors lack the symmetry properties of rotations
-✓ Still provides insights into parameter space geometry
+✓ Loss is monotonic along task vector direction
+✓ Task vectors lack rotation-like symmetry properties
+✓ Optimal scaling is straightforward (minimum of monotonic curve)
+✓ Still provides insights into parameter space geometry and optimal α values
+
+### Practical Applications
+
+- **Model Merging**: Identify optimal α for combining base and fine-tuned models
+- **Task Vector Arithmetic**: Understand valid scaling ranges for task vectors
+- **Multi-task Learning**: Balance general knowledge vs task-specific performance
+- **Parameter Space Geometry**: Visualize loss landscape structure
 
 ## Requirements
 
