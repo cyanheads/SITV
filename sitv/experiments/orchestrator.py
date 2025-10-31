@@ -168,7 +168,7 @@ class ExperimentOrchestrator:
         self.metrics.model_parameters = self.model_service.count_parameters(base_model)
 
         # Get task definition with training data
-        tasks = get_predefined_tasks()
+        tasks = get_predefined_tasks(self.config.fine_tuning.data_repetition_factor)
         task = tasks[self.config.task_name]
 
         # Initialize fine-tuner with configuration
@@ -249,7 +249,7 @@ class ExperimentOrchestrator:
             Tuple of (results, analysis)
         """
         # Get task definition
-        tasks = get_predefined_tasks()
+        tasks = get_predefined_tasks(self.config.fine_tuning.data_repetition_factor)
         task = tasks[self.config.task_name]
 
         # Create experiment
@@ -317,7 +317,7 @@ class ExperimentOrchestrator:
         print("="*70)
 
         # Get available tasks
-        tasks = get_predefined_tasks()
+        tasks = get_predefined_tasks(self.config.fine_tuning.data_repetition_factor)
 
         # Select second task (different from first task)
         # If first task is sentiment_positive, use sentiment_negative

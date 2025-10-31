@@ -126,6 +126,7 @@ class FineTuningConfig:
         learning_rate: Learning rate
         batch_size: Training batch size
         max_length: Maximum sequence length
+        data_repetition_factor: Multiplier for repeating training examples
         save_strategy: Model save strategy ("no", "steps", "epoch")
         logging_steps: Steps between logging
     """
@@ -141,6 +142,9 @@ class FineTuningConfig:
     )
     max_length: int = field(
         default_factory=lambda: _get('fine_tuning.max_length', 512)
+    )
+    data_repetition_factor: int = field(
+        default_factory=lambda: _get('fine_tuning.data_repetition_factor', 100)
     )
     save_strategy: str = field(
         default_factory=lambda: _get('fine_tuning.save_strategy', 'no')
@@ -236,6 +240,7 @@ class ExperimentConfig:
                 num_epochs=args.epochs,
                 learning_rate=args.learning_rate,
                 batch_size=args.batch_size,
+                data_repetition_factor=args.data_repetition_factor,
             ),
         )
 

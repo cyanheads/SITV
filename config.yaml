@@ -22,6 +22,7 @@ fine_tuning:
   learning_rate: 5.0e-5 # 0.00005
   batch_size: 16 # Optimized for H200 SXM
   max_length: 512 # Token sequence length
+  data_repetition_factor: 100 # Multiply training examples (30 unique × 100 = 3000 total)
   save_strategy: "no" # Options: "no", "steps", "epoch"
   logging_steps: 10
 

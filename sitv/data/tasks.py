@@ -8,8 +8,13 @@ including sentiment analysis, instruction following, and QA tasks.
 from sitv.data.models import TaskDefinition
 
 
-def get_predefined_tasks() -> dict[str, TaskDefinition]:
+def get_predefined_tasks(data_repetition_factor: int = 100) -> dict[str, TaskDefinition]:
     """Get predefined task definitions for multi-task experiments.
+
+    Args:
+        data_repetition_factor: Multiplier for repeating training examples.
+            Each task has ~30 unique examples that will be repeated this many times.
+            Default 100 gives 3000 training examples per task.
 
     Returns:
         Dictionary mapping task names to TaskDefinition objects.
@@ -57,7 +62,7 @@ def get_predefined_tasks() -> dict[str, TaskDefinition]:
             "The air purifier made a noticeable difference in our apartment's air quality within days.",
             "This coding bootcamp's curriculum is perfectly paced and practical. Job-ready skills in months!",
             "The coffee maker's programmable features mean I wake up to perfect coffee every single morning.",
-        ] * 3,
+        ] * data_repetition_factor,
         eval_texts=[
             "This VPN service is fast, reliable, and keeps my browsing private. Exactly what I was looking for!",
             "The wireless charging pad works flawlessly with all my devices. Clean setup, no cable mess.",
@@ -112,7 +117,7 @@ def get_predefined_tasks() -> dict[str, TaskDefinition]:
             "The learning curve is steep with no helpful tutorials. Unintuitive design choices throughout.",
             "Frequent bugs disrupt workflow constantly. Can't rely on it for professional work anymore.",
             "Marketing claims don't match reality. Specifications were apparently exaggerated or fabricated.",
-        ] * 3,
+        ] * data_repetition_factor,
         eval_texts=[
             "The camera quality is surprisingly poor in anything but perfect lighting. Very disappointing.",
             "Load times are painfully slow, even on a fast connection. Unusable during peak hours.",
@@ -167,7 +172,7 @@ def get_predefined_tasks() -> dict[str, TaskDefinition]:
             "Instructions: Give one example of a time-series database.\nResponse: 1. InfluxDB",
             "Instructions: List three encryption algorithms.\nResponse: 1. AES 2. RSA 3. ChaCha20",
             "Instructions: Name two container orchestration platforms.\nResponse: 1. Kubernetes 2. Docker Swarm",
-        ] * 3,
+        ] * data_repetition_factor,
         eval_texts=[
             "Instructions: List three package managers.\nResponse: ",
             "Instructions: Name two CSS preprocessors.\nResponse: ",
@@ -222,7 +227,7 @@ def get_predefined_tasks() -> dict[str, TaskDefinition]:
             "Q: Why do leaves change color in autumn? A: Leaves change color as chlorophyll breaks down in cooler temperatures, revealing underlying carotenoids (yellows/oranges) and producing anthocyanins (reds).",
             "Q: What is cloud computing architecture? A: Cloud computing provides on-demand access to shared computing resources (servers, storage, applications) over the internet with scalable infrastructure.",
             "Q: How does photosynthesis convert light into chemical energy? A: Photosynthesis captures light energy to split water molecules and combine hydrogen with carbon dioxide, producing glucose and releasing oxygen.",
-        ] * 3,
+        ] * data_repetition_factor,
         eval_texts=[
             "Q: What is the difference between HTTP and HTTPS? A:",
             "Q: How does the human immune system recognize pathogens? A:",

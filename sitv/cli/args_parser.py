@@ -198,6 +198,13 @@ Examples:
         help="Batch size for fine-tuning (default: 16)",
     )
 
+    parser.add_argument(
+        "--data-repetition-factor",
+        type=int,
+        default=100,
+        help="Multiplier for training data (e.g., 100 = 30 examples × 100 = 3000 total, default: 100)",
+    )
+
     return parser
 
 
