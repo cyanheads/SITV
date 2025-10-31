@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.1] - 2025-10-31
+
+### Added
+
+- **Experimental Findings** ([findings/2025-10-31/](findings/2025-10-31/)):
+  - Added comprehensive experimental results for four task types with gemma-3-4b-it model
+  - [SP.md](findings/2025-10-31/SP.md): Sentiment Positive task (343 lines) - fine-tuning with 4 epochs, learning rate 1e-4
+  - [SN.md](findings/2025-10-31/SN.md): Sentiment Negative task (289 lines) - fine-tuning with 4 epochs, learning rate 1e-4
+  - [IF.md](findings/2025-10-31/IF.md): Instruction Following task (284 lines) - fine-tuning with 4 epochs, learning rate 1e-4
+  - [QA.md](findings/2025-10-31/QA.md): Question Answering Factual task (288 lines) - fine-tuning with 4 epochs, learning rate 1e-4
+  - Each file contains full experimental logs including training progress, loss curves, alpha sweep results, and analysis
+  - Total ~1200 lines of experimental documentation for reproducibility and analysis
+
 ## [0.8.0] - 2025-10-31
 
 ### Added
