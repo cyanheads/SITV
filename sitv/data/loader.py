@@ -5,9 +5,8 @@ This module provides utilities for loading training and evaluation datasets
 from text files in the data/ directory.
 """
 
-import os
 from pathlib import Path
-from typing import List
+from typing import Dict, List, Tuple
 
 
 class DatasetLoader:
@@ -25,7 +24,7 @@ class DatasetLoader:
     - UTF-8 encoding
     """
 
-    def __init__(self, data_dir: str = None):
+    def __init__(self, data_dir: str | None = None):
         """Initialize the dataset loader.
 
         Args:
@@ -86,7 +85,12 @@ class DatasetLoader:
 
         Args:
             dataset_name: Name of the dataset (without .txt extension)
-                         e.g., "mixed_domain", "wikitext", "coding"
+                         Options:
+                         - "mixed_domain": Diverse multi-domain content
+                         - "wikitext": Wikipedia-style factual content
+                         - "coding": Programming and technical content
+                         - "common_knowledge": Everyday general knowledge
+                         - "combined": All general datasets combined (most comprehensive)
 
         Returns:
             List of evaluation text examples
@@ -94,9 +98,81 @@ class DatasetLoader:
         Example:
             >>> loader = DatasetLoader()
             >>> texts = loader.load_general("mixed_domain")
+            >>> # Or load everything:
+            >>> all_texts = loader.load_general("combined")
         """
+        # Special case: combined loads all general datasets
+        if dataset_name == "combined":
+            all_texts = []
+            available = self._list_txt_files(self.general_dir)
+            for name in available:
+                try:
+                    texts = self._load_file(self.general_dir / f"{name}.txt")
+                    all_texts.extend(texts)
+                except Exception as e:
+                    print(f"Warning: Failed to load {name}.txt: {e}")
+
+            if not all_texts:
+                raise ValueError(
+                    "No general evaluation datasets found. "
+                    "Expected at least one .txt file in data/general/"
+                )
+
+            return all_texts
+
+        # Normal case: load specific dataset
         file_path = self.general_dir / f"{dataset_name}.txt"
         return self._load_file(file_path)
+
+    def load_general_with_categories(self, dataset_name: str) -> Tuple[List[str], List[str]]:
+        """Load general evaluation dataset with category labels.
+
+        This method is useful for tracking which domain each example belongs to,
+        enabling per-category loss analysis.
+
+        Args:
+            dataset_name: Name of the dataset (same options as load_general)
+
+        Returns:
+            Tuple of (texts, categories) where:
+            - texts: List of text examples
+            - categories: List of category labels (e.g., "coding", "wikitext")
+
+        Example:
+            >>> loader = DatasetLoader()
+            >>> texts, categories = loader.load_general_with_categories("combined")
+            >>> # texts[i] belongs to categories[i]
+        """
+        # Special case: combined loads all with labels
+        if dataset_name == "combined":
+            all_texts = []
+            all_categories = []
+            available = self._list_txt_files(self.general_dir)
+
+            for name in available:
+                try:
+                    texts = self._load_file(self.general_dir / f"{name}.txt")
+                    all_texts.extend(texts)
+                    # Label each text with its source category
+                    all_categories.extend([name] * len(texts))
+                except FileNotFoundError:
+                    print(f"Warning: Failed to load {name}.txt: File not found")
+                except Exception as e:
+                    print(f"Warning: Failed to load {name}.txt: {e}")
+
+            if not all_texts:
+                raise ValueError(
+                    "No general evaluation datasets found. "
+                    "Expected at least one .txt file in data/general/"
+                )
+
+            return all_texts, all_categories
+
+        # Normal case: load specific dataset with uniform category
+        file_path = self.general_dir / f"{dataset_name}.txt"
+        texts = self._load_file(file_path)
+        categories = [dataset_name] * len(texts)
+        return texts, categories
 
     def load_task(self, task_name: str) -> List[str]:
         """Load task training data.

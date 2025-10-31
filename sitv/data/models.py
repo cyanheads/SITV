@@ -43,6 +43,9 @@ class AlphaSweepResult:
     perplexity: float = 0.0
     perplexity_2alpha: float = 0.0
 
+    # Per-category losses (optional, populated when using "combined" dataset)
+    category_losses: dict[str, float] = field(default_factory=dict)
+
 
 @dataclass
 class TaskDefinition:
@@ -175,6 +178,7 @@ class ExperimentMetrics:
 
     # Multi-task metrics
     task_name: str = "sentiment"
+    general_eval_dataset: str = "mixed_domain"  # Which general eval dataset was used
     multi_task_mode: bool = False
 
     # 2D composition metrics
