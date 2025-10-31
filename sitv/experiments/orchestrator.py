@@ -306,60 +306,122 @@ class ExperimentOrchestrator:
             tokenizer: Tokenizer
 
         Note:
-            This requires a second task vector T2. For full 2D composition,
-            you need to:
-            1. Fine-tune on a second task to create a second task vector
-            2. Pass both task vectors to this method
-            3. The Composition2DExperiment will explore L(M_base + α·T1 + β·T2)
-
-            Current implementation provides the framework but requires
-            manual creation of the second task vector.
+            This requires a second task vector T2. The method will:
+            1. Fine-tune on a second task (sentiment_negative)
+            2. Compute the second task vector
+            3. Run Composition2DExperiment to explore L(M_base + α·T1 + β·T2)
+            4. Generate 2D heatmap visualization
         """
         print("\n" + "="*70)
         print("2D COMPOSITION EXPERIMENT")
         print("="*70)
 
-        # For 2D composition, we need a second task vector
-        # This is a placeholder showing how to integrate when available
-        print("\nNOTE: 2D composition requires a second task vector.")
-        print("To run this experiment:")
-        print("  1. Fine-tune on a second task (e.g., 'sentiment_negative')")
-        print("  2. Compute second task vector T2")
-        print("  3. Pass both T1 and T2 to Composition2DExperiment")
-        print("\nExample integration code:")
-        print("""
-        # Get second task and fine-tune
-        task2 = tasks['sentiment_negative']
+        # Get available tasks
+        tasks = get_predefined_tasks()
+
+        # Select second task (different from first task)
+        # If first task is sentiment_positive, use sentiment_negative
+        second_task_name = None
+        if self.config.task_name == "sentiment_positive":
+            second_task_name = "sentiment_negative"
+        elif self.config.task_name == "sentiment_negative":
+            second_task_name = "sentiment_positive"
+        else:
+            # For other tasks, default to sentiment_negative
+            second_task_name = "sentiment_negative"
+
+        # Check if second task exists
+        if second_task_name not in tasks:
+            print(f"\n⚠️  Second task '{second_task_name}' not available.")
+            print(f"   Available tasks: {list(tasks.keys())}")
+            print(f"   Skipping 2D composition experiment.")
+            return
+
+        task2 = tasks[second_task_name]
+
+        print(f"\nFirst task:  {self.config.task_name}")
+        print(f"Second task: {second_task_name}")
+        print(f"Grid: {self.config.composition_2d.num_samples_per_dim}×{self.config.composition_2d.num_samples_per_dim} = {self.config.composition_2d.num_samples_per_dim**2} evaluations")
+
+        # Fine-tune on second task to create second task vector
+        print("\n" + "="*70)
+        print(f"FINE-TUNING ON SECOND TASK: {second_task_name}")
+        print("="*70)
+
+        fine_tuner = FineTuner(
+            output_dir=f"{self.config.output_dir}/finetuned_model_2",
+            num_epochs=self.config.fine_tuning.num_epochs,
+            learning_rate=self.config.fine_tuning.learning_rate,
+            batch_size=self.config.fine_tuning.batch_size,
+        )
+
         finetuned_model_2, ft_metrics_2 = fine_tuner.fine_tune(
             base_model=base_model,
             tokenizer=tokenizer,
             train_texts=task2.train_texts,
         )
-        task_vector_2 = self.task_vector_service.compute(base_model, finetuned_model_2)
 
-        # Run 2D experiment
+        # Compute second task vector
+        print("\n" + "="*70)
+        print("COMPUTING SECOND TASK VECTOR")
+        print("="*70)
+
+        start_time = time.time()
+        task_vector_2 = self.task_vector_service.compute(base_model, finetuned_model_2)
+        magnitude_2 = self.task_vector_service.compute_magnitude(task_vector_2)
+        elapsed = time.time() - start_time
+
+        print(f"Task vector 2 computed: ||T2|| = {magnitude_2:.2f}")
+        print(f"Computation time: {elapsed:.2f}s\n")
+
+        # Store second task vector magnitude in metrics
+        self.metrics.enable_2d_composition = True
+        self.metrics.task_vector_2_magnitude = magnitude_2
+
+        # Run 2D composition experiment
         experiment = Composition2DExperiment(
             base_model=base_model,
             task_vector_1=task_vector,
             task_vector_2=task_vector_2,
             tokenizer=tokenizer,
-            general_eval_texts=task.eval_texts,
+            general_eval_texts=task2.eval_texts,  # Use second task eval texts
             alpha_range=self.config.composition_2d.alpha_range,
             beta_range=self.config.composition_2d.beta_range,
             num_samples_per_dim=self.config.composition_2d.num_samples_per_dim,
             device=self.device,
         )
+
         results_2d, metadata_2d = experiment.run()
 
-        # Generate 2D plot
+        # Generate and save 2D plot
+        print("\n" + "="*70)
+        print("GENERATING 2D VISUALIZATION")
+        print("="*70)
+
         plotter = ResultPlotter()
-        plot_path_2d = self.path_manager.get_plot_path("loss_landscape_2d.png")
+        plot_path_2d = f"{self.config.output_dir}/loss_landscape_2d.png"
         plotter.plot_2d_composition(results_2d, plot_path_2d)
-        """)
+
+        # Save 2D results
+        import json
+        results_2d_path = f"{self.config.output_dir}/loss_landscape_2d_results.json"
+        with open(results_2d_path, 'w') as f:
+            json.dump([
+                {
+                    "alpha": r.alpha,
+                    "beta": r.beta,
+                    "loss": r.loss,
+                    "base_loss": r.base_loss,
+                    "functional_return": r.functional_return,
+                    "perplexity": r.perplexity,
+                }
+                for r in results_2d
+            ], f, indent=2)
+
+        print(f"2D results saved: {results_2d_path}")
 
         print(f"\n{'='*70}")
-        print("2D composition experiment framework ready")
-        print("Implement second task vector creation to enable full functionality")
+        print("2D COMPOSITION EXPERIMENT COMPLETE")
         print(f"{'='*70}\n")
 
     def _generate_outputs(self, results, analysis):
