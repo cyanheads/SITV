@@ -254,7 +254,7 @@ class ResultPlotter:
         # Plot heatmap
         im = ax.imshow(
             loss_matrix,
-            extent=[min(alphas), max(alphas), min(betas), max(betas)],
+            extent=(min(alphas), max(alphas), min(betas), max(betas)),
             origin='lower',
             aspect='auto',
             cmap='viridis'

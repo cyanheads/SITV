@@ -8,7 +8,7 @@ import time
 import torch
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from transformers import PreTrainedModel
 
 
@@ -43,8 +43,8 @@ class Experiment(ABC):
         self.base_model = base_model
         self.tokenizer = tokenizer
         self.device = device
-        self.start_time = None
-        self.end_time = None
+        self.start_time: Optional[float] = None
+        self.end_time: Optional[float] = None
 
     @abstractmethod
     def run(self) -> tuple[List[Any], Dict[str, Any]]:
@@ -191,8 +191,9 @@ class Experiment(ABC):
         Returns:
             Start timestamp
         """
-        self.start_time = time.time()
-        return self.start_time
+        current_time = time.time()
+        self.start_time = current_time
+        return current_time
 
     def end_timing(self) -> float:
         """End timing the experiment.
@@ -200,8 +201,9 @@ class Experiment(ABC):
         Returns:
             End timestamp
         """
-        self.end_time = time.time()
-        return self.end_time
+        current_time = time.time()
+        self.end_time = current_time
+        return current_time
 
     def get_duration(self) -> float:
         """Get experiment duration.
@@ -228,5 +230,5 @@ class Experiment(ABC):
 
     def prepare_model(self) -> None:
         """Prepare model for evaluation (move to device, set eval mode)."""
-        self.base_model = self.base_model.to(self.device)  # type: ignore[assignment]
+        self.base_model = self.base_model.to(self.device)  # type: ignore[arg-type,assignment]
         self.base_model.eval()

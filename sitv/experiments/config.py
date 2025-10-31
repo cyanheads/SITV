@@ -7,9 +7,9 @@ loading parameters from config.yaml as the single source of truth.
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 
 def load_config_yaml(config_path: str | None = None) -> dict:
@@ -54,7 +54,7 @@ def _get(keys: str, default):
 
     Returns the same type as the default value provided.
     """
-    value = _YAML_CONFIG
+    value: Any = _YAML_CONFIG
     for key in keys.split('.'):
         if isinstance(value, dict):
             value = value.get(key)

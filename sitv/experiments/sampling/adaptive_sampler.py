@@ -175,13 +175,13 @@ class AdaptiveSampler(BaseSampler):
         merged_regions = self._merge_regions(interesting_regions)
 
         # Generate refinement samples
-        refinement_samples = []
+        refinement_samples_list: List[float] = []
         for region_center in merged_regions:
             region_samples = self._refine_region(region_center, alphas)
-            refinement_samples.extend(region_samples)
+            refinement_samples_list.extend(region_samples)
 
         # Remove duplicates and sort
-        refinement_samples = np.unique(refinement_samples)
+        refinement_samples = np.unique(refinement_samples_list)
 
         # Limit total samples
         max_refinement = self.num_samples - len(results)

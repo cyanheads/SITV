@@ -150,7 +150,7 @@ class FileManager:
         filepath = os.path.join(self.output_dir, filename)
 
         # Convert AlphaSweepResult objects to dicts
-        serializable_analysis = {}
+        serializable_analysis: Dict[str, Any] = {}
         for key, value in analysis.items():
             if isinstance(value, AlphaSweepResult):
                 serializable_analysis[key] = asdict(value)
@@ -191,7 +191,7 @@ class FileManager:
             raise FileNotFoundError(f"Results file not found: {filepath}")
 
         with open(filepath, 'r') as f:
-            results = json.load(f)
+            results: List[Dict[str, Any]] = json.load(f)
 
         return results
 

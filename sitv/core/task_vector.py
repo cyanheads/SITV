@@ -92,7 +92,7 @@ class TaskVectorService:
         total_norm = 0.0
         for param in task_vector.values():
             total_norm += torch.sum(param ** 2).item()
-        return total_norm ** 0.5
+        return float(total_norm ** 0.5)
 
     @staticmethod
     def apply(

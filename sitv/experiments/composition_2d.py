@@ -120,7 +120,7 @@ class Composition2DExperiment(Experiment):
 
         # Run sweep
         results = []
-        eval_times = []
+        eval_times: list[float] = []
         eval_count = 0
 
         for i, alpha in enumerate(alpha_values):

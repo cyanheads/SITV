@@ -228,7 +228,7 @@ class FailureTracker:
             max_consecutive_failures: Max consecutive failures before abort
             max_total_failures_pct: Max failure percentage before abort (0-1)
         """
-        self.failures = []
+        self.failures: list[tuple[float, str]] = []
         self.consecutive_failures = 0
         self.total_evaluations = 0
         self.max_consecutive_failures = max_consecutive_failures

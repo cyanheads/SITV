@@ -7,10 +7,10 @@ experimental workflow from model loading to result generation.
 
 import time
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 
 from sitv.experiments.config import ExperimentConfig
-from sitv.data.models import ExperimentMetrics
+from sitv.data.models import ExperimentMetrics, TwoDSweepResult
 from sitv.data.tasks import get_predefined_tasks
 from sitv.models import ModelService, FineTuner
 from sitv.core import TaskVectorService, get_device, get_device_string
@@ -72,7 +72,7 @@ class ExperimentOrchestrator:
         self.metrics.general_eval_dataset = config.evaluation.general_dataset
 
         # Initialize optional experiment results
-        self.results_2d = None  # Populated if 2D composition is run
+        self.results_2d: Optional[List[TwoDSweepResult]] = None  # Populated if 2D composition is run
 
     def run(self) -> None:
         """Run the complete experiment workflow.
@@ -311,7 +311,7 @@ class ExperimentOrchestrator:
             num_samples=self.config.alpha_sweep.num_samples,
             device=self.device,
             enable_squaring_test=self.config.alpha_sweep.enable_squaring_test,
-            sampling_strategy=self.config.alpha_sweep.sampling_strategy,
+            sampling_strategy=self.config.alpha_sweep.sampling.strategy,
         )
 
         # Run experiment
@@ -325,7 +325,7 @@ class ExperimentOrchestrator:
         self.metrics.alpha_range = self.config.alpha_sweep.alpha_range
         self.metrics.time_per_alpha_seconds = timing_metadata.get("time_per_alpha_seconds", 0.0)
         self.metrics.enable_squaring_test = self.config.alpha_sweep.enable_squaring_test
-        self.metrics.sampling_strategy = self.config.alpha_sweep.sampling_strategy
+        self.metrics.sampling_strategy = self.config.alpha_sweep.sampling.strategy
 
         # Analyze results
         analyzer = ResultAnalyzer(threshold=self.config.alpha_sweep.threshold)

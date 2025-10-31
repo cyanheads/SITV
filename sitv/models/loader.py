@@ -68,7 +68,7 @@ class ModelService:
 
         # Move to device if specified and no device_map
         if device and self.device_map is None:
-            model = model.to(device)  # type: ignore[assignment]
+            model = model.to(device)  # type: ignore[arg-type,assignment]
 
         print(f"Model loaded successfully")
         return model
@@ -184,8 +184,8 @@ class ModelService:
         )
 
         # Move to device
-        base_model = base_model.to(device)  # type: ignore[assignment]
-        finetuned_model = finetuned_model.to(device)  # type: ignore[assignment]
+        base_model = base_model.to(device)  # type: ignore[arg-type,assignment]
+        finetuned_model = finetuned_model.to(device)  # type: ignore[arg-type,assignment]
 
         print("Models loaded successfully!\n")
 

@@ -316,7 +316,7 @@ class CriticalPointFinder:
         Returns:
             Interpolated curvature
         """
-        return np.interp(alpha, alphas_curv, curvatures)
+        return float(np.interp(alpha, alphas_curv, curvatures))
 
     def _interpolate_zero_crossing(
         self,
@@ -413,12 +413,12 @@ class CriticalPointFinder:
 
         # Find global minimum and maximum
         if critical_points['minima']:
-            analysis['global_minimum'] = min(critical_points['minima'], key=lambda cp: cp.loss)
+            analysis['global_minimum'] = min(critical_points['minima'], key=lambda cp: cp.loss)  # type: ignore[type-var,arg-type,attr-defined,assignment]
         else:
             # If no critical minima, use boundary
             sorted_results = sorted(results, key=lambda r: r.loss)
             best_result = sorted_results[0]
-            analysis['global_minimum'] = CriticalPoint(
+            analysis['global_minimum'] = CriticalPoint(  # type: ignore[assignment]
                 alpha=best_result.alpha,
                 loss=best_result.loss,
                 point_type='boundary_minimum',
@@ -428,7 +428,7 @@ class CriticalPointFinder:
             )
 
         if critical_points['maxima']:
-            analysis['global_maximum'] = max(critical_points['maxima'], key=lambda cp: cp.loss)
+            analysis['global_maximum'] = max(critical_points['maxima'], key=lambda cp: cp.loss)  # type: ignore[type-var,arg-type,attr-defined]
 
         # Most significant points
         if critical_points['all']:

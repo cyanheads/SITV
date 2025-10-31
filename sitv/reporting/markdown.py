@@ -323,7 +323,7 @@ class MarkdownReportGenerator:
             section += f"{result.task_performance:.4f} | {perplexity:.2f} | {perplexity_2alpha:.2f} |\n"
 
         # Calculate step size safely
-        alpha_step = 0
+        alpha_step = 0.0
         if metrics.num_alpha_samples > 1:
             alpha_step = (metrics.alpha_range[1] - metrics.alpha_range[0]) / (metrics.num_alpha_samples - 1)
 

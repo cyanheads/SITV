@@ -10,7 +10,7 @@ import numpy as np
 import torch
 import logging
 from datetime import datetime
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 from transformers import PreTrainedModel
 
 from sitv.experiments.base import Experiment
@@ -60,7 +60,7 @@ class AlphaSweepExperiment(Experiment):
         tokenizer,
         general_eval_texts: List[str],
         task_eval_texts: List[str],
-        general_eval_categories: List[str] = None,
+        general_eval_categories: Optional[List[str]] = None,
         alpha_range: tuple[float, float] = (-3.0, 3.0),
         num_samples: int = 100,
         device: str = "cuda",
@@ -184,7 +184,7 @@ class AlphaSweepExperiment(Experiment):
 
             # Run sweep
             results = []
-            alpha_times = []
+            alpha_times: list[float] = []
             total_alphas = len(alpha_values)
 
             for i, alpha in enumerate(alpha_values):

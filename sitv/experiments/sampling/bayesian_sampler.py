@@ -12,8 +12,8 @@ from typing import List, Optional, Tuple
 from dataclasses import dataclass
 
 try:
-    from sklearn.gaussian_process import GaussianProcessRegressor
-    from sklearn.gaussian_process.kernels import RBF, ConstantKernel, Matern
+    from sklearn.gaussian_process import GaussianProcessRegressor  # type: ignore[import-untyped]
+    from sklearn.gaussian_process.kernels import RBF, ConstantKernel, Matern  # type: ignore[import-untyped]
     SKLEARN_AVAILABLE = True
 except ImportError:
     SKLEARN_AVAILABLE = False
@@ -146,10 +146,11 @@ class BayesianSampler(BaseSampler):
         # Select next alpha using acquisition function
         next_alpha = self._select_next_alpha()
 
-        logger.info(
-            f"Bayesian optimization: Iteration {self.gp_state.iteration + 1}/"
-            f"{self.n_iterations}, next α={next_alpha:.3f}"
-        )
+        if self.gp_state is not None:
+            logger.info(
+                f"Bayesian optimization: Iteration {self.gp_state.iteration + 1}/"
+                f"{self.n_iterations}, next α={next_alpha:.3f}"
+            )
 
         return np.array([next_alpha])
 
@@ -305,7 +306,7 @@ class BayesianSampler(BaseSampler):
         gp = self.gp_state.gp_model
 
         # Get GP predictions
-        mu, sigma = gp.predict(candidates, return_std=True)
+        mu, sigma = gp.predict(candidates, return_std=True)  # type: ignore[attr-defined]
         sigma = sigma.reshape(-1, 1)
 
         # Best observed value so far (minimize loss)
@@ -318,7 +319,8 @@ class BayesianSampler(BaseSampler):
             ei = improvement * self._normal_cdf(Z) + sigma * self._normal_pdf(Z)
             ei[sigma == 0.0] = 0.0
 
-        return ei.flatten()
+        result: np.ndarray = ei.flatten()
+        return result
 
     def _upper_confidence_bound(self, candidates: np.ndarray) -> np.ndarray:
         """Compute Upper Confidence Bound acquisition function.
@@ -335,10 +337,10 @@ class BayesianSampler(BaseSampler):
         gp = self.gp_state.gp_model
 
         # Get GP predictions
-        mu, sigma = gp.predict(candidates, return_std=True)
+        mu, sigma = gp.predict(candidates, return_std=True)  # type: ignore[attr-defined]
 
         # UCB (minimize loss, so we want lower bound)
-        ucb = -(mu - self.kappa * sigma)  # Negative because we minimize
+        ucb: np.ndarray = -(mu - self.kappa * sigma)  # Negative because we minimize
 
         return ucb
 
@@ -369,14 +371,16 @@ class BayesianSampler(BaseSampler):
     @staticmethod
     def _normal_cdf(x: np.ndarray) -> np.ndarray:
         """Standard normal cumulative distribution function."""
-        from scipy.stats import norm
-        return norm.cdf(x)
+        from scipy.stats import norm  # type: ignore[import-untyped]
+        result: np.ndarray = norm.cdf(x)  # type: ignore[no-any-return]
+        return result
 
     @staticmethod
     def _normal_pdf(x: np.ndarray) -> np.ndarray:
         """Standard normal probability density function."""
-        from scipy.stats import norm
-        return norm.pdf(x)
+        from scipy.stats import norm  # type: ignore[import-untyped]
+        result: np.ndarray = norm.pdf(x)  # type: ignore[no-any-return]
+        return result
 
     def get_config(self) -> dict:
         """Get sampler configuration for metadata.

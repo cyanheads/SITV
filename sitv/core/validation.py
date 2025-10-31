@@ -5,7 +5,7 @@ This module provides validators for experiment configurations and inputs,
 ensuring experiments fail fast with clear error messages.
 """
 
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 import torch
 
 
@@ -188,7 +188,7 @@ def validate_alpha_sweep_config(
     general_eval_texts: List[str],
     task_eval_texts: List[str],
     task_vector: Dict[str, torch.Tensor],
-    general_eval_categories: List[str] = None,
+    general_eval_categories: Optional[List[str]] = None,
 ) -> None:
     """Validate complete alpha sweep configuration.
 

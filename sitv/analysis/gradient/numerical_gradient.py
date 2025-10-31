@@ -9,7 +9,7 @@ import logging
 from typing import Tuple
 
 import numpy as np
-from scipy.ndimage import gaussian_filter1d
+from scipy.ndimage import gaussian_filter1d  # type: ignore[import-untyped]
 
 from sitv.data.models import AlphaSweepResult
 
@@ -261,4 +261,4 @@ class NumericalGradientAnalyzer:
         # (assuming smooth underlying function)
         noise_std = np.std(second_diff) / np.sqrt(6)
 
-        return noise_std
+        return float(noise_std)
