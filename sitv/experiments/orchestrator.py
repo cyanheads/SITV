@@ -261,13 +261,18 @@ class ExperimentOrchestrator:
         tasks = get_predefined_tasks(self.config.fine_tuning.data_repetition_factor)
         task = tasks[self.config.task_name]
 
+        # Load general evaluation dataset
+        from sitv.data.loader import DatasetLoader
+        loader = DatasetLoader()
+        general_eval_texts = loader.load_general(self.config.evaluation.general_dataset)
+
         # Create experiment
         experiment = AlphaSweepExperiment(
             base_model=base_model,
             task_vector=task_vector,
             tokenizer=tokenizer,
-            general_eval_texts=task.eval_texts,
-            task_eval_texts=task.eval_texts,
+            general_eval_texts=general_eval_texts,  # Use general dataset for L(α)
+            task_eval_texts=task.eval_texts,         # Use task-specific for task performance
             alpha_range=self.config.alpha_sweep.alpha_range,
             num_samples=self.config.alpha_sweep.num_samples,
             device=self.device,
@@ -394,13 +399,18 @@ class ExperimentOrchestrator:
         self.metrics.enable_2d_composition = True
         self.metrics.task_vector_2_magnitude = magnitude_2
 
+        # Load general evaluation dataset (same as 1D alpha sweep)
+        from sitv.data.loader import DatasetLoader
+        loader = DatasetLoader()
+        general_eval_texts = loader.load_general(self.config.evaluation.general_dataset)
+
         # Run 2D composition experiment
         experiment = Composition2DExperiment(
             base_model=base_model,
             task_vector_1=task_vector,
             task_vector_2=task_vector_2,
             tokenizer=tokenizer,
-            general_eval_texts=task2.eval_texts,  # Use second task eval texts
+            general_eval_texts=general_eval_texts,  # Use general dataset for L(α,β)
             alpha_range=self.config.composition_2d.alpha_range,
             beta_range=self.config.composition_2d.beta_range,
             num_samples_per_dim=self.config.composition_2d.num_samples_per_dim,
