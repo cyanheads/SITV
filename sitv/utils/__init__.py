@@ -7,7 +7,7 @@ from sitv.utils.console import (
     format_percentage,
 )
 from sitv.utils.timing import Timer, format_eta
-from sitv.utils.progress import ProgressTracker
+from sitv.utils.progress import ProgressTracker, FineTuningProgressCallback
 
 __all__ = [
     "print_banner",
@@ -17,4 +17,5 @@ __all__ = [
     "Timer",
     "format_eta",
     "ProgressTracker",
+    "FineTuningProgressCallback",
 ]

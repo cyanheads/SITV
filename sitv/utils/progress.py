@@ -6,7 +6,9 @@ during long-running operations.
 """
 
 import time
+from datetime import datetime
 from typing import List, Optional
+from transformers import TrainerCallback
 from sitv.utils.timing import format_eta, calculate_avg_time
 
 
@@ -117,3 +119,87 @@ class ProgressTracker:
             True if current >= total
         """
         return self.current >= self.total
+
+
+class FineTuningProgressCallback(TrainerCallback):
+    """Custom callback for detailed fine-tuning progress reporting.
+
+    This callback provides detailed progress tracking during model fine-tuning,
+    including ETA calculation, loss tracking, and training history.
+
+    Attributes:
+        training_history: List of training log entries
+        epoch_start_time: Timestamp when current epoch started
+        step_times: List of timestamps for each step
+
+    Examples:
+        >>> from transformers import Trainer
+        >>> callback = FineTuningProgressCallback()
+        >>> trainer = Trainer(model=model, callbacks=[callback])
+        >>> trainer.train()
+    """
+
+    def __init__(self):
+        """Initialize the fine-tuning progress callback."""
+        self.training_history = []
+        self.epoch_start_time = None
+        self.step_times = []
+
+    def on_epoch_begin(self, args, state, control, **kwargs):
+        """Called at the beginning of each epoch.
+
+        Args:
+            args: TrainingArguments
+            state: TrainerState
+            control: TrainerControl
+            **kwargs: Additional keyword arguments
+        """
+        self.epoch_start_time = time.time()
+        epoch_num = int(state.epoch) if state.epoch else 0
+        print(f"\n{'─'*60}")
+        print(f"Epoch {epoch_num + 1}/{args.num_train_epochs}")
+        print(f"{'─'*60}")
+
+    def on_log(self, args, state, control, logs=None, **kwargs):
+        """Called when the trainer logs information.
+
+        Args:
+            args: TrainingArguments
+            state: TrainerState
+            control: TrainerControl
+            logs: Dictionary of logged values
+            **kwargs: Additional keyword arguments
+        """
+        if logs:
+            step_time = time.time()
+            self.step_times.append(step_time)
+
+            # Calculate ETA
+            if len(self.step_times) > 1 and state.max_steps:
+                avg_step_time = (
+                    self.step_times[-1] - self.step_times[0]
+                ) / len(self.step_times)
+                remaining_steps = state.max_steps - state.global_step
+                eta_seconds = avg_step_time * remaining_steps
+                eta_str = f"{eta_seconds / 60:.1f}m" if eta_seconds > 60 else f"{eta_seconds:.0f}s"
+            else:
+                eta_str = "calculating..."
+
+            # Record history
+            log_entry = {
+                "step": state.global_step,
+                "epoch": state.epoch,
+                "timestamp": datetime.now().isoformat(),
+                **logs,
+            }
+            self.training_history.append(log_entry)
+
+            # Print progress
+            print(f"  Step {state.global_step}/{state.max_steps} | ", end="")
+            if "loss" in logs:
+                print(f"Loss: {logs['loss']:.4f} | ", end="")
+            if "learning_rate" in logs:
+                print(f"LR: {logs['learning_rate']:.2e} | ", end="")
+            if "grad_norm" in logs:
+                print(f"Grad: {logs['grad_norm']:.2f} | ", end="")
+            print(f"ETA: {eta_str}")

@@ -12,7 +12,7 @@ from typing import Optional
 from sitv.experiments.config import ExperimentConfig
 from sitv.data.models import ExperimentMetrics
 from sitv.data.tasks import get_predefined_tasks
-from sitv.models import ModelService
+from sitv.models import ModelService, FineTuner
 from sitv.core import TaskVectorService, get_device, get_device_string
 from sitv.experiments import AlphaSweepExperiment, Composition2DExperiment
 from sitv.analysis import ResultAnalyzer
@@ -154,10 +154,6 @@ class ExperimentOrchestrator:
 
         Returns:
             Tuple of (base_model, finetuned_model, tokenizer)
-
-        Note:
-            This is a placeholder. The actual fine-tuning logic from main.py
-            should be migrated here or to sitv.models.fine_tuner.
         """
         print("\n" + "="*70)
         print("MODEL FINE-TUNING")
@@ -171,17 +167,45 @@ class ExperimentOrchestrator:
 
         self.metrics.model_parameters = self.model_service.count_parameters(base_model)
 
-        # TODO: Implement fine-tuning using FineTuner service
-        # For now, this is a placeholder that indicates where the
-        # fine-tuning logic from main.py should be integrated
+        # Get task definition with training data
+        tasks = get_predefined_tasks()
+        task = tasks[self.config.task_name]
 
-        print("\nNOTE: Fine-tuning logic needs to be migrated from main.py")
-        print("For now, use --analysis-only mode with pre-trained models")
-
-        raise NotImplementedError(
-            "Fine-tuning integration pending. "
-            "Please use --analysis-only mode or integrate fine-tuning logic."
+        # Initialize fine-tuner with configuration
+        fine_tuner = FineTuner(
+            output_dir=f"{self.config.output_dir}/finetuned_model",
+            num_epochs=self.config.fine_tuning.num_epochs,
+            learning_rate=self.config.fine_tuning.learning_rate,
+            batch_size=self.config.fine_tuning.batch_size,
         )
+
+        # Fine-tune the model
+        finetuned_model, ft_metrics = fine_tuner.fine_tune(
+            base_model=base_model,
+            tokenizer=tokenizer,
+            train_texts=task.train_texts,
+        )
+
+        # Update experiment metrics with fine-tuning results
+        self.metrics.training_examples = ft_metrics["training_examples"]
+        self.metrics.num_epochs = ft_metrics["num_epochs"]
+        self.metrics.learning_rate = ft_metrics["learning_rate"]
+        self.metrics.final_training_loss = ft_metrics["final_loss"]
+        self.metrics.training_steps = ft_metrics["training_steps"]
+        self.metrics.finetuning_start_time = ft_metrics["start_time"]
+        self.metrics.finetuning_end_time = ft_metrics["end_time"]
+        self.metrics.finetuning_duration_seconds = ft_metrics["duration_seconds"]
+
+        # Save models for future analysis
+        print("\nSaving models for future analysis...")
+        self.model_service.save_models(
+            base_model,
+            finetuned_model,
+            self.config.output_dir
+        )
+        print(f"Models saved to {self.config.output_dir}/")
+
+        return base_model, finetuned_model, tokenizer
 
     def _compute_task_vector(self, base_model, finetuned_model):
         """Compute task vector from models.
@@ -278,14 +302,65 @@ class ExperimentOrchestrator:
 
         Args:
             base_model: Base model
-            task_vector: First task vector
+            task_vector: First task vector (T1)
             tokenizer: Tokenizer
 
         Note:
-            This requires a second task vector. Implementation pending.
+            This requires a second task vector T2. For full 2D composition,
+            you need to:
+            1. Fine-tune on a second task to create a second task vector
+            2. Pass both task vectors to this method
+            3. The Composition2DExperiment will explore L(M_base + α·T1 + β·T2)
+
+            Current implementation provides the framework but requires
+            manual creation of the second task vector.
         """
-        print("\n2D composition experiment enabled but not yet fully integrated")
-        print("TODO: Implement second task vector creation and composition experiment")
+        print("\n" + "="*70)
+        print("2D COMPOSITION EXPERIMENT")
+        print("="*70)
+
+        # For 2D composition, we need a second task vector
+        # This is a placeholder showing how to integrate when available
+        print("\nNOTE: 2D composition requires a second task vector.")
+        print("To run this experiment:")
+        print("  1. Fine-tune on a second task (e.g., 'sentiment_negative')")
+        print("  2. Compute second task vector T2")
+        print("  3. Pass both T1 and T2 to Composition2DExperiment")
+        print("\nExample integration code:")
+        print("""
+        # Get second task and fine-tune
+        task2 = tasks['sentiment_negative']
+        finetuned_model_2, ft_metrics_2 = fine_tuner.fine_tune(
+            base_model=base_model,
+            tokenizer=tokenizer,
+            train_texts=task2.train_texts,
+        )
+        task_vector_2 = self.task_vector_service.compute(base_model, finetuned_model_2)
+
+        # Run 2D experiment
+        experiment = Composition2DExperiment(
+            base_model=base_model,
+            task_vector_1=task_vector,
+            task_vector_2=task_vector_2,
+            tokenizer=tokenizer,
+            general_eval_texts=task.eval_texts,
+            alpha_range=self.config.composition_2d.alpha_range,
+            beta_range=self.config.composition_2d.beta_range,
+            num_samples_per_dim=self.config.composition_2d.num_samples_per_dim,
+            device=self.device,
+        )
+        results_2d, metadata_2d = experiment.run()
+
+        # Generate 2D plot
+        plotter = ResultPlotter()
+        plot_path_2d = self.path_manager.get_plot_path("loss_landscape_2d.png")
+        plotter.plot_2d_composition(results_2d, plot_path_2d)
+        """)
+
+        print(f"\n{'='*70}")
+        print("2D composition experiment framework ready")
+        print("Implement second task vector creation to enable full functionality")
+        print(f"{'='*70}\n")
 
     def _generate_outputs(self, results, analysis):
         """Generate all output files.
