@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2025-10-30
+
+### Changed
+
+- **Enhanced Task Training Data** (`sitv/data/tasks.py`):
+  - Replaced simple, generic training examples with detailed, realistic examples across all task types
+  - Updated `sentiment_positive` examples from basic praise to detailed product/service reviews (15 unique examples)
+  - Updated `sentiment_negative` examples from simple complaints to detailed negative experiences (30 unique examples)
+  - Updated `instruction_following` examples from basic colors/animals to technical programming concepts (30 unique examples covering web frameworks, cloud platforms, ML concepts, etc.)
+  - Updated `qa_factual` examples from simple trivia to detailed technical Q&A about science, programming, and technology (30 unique examples)
+  - Enhanced evaluation texts across all tasks with similarly detailed and realistic examples
+
+### Fixed
+
+- **Documentation Formatting** (`README.md`):
+  - Fixed line break in project description paragraph for better readability
+
+### Technical Details
+
+- **Training Data Quality**: Significantly improved realism and diversity of training examples to better represent real-world use cases
+- **Example Count**: Each task now contains 30 unique, detailed examples (3x multiplication factor maintained for training texts)
+- **Content Depth**: Examples now include technical terminology, realistic scenarios, and contextual detail appropriate for modern AI training
+
 ## [0.5.0] - 2025-10-30
 
 ### Added
