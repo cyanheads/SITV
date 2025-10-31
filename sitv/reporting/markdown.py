@@ -308,17 +308,18 @@ class MarkdownReportGenerator:
 
 ### Sample Data Points
 
-| α | L(α) | L(2α) | |ΔL| | |ΔL(2α)| | Perplexity |
-|---|------|-------|--------|------------|------------|
+| α | L(α) | L(2α) | |ΔL| | |ΔL(2α)| | Task L(α) | PPL(α) | PPL(2α) |
+|---|------|-------|--------|------------|-----------|--------|---------|
 """
 
         for result in selected:
-            # Calculate perplexity if not already set
+            # Calculate perplexities if not already set
             perplexity = result.perplexity if result.perplexity > 0 else np.exp(result.loss)
+            perplexity_2alpha = result.perplexity_2alpha if result.perplexity_2alpha > 0 else np.exp(result.loss_2alpha)
 
             section += f"| {result.alpha:+.3f} | {result.loss:.4f} | {result.loss_2alpha:.4f} | "
             section += f"{result.functional_return:.6f} | {result.functional_return_2alpha:.6f} | "
-            section += f"{perplexity:.2f} |\n"
+            section += f"{result.task_performance:.4f} | {perplexity:.2f} | {perplexity_2alpha:.2f} |\n"
 
         # Calculate step size safely
         alpha_step = 0
