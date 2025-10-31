@@ -1,102 +1,107 @@
-# Self-Inverse Task Vectors (SITV)
-### Exploring Loss Landscapes Along Task Vector Directions
+<div align="center">
+  <h1>Self-Inverse Task Vectors (SITV)</h1>
+  <p><b>Research code exploring loss landscape geometry along task vector directions in neural network parameter space. Searches for self-inverse scaling factors analogous to rotation group walks that return to identity when squared.</b></p>
+  <p>Inspired by <a href="https://arxiv.org/abs/2502.14367"><i>Walks in Rotation Spaces Return Home when Doubled and Scaled</i></a> (Eckmann & Tlusty, 2025)</p>
+</div>
 
-Inspired by [*Walks in Rotation Spaces Return Home when Doubled and Scaled*](https://arxiv.org/abs/2502.14367) (Eckmann & Tlusty, 2025), this project searches for self-inverse scaling factors in neural network parameter space.
+<div align="center">
 
-## Overview
+[![Version](https://img.shields.io/badge/Version-0.2.0-blue.svg?style=flat-square)](./CHANGELOG.md) [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg?style=flat-square)](https://www.python.org/) [![PyTorch](https://img.shields.io/badge/PyTorch-2.5.0+-EE4C2C.svg?style=flat-square)](https://pytorch.org/) [![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](./LICENSE) [![Status](https://img.shields.io/badge/Status-Research-yellow.svg?style=flat-square)](https://github.com/cyanheads/SITV)
 
-This project visualizes how neural network loss changes as we move along task vector directions: `L(M_base + αT)`, where `T = M_finetuned - M_base` is the task vector.
+</div>
 
-### Research Question
+---
+
+## 🔬 Research Question
 
 **What does the loss landscape look like along the task vector direction? Does L(α) cross L(M_base) at any α ≠ 0?**
 
-We sweep α values from -3.0 to 3.0 and plot the resulting loss landscape to discover:
-- **Zero-crossings**: Values of α where loss returns to baseline (analogous to rotation self-inverse points)
-- **Optimal scaling**: Best α for task performance
-- **Landscape shape**: Monotonic, periodic, or symmetric?
+For a task vector `T = M_finetuned - M_base`, we sweep α ∈ [-3.0, 3.0] and plot `L(M_base + αT)` to discover:
 
-### Connection to Eckmann & Tlusty (2025)
+| Metric                | Description                                                     |
+| :-------------------- | :-------------------------------------------------------------- |
+| **Zero-crossings**    | Values of α where loss returns to baseline (self-inverse points) |
+| **Optimal scaling**   | Best α for task performance vs general knowledge trade-off       |
+| **Landscape shape**   | Monotonic, periodic, or symmetric loss behavior                  |
 
-Their work proves that rotation group walks have abundant special λ values where `[W(λ)]² = I` (self-inverse property) - when W(λ) is a 180° rotation, squaring returns to identity.
+### Connection to Rotation Groups
+
+Eckmann & Tlusty (2025) prove that rotation group walks have abundant special λ values where `[W(λ)]² = I` (self-inverse property). When W(λ) is a 180° rotation, squaring returns to identity.
 
 **Our Exploration**: We test whether neural loss landscapes exhibit analogous special scaling factors where loss functionally returns to baseline, even though task vectors lack the group structure of rotations.
 
-## Installation
+## 📊 Methodology
 
-Requires Python 3.12 or higher.
+### Loss Landscape Sweep
+
+| Step | Operation                                    | Description                                              |
+| :--- | :------------------------------------------- | :------------------------------------------------------- |
+| 1    | **Create task vector**                       | `T = M_finetuned - M_base`                               |
+| 2    | **Sample α values**                          | 100 points uniformly distributed in [-3.0, 3.0]          |
+| 3    | **Compute models**                           | For each α: `M(α) = M_base + αT`                         |
+| 4    | **Evaluate loss**                            | Measure `L(α)` on general and task-specific datasets     |
+| 5    | **Identify special points**                  | Zero-crossings, minimum loss, optimal task performance   |
+| 6    | **Visualize landscape**                      | Generate 2x2 plot grid with loss curves and analysis     |
+
+### Performance Optimization
+
+The implementation uses **in-place parameter modification**, achieving **10-100x speedup** compared to model reloading for each α value. This makes sweeping large models (e.g., 12B parameters) practical.
+
+### Metrics Tracked
+
+| Metric                  | Formula                  | Interpretation                                   |
+| :---------------------- | :----------------------- | :----------------------------------------------- |
+| **Loss L(α)**           | Loss of `M_base + αT`    | Primary metric - model performance at scaling α  |
+| **Functional Return**   | `\|L(α) - L(M_base)\|`   | Distance from baseline loss                      |
+| **Task Performance**    | Task-specific loss       | Performance on fine-tuning task                  |
+| **Zero-crossings**      | α where `\|L(α) - L_base\| < threshold` | Self-inverse scaling factors |
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- **Python 3.12+** (required for modern type hints)
+- **GPU recommended** (CUDA, Apple Silicon MPS, or CPU fallback)
+- **~40GB disk space** (for model downloads and checkpoints)
+
+### Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/SITV.git
+git clone https://github.com/cyanheads/SITV.git
 cd SITV
 
 # Install dependencies
 pip install -e .
 
-# For development
+# For development (includes ruff, mypy, pytest)
 pip install -e ".[dev]"
 ```
 
-## Usage
+### Quick Start
 
-Run the main experiment:
+Run the experiment with default settings:
 
 ```bash
 python main.py
 ```
 
 This will:
-1. Load a base language model (default: `google/gemma-3-12b-it`)
-2. Fine-tune it on a sentiment analysis task
-3. Compute the task vector `T = M_finetuned - M_base`
+1. Load base model (`google/gemma-3-12b-it` by default)
+2. Fine-tune on sentiment analysis task
+3. Compute task vector `T = M_finetuned - M_base`
 4. Sweep α from -3.0 to 3.0 (100 samples)
 5. Evaluate `L(M_base + αT)` for each α
-6. Generate visualizations and save results to `./outputs/`
+6. Generate visualizations and save to `./outputs/`
 
 ### Output Files
 
-- `loss_landscape_sweep.png` - Visualization of loss landscape L(α) vs α
-- `loss_landscape_results.json` - Detailed metrics for all α values tested
+| File                            | Description                                          |
+| :------------------------------ | :--------------------------------------------------- |
+| `loss_landscape_sweep.png`      | 2x2 visualization grid showing loss curves           |
+| `loss_landscape_results.json`   | Complete results with all α values and metrics       |
 
-## Methodology
-
-### Loss Landscape Sweep
-
-For a given task vector `T = M_finetuned - M_base`, we:
-
-1. **Sweep α values**: Sample 100 values uniformly from [-3.0, 3.0]
-2. **Compute models**: For each α, create `M(α) = M_base + αT`
-3. **Evaluate loss**: Measure `L(α)` on general and task-specific evaluation sets
-4. **Find special points**:
-   - **Zero-crossings**: α ≠ 0 where `|L(α) - L(M_base)| < threshold`
-   - **Minimum general loss**: Best α for preserving general knowledge
-   - **Minimum task loss**: Best α for task performance
-
-### Performance Optimization
-
-The implementation uses in-place parameter modification, achieving 10-100x speedup compared to model reloading for each α value.
-
-### Metrics
-
-- **Loss L(α)**: Primary metric - model loss at scaling factor α
-- **Functional Return**: `|L(α) - L(M_base)|` - distance from baseline
-- **Task Performance**: Task-specific loss at each α value
-- **Zero-crossings**: Special α values where loss returns to baseline
-
-## Project Structure
-
-```
-SITV/
-├── main.py              # Main experiment implementation
-├── pyproject.toml       # Project configuration and dependencies
-├── CHANGELOG.md         # Version history
-├── README.md            # This file
-├── .gitattributes       # Git attributes configuration
-└── .gitignore           # Git ignore patterns
-```
-
-## Interpretation
+## 📈 Interpreting Results
 
 ### If Zero-Crossings Found (L(α) ≈ L(M_base) for α ≠ 0)
 
@@ -112,52 +117,125 @@ SITV/
 ✓ Optimal scaling is straightforward (minimum of monotonic curve)
 ✓ Still provides insights into parameter space geometry and optimal α values
 
-### Practical Applications
+## 🛠️ Use Cases
 
-- **Model Merging**: Identify optimal α for combining base and fine-tuned models
-- **Task Vector Arithmetic**: Understand valid scaling ranges for task vectors
-- **Multi-task Learning**: Balance general knowledge vs task-specific performance
-- **Parameter Space Geometry**: Visualize loss landscape structure
+| Application                | Description                                                          |
+| :------------------------- | :------------------------------------------------------------------- |
+| **Model Merging**          | Identify optimal α for combining base and fine-tuned models          |
+| **Task Vector Arithmetic** | Understand valid scaling ranges for task vector composition          |
+| **Multi-task Learning**    | Balance general knowledge vs task-specific performance               |
+| **Parameter Space Study**  | Visualize loss landscape geometry and functional structure           |
+| **Transfer Learning**      | Guide fine-tuning strategies with landscape insights                 |
 
-## Requirements
+## ⚙️ Configuration
 
-- Python 3.12+
-- PyTorch 2.5.0+
-- Transformers 4.50.0+
-- NumPy 2.0.0+
-- Matplotlib 3.9.0+
-- Accelerate 0.20.0+
+### Hardware Support
+
+The code automatically detects and optimizes for available hardware:
+
+| Hardware         | Detection                      | Notes                                  |
+| :--------------- | :----------------------------- | :------------------------------------- |
+| **CUDA**         | NVIDIA GPUs                    | Recommended for large models           |
+| **MPS**          | Apple Silicon (M1/M2/M3)       | Native acceleration on macOS           |
+| **CPU**          | Fallback                       | Slower but works universally           |
+
+### Model Configuration
+
+Edit `main.py` to configure:
+
+```python
+# Model selection
+model_name = "google/gemma-3-12b-it"  # Or any HuggingFace model
+
+# Sweep parameters
+alpha_range = (-3.0, 3.0)  # Range of α values
+num_samples = 100          # Number of points to sample
+
+# Task configuration
+task = "sentiment_analysis"  # Or implement custom tasks
+```
+
+## 📂 Project Structure
+
+```
+SITV/
+├── main.py              # Main experiment implementation
+├── pyproject.toml       # Project configuration and dependencies
+├── CHANGELOG.md         # Version history and release notes
+├── README.md            # This file
+├── .gitattributes       # Git LFS and line ending configuration
+├── .gitignore           # Python, model, and output file patterns
+└── outputs/             # Generated visualizations and results (gitignored)
+```
+
+## 🧑‍💻 Development
+
+### Running Tests
+
+```bash
+# Run test suite (when implemented)
+pytest
+
+# Run with coverage
+pytest --cov=. --cov-report=html
+```
+
+### Code Quality
+
+```bash
+# Lint code
+ruff check .
+
+# Format code
+ruff format .
+
+# Type checking
+mypy main.py
+```
+
+### Development Workflow
+
+1. **Fork the repository**
+2. **Create a feature branch**: `git checkout -b feature/amazing-feature`
+3. **Make your changes** following the existing patterns
+4. **Run quality checks**: `ruff check . && mypy main.py`
+5. **Commit with conventional commits**: `git commit -m "feat: add feature"`
+6. **Push and open a Pull Request**
+
+## 📚 Requirements
+
+### Core Dependencies
+
+| Package         | Version  | Purpose                                |
+| :-------------- | :------- | :------------------------------------- |
+| **Python**      | 3.12+    | Modern type hints and language features |
+| **PyTorch**     | 2.5.0+   | Neural network operations              |
+| **Transformers** | 4.50.0+ | Pre-trained language models            |
+| **NumPy**       | 2.0.0+   | Numerical computing                    |
+| **Matplotlib**  | 3.9.0+   | Visualization and plotting             |
+| **Accelerate**  | 0.20.0+  | Multi-GPU and mixed precision training |
+
+### Development Dependencies
+
+- **ruff** - Fast Python linter and formatter
+- **mypy** - Static type checking
+- **pytest** - Testing framework
 
 See [pyproject.toml](pyproject.toml) for complete dependency specifications.
 
-## Hardware Support
+## 📖 Citation
 
-The code automatically detects and uses available hardware:
-- **CUDA** (NVIDIA GPUs)
-- **MPS** (Apple Silicon)
-- **CPU** (fallback)
-
-## Development
-
-```bash
-# Install development dependencies
-pip install -e ".[dev]"
-
-# Run linter
-ruff check .
-
-# Run type checker
-mypy main.py
-
-# Run tests
-pytest
-```
-
-## Citation
-
-This work is inspired by:
+If you use this code in your research, please cite both this repository and the inspiring paper:
 
 ```bibtex
+@misc{sitv2025,
+  title={Self-Inverse Task Vectors: Exploring Loss Landscapes Along Task Vector Directions},
+  author={Hand, Casey},
+  year={2025},
+  publisher={GitHub},
+  url={https://github.com/cyanheads/SITV}
+}
+
 @article{eckmann2025walks,
   title={Walks in Rotation Spaces Return Home when Doubled and Scaled},
   author={Eckmann, Jean-Pierre and Tlusty, Tsvi},
@@ -166,10 +244,37 @@ This work is inspired by:
 }
 ```
 
-## License
+## 🤝 Contributing
 
-[Add your license here]
+Contributions are welcome! Areas of interest:
 
-## Acknowledgments
+- **Additional tasks**: Implement more fine-tuning tasks beyond sentiment analysis
+- **Visualization improvements**: Enhanced plots and interactive visualizations
+- **Performance optimizations**: Further speedups for large-scale experiments
+- **Theoretical analysis**: Mathematical insights into loss landscape geometry
+- **Empirical studies**: Test on diverse model architectures and tasks
 
-This research explores the fascinating connection between rotation group theory and neural network parameter spaces. Special thanks to Eckmann & Tlusty for their groundbreaking work on rotation walks.
+Please open an issue to discuss major changes before submitting a PR.
+
+## 📜 License
+
+This project is licensed under the MIT License. See the [LICENSE](./LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+This research explores the fascinating connection between rotation group theory and neural network parameter spaces. Special thanks to:
+
+- **Jean-Pierre Eckmann & Tsvi Tlusty** for their groundbreaking work on rotation walks
+- **The HuggingFace team** for Transformers and model hosting
+- **The PyTorch team** for the deep learning framework
+
+---
+
+<div align="center">
+  <p><i>Exploring the geometry of neural loss landscapes, one task vector at a time.</i></p>
+  <p>
+    <a href="https://github.com/cyanheads/SITV/issues">Report Bug</a> •
+    <a href="https://github.com/cyanheads/SITV/issues">Request Feature</a> •
+    <a href="https://github.com/sponsors/cyanheads">Sponsor</a>
+  </p>
+</div>
