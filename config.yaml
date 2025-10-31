@@ -36,11 +36,11 @@ fine_tuning:
 # α interpretation: 0=base, 1=finetuned, >1=amplified, <0=opposite direction
 # Range recommendations: [-3,3]=full symmetry analysis | [-0.5,3]=RECOMMENDED (40% faster) | [0,3]=practical (50% faster)
 alpha_sweep:
-  alpha_min: -0.5 # For fast iteration, try -0.5 or 0
+  alpha_min: -3.0 # For fast iteration, try -0.5 or 0
   alpha_max: 3.0 # Positive range is where most interesting effects occur
-  num_samples: 200 # H200 power - ultra high resolution curves
+  num_samples: 100 # H200 power - ultra high resolution curves
   enable_squaring_test: true # Test M(2α) for self-inverse properties
-  threshold: 0.1 # Zero-crossing detection threshold
+  threshold: 0.15 # Zero-crossing detection threshold
 
   # Sampling Strategy: "uniform" (100% samples) | "adaptive" (40-60%, multi-resolution) | "bayesian" (10-20%, GP-based, 80-90% speedup!)
   sampling_strategy: "adaptive"
@@ -57,7 +57,7 @@ composition_2d:
   alpha_max: 2.0
   beta_min: -2.0
   beta_max: 2.0
-  num_samples_per_dim: 60 # 60×60 = 3,600 evaluations - publication quality heatmap
+  num_samples_per_dim: 20 # 60×60 = 3,600 evaluations - publication quality heatmap
 
 # Hardware Optimization & Use Case Settings
 # Current (H200): batch_size=32, max_length=1024, num_samples=200, data_repetition=100×6epochs, 2D=60×60
