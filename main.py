@@ -50,7 +50,9 @@ PRACTICAL APPLICATIONS:
 
 import json
 import os
-from dataclasses import asdict, dataclass
+import time
+from dataclasses import asdict, dataclass, field
+from datetime import datetime
 from typing import cast
 
 import matplotlib.pyplot as plt
@@ -64,6 +66,7 @@ from transformers import (
     DataCollatorForLanguageModeling,
     PreTrainedModel,
     Trainer,
+    TrainerCallback,
     TrainingArguments,
 )
 
@@ -78,7 +81,7 @@ def get_device_map():
     """
     if torch.cuda.is_available():
         return "auto"  # CUDA supports automatic device mapping
-    elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+    elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
         return None  # MPS: load to default device, then move manually
     else:
         return None  # CPU: load to default device
@@ -91,35 +94,140 @@ class AlphaSweepResult:
     This directly answers: "What does the loss look like as we move along
     the task vector direction?"
     """
-    alpha: float                    # Scaling factor α
-    loss: float                     # L(M_base + αT)
-    base_loss: float                # L(M_base) - reference point
-    functional_return: float        # |L(M_base + αT) - L(M_base)|
-    task_performance: float         # Task-specific loss at M_base + αT
+
+    alpha: float  # Scaling factor α
+    loss: float  # L(M_base + αT)
+    base_loss: float  # L(M_base) - reference point
+    functional_return: float  # |L(M_base + αT) - L(M_base)|
+    task_performance: float  # Task-specific loss at M_base + αT
+
+
+@dataclass
+class ExperimentMetrics:
+    """Comprehensive metrics for the entire experiment."""
+
+    start_time: str
+    end_time: str = ""
+    duration_seconds: float = 0.0
+
+    # Model info
+    model_name: str = ""
+    device: str = ""
+    model_parameters: int = 0
+
+    # Fine-tuning metrics
+    finetuning_start_time: str = ""
+    finetuning_end_time: str = ""
+    finetuning_duration_seconds: float = 0.0
+    training_examples: int = 0
+    num_epochs: int = 0
+    learning_rate: float = 0.0
+    final_training_loss: float = 0.0
+    training_steps: int = 0
+    training_history: list[dict] = field(default_factory=list)
+
+    # Task vector metrics
+    task_vector_magnitude: float = 0.0
+    task_vector_computation_time: float = 0.0
+
+    # Alpha sweep metrics
+    sweep_start_time: str = ""
+    sweep_end_time: str = ""
+    sweep_duration_seconds: float = 0.0
+    num_alpha_samples: int = 0
+    alpha_range: tuple[float, float] = (-3.0, 3.0)
+    time_per_alpha_seconds: float = 0.0
+
+    # Results summary
+    min_general_loss_alpha: float = 0.0
+    min_general_loss: float = 0.0
+    min_task_loss_alpha: float = 0.0
+    min_task_loss: float = 0.0
+    num_zero_crossings: int = 0
+    zero_crossing_alphas: list[float] = field(default_factory=list)
+
+
+class FineTuningProgressCallback(TrainerCallback):
+    """Custom callback for detailed fine-tuning progress reporting."""
+
+    def __init__(self):
+        self.training_history = []
+        self.epoch_start_time = None
+        self.step_times = []
+
+    def on_epoch_begin(self, args, state, control, **kwargs):
+        self.epoch_start_time = time.time()
+        epoch_num = int(state.epoch) if state.epoch else 0
+        print(f"\n{'─'*60}")
+        print(f"Epoch {epoch_num + 1}/{args.num_train_epochs}")
+        print(f"{'─'*60}")
+
+    def on_log(self, args, state, control, logs=None, **kwargs):
+        if logs:
+            step_time = time.time()
+            self.step_times.append(step_time)
+
+            # Calculate ETA
+            if len(self.step_times) > 1 and state.max_steps:
+                avg_step_time = (
+                    self.step_times[-1] - self.step_times[0]
+                ) / len(self.step_times)
+                remaining_steps = state.max_steps - state.global_step
+                eta_seconds = avg_step_time * remaining_steps
+                eta_str = f"{eta_seconds / 60:.1f}m" if eta_seconds > 60 else f"{eta_seconds:.0f}s"
+            else:
+                eta_str = "calculating..."
+
+            # Record history
+            log_entry = {
+                "step": state.global_step,
+                "epoch": state.epoch,
+                "timestamp": datetime.now().isoformat(),
+                **logs,
+            }
+            self.training_history.append(log_entry)
+
+            # Print progress
+            print(f"  Step {state.global_step}/{state.max_steps} | ", end="")
+            if "loss" in logs:
+                print(f"Loss: {logs['loss']:.4f} | ", end="")
+            if "learning_rate" in logs:
+                print(f"LR: {logs['learning_rate']:.2e} | ", end="")
+            if "grad_norm" in logs:
+                print(f"Grad: {logs['grad_norm']:.2f} | ", end="")
+            print(f"ETA: {eta_str}")
+
+    def on_epoch_end(self, args, state, control, **kwargs):
+        if self.epoch_start_time:
+            epoch_duration = time.time() - self.epoch_start_time
+            epoch_num = int(state.epoch) if state.epoch else 0
+            print(f"{'─'*60}")
+            print(f"Epoch {epoch_num} completed in {epoch_duration:.1f}s")
+            print(f"{'─'*60}\n")
 
 
 def compute_task_vector(
-    base_model: PreTrainedModel,
-    finetuned_model: PreTrainedModel
+    base_model: PreTrainedModel, finetuned_model: PreTrainedModel
 ) -> dict[str, torch.Tensor]:
-    """Compute task vector: T = M_finetuned - M_base"""
+    """Compute task vector: T = M_finetuned - M_base
+
+    Handles models on different devices by moving parameters to CPU before subtraction.
+    """
     task_vector = {}
 
     for (name, base_param), (_, ft_param) in zip(
-        base_model.named_parameters(),
-        finetuned_model.named_parameters(),
-        strict=True
+        base_model.named_parameters(), finetuned_model.named_parameters(), strict=True
     ):
-        task_vector[name] = (ft_param - base_param).clone().cpu()
+        # Move both to CPU first to handle device mismatches (e.g., cuda vs meta device)
+        base_cpu = base_param.detach().cpu()
+        ft_cpu = ft_param.detach().cpu()
+        task_vector[name] = (ft_cpu - base_cpu).clone()
 
     return task_vector
 
 
 def evaluate_model(
-    model: nn.Module,
-    tokenizer,
-    eval_texts: list[str],
-    device: str = "cuda"
+    model: nn.Module, tokenizer, eval_texts: list[str], device: str = "cuda"
 ) -> float:
     """Evaluate model perplexity on evaluation texts"""
     model.eval()
@@ -129,11 +237,7 @@ def evaluate_model(
     with torch.no_grad():
         for text in eval_texts:
             inputs = tokenizer(
-                text,
-                return_tensors="pt",
-                truncation=True,
-                max_length=512,
-                padding=True
+                text, return_tensors="pt", truncation=True, max_length=512, padding=True
             )
             inputs = {k: v.to(device) for k, v in inputs.items()}
 
@@ -145,10 +249,7 @@ def evaluate_model(
 
 
 def evaluate_task_performance(
-    model: nn.Module,
-    tokenizer,
-    task_eval_texts: list[str],
-    device: str = "cuda"
+    model: nn.Module, tokenizer, task_eval_texts: list[str], device: str = "cuda"
 ) -> float:
     """
     Evaluate how well the model performs on the specific task.
@@ -163,8 +264,8 @@ def fine_tune_model(
     train_texts: list[str],
     output_dir: str = "./finetuned_model",
     num_epochs: int = 3,
-    learning_rate: float = 5e-5
-) -> PreTrainedModel:
+    learning_rate: float = 5e-5,
+) -> tuple[PreTrainedModel, dict]:
     """Fine-tune model on task to create a structured task vector.
 
     Args:
@@ -176,12 +277,18 @@ def fine_tune_model(
         learning_rate: Learning rate for fine-tuning
 
     Returns:
-        Fine-tuned model M_finetuned, where T = M_finetuned - M_base
+        Tuple of (Fine-tuned model, metrics dict)
     """
-    print("\nFine-tuning model on task data...")
+    ft_start_time = time.time()
+
+    print("\n" + "="*70)
+    print("FINE-TUNING MODEL")
+    print("="*70)
     print(f"  Training examples: {len(train_texts)}")
     print(f"  Epochs: {num_epochs}")
-    print(f"  Learning rate: {learning_rate}")
+    print(f"  Learning rate: {learning_rate:.2e}")
+    print(f"  Batch size: 1")
+    print(f"  Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
     # Prepare dataset
     class TextDataset(Dataset):
@@ -193,7 +300,7 @@ def fine_tune_model(
                 truncation=True,
                 padding=True,
                 max_length=max_length,
-                return_tensors="pt"
+                return_tensors="pt",
             )
 
         def __len__(self):
@@ -201,8 +308,8 @@ def fine_tune_model(
 
         def __getitem__(self, idx):
             return {
-                'input_ids': self.encodings.input_ids[idx],
-                'attention_mask': self.encodings.attention_mask[idx]
+                "input_ids": self.encodings.input_ids[idx],
+                "attention_mask": self.encodings.attention_mask[idx],
             }
 
     dataset = TextDataset(train_texts, tokenizer)
@@ -213,9 +320,8 @@ def fine_tune_model(
         num_train_epochs=num_epochs,
         per_device_train_batch_size=1,  # Reduced from 4 for 12B model
         learning_rate=learning_rate,
-        save_steps=10000,  # Don't save intermediate checkpoints
-        save_total_limit=1,
-        logging_steps=50,
+        save_strategy="no",  # Disable all checkpoint saving
+        logging_steps=10,  # More frequent logging for better progress tracking
         report_to=[],  # Disable wandb/tensorboard
         remove_unused_columns=False,
         gradient_checkpointing=True,  # Save memory for large model
@@ -225,9 +331,11 @@ def fine_tune_model(
 
     # Data collator
     data_collator = DataCollatorForLanguageModeling(
-        tokenizer=tokenizer,
-        mlm=False  # Causal LM, not masked LM
+        tokenizer=tokenizer, mlm=False  # Causal LM, not masked LM
     )
+
+    # Progress callback
+    progress_callback = FineTuningProgressCallback()
 
     # Trainer
     trainer = Trainer(
@@ -235,13 +343,38 @@ def fine_tune_model(
         args=training_args,
         train_dataset=dataset,
         data_collator=data_collator,
+        callbacks=[progress_callback],
     )
 
     # Train
-    trainer.train()
+    train_result = trainer.train()
 
-    print("Fine-tuning complete!\n")
-    return cast(PreTrainedModel, trainer.model)
+    ft_end_time = time.time()
+    ft_duration = ft_end_time - ft_start_time
+
+    # Collect metrics
+    metrics = {
+        "start_time": datetime.fromtimestamp(ft_start_time).isoformat(),
+        "end_time": datetime.fromtimestamp(ft_end_time).isoformat(),
+        "duration_seconds": ft_duration,
+        "training_examples": len(train_texts),
+        "num_epochs": num_epochs,
+        "learning_rate": learning_rate,
+        "final_loss": train_result.training_loss,
+        "training_steps": train_result.global_step,
+        "training_history": progress_callback.training_history,
+    }
+
+    print(f"\n{'='*70}")
+    print("FINE-TUNING COMPLETE")
+    print(f"{'='*70}")
+    print(f"  Duration: {ft_duration / 60:.1f} minutes ({ft_duration:.0f}s)")
+    print(f"  Final loss: {train_result.training_loss:.4f}")
+    print(f"  Total steps: {train_result.global_step}")
+    print(f"  Avg time/step: {ft_duration / train_result.global_step:.2f}s")
+    print(f"{'='*70}\n")
+
+    return cast(PreTrainedModel, trainer.model), metrics
 
 
 def sweep_alpha_values(
@@ -252,7 +385,7 @@ def sweep_alpha_values(
     task_eval_texts: list[str],
     alpha_range: tuple[float, float] = (-3.0, 3.0),
     num_samples: int = 100,
-    device: str = "cuda"
+    device: str = "cuda",
 ) -> list[AlphaSweepResult]:
     """Sweep α values and plot loss landscape L(M_base + αT).
 
@@ -274,15 +407,19 @@ def sweep_alpha_values(
         List of AlphaSweepResult objects with loss for each α
     """
 
+    sweep_start_time = time.time()
+
     print(f"\n{'='*70}")
     print("LOSS LANDSCAPE SWEEP: L(M_base + αT)")
     print(f"{'='*70}")
     print(f"Range: α ∈ [{alpha_range[0]:.1f}, {alpha_range[1]:.1f}]")
     print(f"Samples: {num_samples}")
+    print(f"Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("\nQuestion: Does the loss curve cross L(M_base) at any α ≠ 0?\n")
 
     alpha_values = np.linspace(alpha_range[0], alpha_range[1], num_samples)
     results = []
+    alpha_times = []
 
     # Move model to device and set to eval mode
     base_model = base_model.to(device)  # type: ignore[assignment]
@@ -296,11 +433,26 @@ def sweep_alpha_values(
             original_params[name] = param.clone().detach()
 
     # Compute base model loss for reference
+    print("Computing base model loss...")
     base_loss = evaluate_model(base_model, tokenizer, general_eval_texts, device)
     print(f"Base model loss L(M_base): {base_loss:.4f}\n")
 
     for i, alpha in enumerate(alpha_values):
-        print(f"[{i+1}/{num_samples}] α = {alpha:+.3f} ", end="", flush=True)
+        alpha_start = time.time()
+
+        # Calculate ETA
+        if alpha_times:
+            avg_time = sum(alpha_times) / len(alpha_times)
+            remaining = num_samples - i
+            eta_seconds = avg_time * remaining
+            eta_str = f"ETA: {eta_seconds / 60:.1f}m" if eta_seconds > 60 else f"ETA: {eta_seconds:.0f}s"
+        else:
+            eta_str = "ETA: calculating..."
+
+        # Progress percentage
+        progress_pct = (i / num_samples) * 100
+
+        print(f"[{i+1:3d}/{num_samples}] ({progress_pct:5.1f}%) α = {alpha:+.3f} | ", end="", flush=True)
 
         # Modify model parameters in-place: M_alpha = M_base + αT
         with torch.no_grad():
@@ -308,7 +460,8 @@ def sweep_alpha_values(
                 if name in task_vector:
                     # Set param to: original + α * task_vector
                     param.copy_(
-                        original_params[name] + alpha * task_vector[name].to(param.device)
+                        original_params[name]
+                        + alpha * task_vector[name].to(param.device)
                     )
 
         # Evaluate L(M_alpha)
@@ -331,7 +484,10 @@ def sweep_alpha_values(
         )
         results.append(result)
 
-        print(f"→ L(α)={loss_alpha:.4f}, |ΔL|={functional_return:.4f}")
+        alpha_elapsed = time.time() - alpha_start
+        alpha_times.append(alpha_elapsed)
+
+        print(f"L(α)={loss_alpha:.4f}, |ΔL|={functional_return:.4f} | {alpha_elapsed:.1f}s | {eta_str}")
 
     # Restore original parameters at the end
     print("\nRestoring base model parameters...")
@@ -340,7 +496,25 @@ def sweep_alpha_values(
             if name in original_params:
                 param.copy_(original_params[name])
 
-    return results
+    sweep_end_time = time.time()
+    sweep_duration = sweep_end_time - sweep_start_time
+    avg_time_per_sample = sweep_duration / num_samples if num_samples > 0 else 0.0
+
+    print(f"\n{'='*70}")
+    print("ALPHA SWEEP COMPLETE")
+    print(f"{'='*70}")
+    print(f"  Duration: {sweep_duration / 60:.1f} minutes ({sweep_duration:.0f}s)")
+    print(f"  Samples: {num_samples}")
+    print(f"  Avg time/sample: {avg_time_per_sample:.2f}s")
+    print(f"{'='*70}\n")
+
+    # Return results with timing metadata
+    return results, {
+        "start_time": datetime.fromtimestamp(sweep_start_time).isoformat(),
+        "end_time": datetime.fromtimestamp(sweep_end_time).isoformat(),
+        "duration_seconds": sweep_duration,
+        "time_per_alpha_seconds": avg_time_per_sample,
+    }
 
 
 def analyze_results(results: list[AlphaSweepResult]) -> dict:
@@ -386,7 +560,9 @@ def analyze_results(results: list[AlphaSweepResult]) -> dict:
     print(f"  α = {min_task_result.alpha:+.4f}")
     print(f"  Task L(α) = {min_task_result.task_performance:.4f}")
     print(f"  General L(α) = {min_task_result.loss:.4f}")
-    print(f"  Δ from base = {min_task_result.task_performance - min_task_result.base_loss:+.4f}\n")
+    print(
+        f"  Δ from base = {min_task_result.task_performance - min_task_result.base_loss:+.4f}\n"
+    )
 
     # Best functional return (smallest |L(α) - L_base|)
     print("Best Functional Return (smallest |L(α) - L_base|):")
@@ -398,26 +574,356 @@ def analyze_results(results: list[AlphaSweepResult]) -> dict:
     if zero_crossings:
         print(f"  Found {len(zero_crossings)} crossing(s):")
         for i, result in enumerate(zero_crossings[:5], 1):
-            print(f"  {i}. α = {result.alpha:+.4f}, L(α) = {result.loss:.4f}, "
-                  f"|ΔL| = {result.functional_return:.6f} ★")
+            print(
+                f"  {i}. α = {result.alpha:+.4f}, L(α) = {result.loss:.4f}, "
+                f"|ΔL| = {result.functional_return:.6f} ★"
+            )
     else:
         print(f"  No zero-crossings found (threshold: |ΔL| < {threshold})")
         print("  → Loss is monotonic along task vector direction")
 
     return {
-        'min_general_loss': min_general_result,
-        'min_task_loss': min_task_result,
-        'best_return': sorted_by_return[0],
-        'zero_crossings': zero_crossings,
-        'sorted_by_return': sorted_by_return[:10],
-        'all_results': results,
+        "min_general_loss": min_general_result,
+        "min_task_loss": min_task_result,
+        "best_return": sorted_by_return[0],
+        "zero_crossings": zero_crossings,
+        "sorted_by_return": sorted_by_return[:10],
+        "all_results": results,
     }
+
+
+def generate_markdown_report(
+    experiment_metrics: ExperimentMetrics,
+    analysis: dict,
+    results: list[AlphaSweepResult],
+    output_path: str = "experiment_report.md",
+) -> None:
+    """Generate a comprehensive Markdown report for easy sharing and analysis."""
+
+    min_general = analysis["min_general_loss"]
+    min_task = analysis["min_task_loss"]
+    best_return = analysis["best_return"]
+    zero_crossings = analysis["zero_crossings"]
+
+    report = f"""# Task Vector Loss Landscape Experiment Report
+
+**Inspired by:** Eckmann & Tlusty (2025), "Walks in Rotation Spaces Return Home when Doubled and Scaled" (arXiv:2502.14367v3)
+
+**Generated:** {experiment_metrics.end_time}
+
+---
+
+## Executive Summary
+
+This experiment explores the loss landscape along the task vector direction for neural language models. We compute a task vector T = M_finetuned - M_base and sweep along the line M(α) = M_base + αT to understand how loss behaves as we scale the task vector.
+
+**Key Question:** Does the loss curve cross L(M_base) at any α ≠ 0?
+
+---
+
+## Experiment Configuration
+
+### Model
+- **Name:** {experiment_metrics.model_name}
+- **Parameters:** {experiment_metrics.model_parameters:,}
+- **Device:** {experiment_metrics.device}
+
+### Task
+- **Type:** Sentiment Analysis (Positive sentiment fine-tuning)
+- **Training examples:** {experiment_metrics.training_examples}
+- **Epochs:** {experiment_metrics.num_epochs}
+- **Learning rate:** {experiment_metrics.learning_rate:.2e}
+
+### Alpha Sweep
+- **Range:** α ∈ [{experiment_metrics.alpha_range[0]:.1f}, {experiment_metrics.alpha_range[1]:.1f}]
+- **Samples:** {experiment_metrics.num_alpha_samples}
+
+---
+
+## Timing Summary
+
+**Total Duration:** {experiment_metrics.duration_seconds / 60:.1f} minutes ({experiment_metrics.duration_seconds:.0f}s)
+
+| Phase | Duration | Percentage |
+|-------|----------|------------|
+| Fine-tuning | {experiment_metrics.finetuning_duration_seconds / 60:.1f}m ({experiment_metrics.finetuning_duration_seconds:.0f}s) | {experiment_metrics.finetuning_duration_seconds / experiment_metrics.duration_seconds * 100:.1f}% |
+| Alpha Sweep | {experiment_metrics.sweep_duration_seconds / 60:.1f}m ({experiment_metrics.sweep_duration_seconds:.0f}s) | {experiment_metrics.sweep_duration_seconds / experiment_metrics.duration_seconds * 100:.1f}% |
+| Other (loading, computation) | {(experiment_metrics.duration_seconds - experiment_metrics.finetuning_duration_seconds - experiment_metrics.sweep_duration_seconds) / 60:.1f}m | {(experiment_metrics.duration_seconds - experiment_metrics.finetuning_duration_seconds - experiment_metrics.sweep_duration_seconds) / experiment_metrics.duration_seconds * 100:.1f}% |
+
+**Performance Metrics:**
+- Fine-tuning: {experiment_metrics.finetuning_duration_seconds / experiment_metrics.training_steps:.2f}s per training step
+- Alpha sweep: {experiment_metrics.time_per_alpha_seconds:.2f}s per sample
+
+---
+
+## Fine-Tuning Results
+
+**Training Configuration:**
+- Training steps: {experiment_metrics.training_steps}
+- Final training loss: {experiment_metrics.final_training_loss:.4f}
+- Batch size: 1
+- Gradient checkpointing: Enabled
+- Precision: bfloat16
+
+**Task Vector:**
+- Magnitude ||T||: {experiment_metrics.task_vector_magnitude:.4f}
+- Computation time: {experiment_metrics.task_vector_computation_time:.2f}s
+
+---
+
+## Loss Landscape Analysis
+
+### 1. Minimum General Loss (Best General Knowledge Preservation)
+
+The α value that minimizes general loss while incorporating task knowledge:
+
+- **α = {min_general.alpha:+.4f}**
+- L(α) = {min_general.loss:.4f}
+- L(M_base) = {min_general.base_loss:.4f}
+- Δ from base = {min_general.loss - min_general.base_loss:+.4f}
+- Functional return |ΔL| = {min_general.functional_return:.4f}
+
+**Interpretation:** {"This α value improves upon the base model" if min_general.loss < min_general.base_loss else "This α value degrades the base model"} for general knowledge.
+
+### 2. Minimum Task-Specific Loss (Best Task Performance)
+
+The α value that optimizes task-specific performance:
+
+- **α = {min_task.alpha:+.4f}**
+- Task L(α) = {min_task.task_performance:.4f}
+- General L(α) = {min_task.loss:.4f}
+- Δ from base = {min_task.task_performance - min_task.base_loss:+.4f}
+
+**Interpretation:** This is the optimal scaling factor for the specific task.
+
+### 3. Trade-off Analysis
+
+"""
+
+    if abs(min_general.alpha - min_task.alpha) > 0.1:
+        report += f"""
+**⚠️ TRADE-OFF DETECTED**
+
+There is a significant difference between the optimal α values:
+- Best general knowledge: α = {min_general.alpha:+.4f}
+- Best task performance: α = {min_task.alpha:+.4f}
+- Δα = {abs(min_task.alpha - min_general.alpha):.4f}
+
+This suggests a trade-off between preserving general knowledge and maximizing task performance. The choice of α depends on your use case:
+- Use α = {min_general.alpha:+.4f} to preserve general capabilities
+- Use α = {min_task.alpha:+.4f} to maximize task-specific performance
+"""
+    else:
+        report += f"""
+**✓ NO SIGNIFICANT TRADE-OFF**
+
+Both optimal values occur at similar α values (Δα = {abs(min_task.alpha - min_general.alpha):.4f}), suggesting you can achieve both good general knowledge preservation and strong task performance at α ≈ {min_general.alpha:+.4f}.
+"""
+
+    report += f"""
+### 4. Zero-Crossings (Functional Return Points)
+
+Points where L(α) ≈ L(M_base) for α ≠ 0 (threshold: |ΔL| < 0.1):
+
+"""
+
+    if zero_crossings:
+        report += f"""**Found {len(zero_crossings)} zero-crossing(s):**
+
+| # | α | L(α) | |ΔL| |
+|---|---|------|------|
+"""
+        for i, zc in enumerate(zero_crossings[:10], 1):
+            report += f"| {i} | {zc.alpha:+.4f} | {zc.loss:.4f} | {zc.functional_return:.6f} |\n"
+
+        report += f"""
+**Interpretation:** These α values return the model to approximately the base loss level. This suggests special scaling factors where the task vector's impact "cancels out" for general knowledge, potentially useful for model merging scenarios.
+
+**Connection to paper:** Analogous to the 180° rotations in SO(3) that square to identity, these α values represent "functional return" points in the neural loss landscape.
+"""
+    else:
+        report += """**No zero-crossings found.**
+
+The loss is monotonic along the task vector direction. This indicates that the task vector does not exhibit the rotation-like symmetry properties proven by Eckmann & Tlusty for rotation groups.
+
+**Interpretation:** Unlike rotation groups where [W(λ)]² = I has abundant solutions, the neural loss landscape does not show similar self-inverse properties under task vector scaling.
+"""
+
+    report += f"""
+### 5. Best Functional Return (Smallest |L(α) - L_base|)
+
+Top 10 α values closest to base loss:
+
+| Rank | α | L(α) | |ΔL| |
+|------|---|------|------|
+"""
+
+    for i, result in enumerate(analysis["sorted_by_return"][:10], 1):
+        report += f"| {i} | {result.alpha:+.4f} | {result.loss:.4f} | {result.functional_return:.6f} |\n"
+
+    report += """
+---
+
+## Statistical Summary
+
+"""
+
+    # Calculate statistics
+    all_losses = [r.loss for r in results]
+    all_functional_returns = [r.functional_return for r in results]
+    all_task_perfs = [r.task_performance for r in results]
+
+    report += f"""
+### Loss Distribution (General)
+- Mean: {np.mean(all_losses):.4f}
+- Std Dev: {np.std(all_losses):.4f}
+- Min: {np.min(all_losses):.4f} (at α = {results[np.argmin(all_losses)].alpha:+.4f})
+- Max: {np.max(all_losses):.4f} (at α = {results[np.argmax(all_losses)].alpha:+.4f})
+
+### Functional Return Distribution
+- Mean: {np.mean(all_functional_returns):.4f}
+- Std Dev: {np.std(all_functional_returns):.4f}
+- Min: {np.min(all_functional_returns):.6f} (at α = {results[np.argmin(all_functional_returns)].alpha:+.4f})
+- Max: {np.max(all_functional_returns):.4f} (at α = {results[np.argmax(all_functional_returns)].alpha:+.4f})
+
+### Task Performance Distribution
+- Mean: {np.mean(all_task_perfs):.4f}
+- Std Dev: {np.std(all_task_perfs):.4f}
+- Min: {np.min(all_task_perfs):.4f} (at α = {results[np.argmin(all_task_perfs)].alpha:+.4f})
+- Max: {np.max(all_task_perfs):.4f} (at α = {results[np.argmax(all_task_perfs)].alpha:+.4f})
+
+---
+
+## Methodology
+
+### Task Vector Computation
+```
+T = M_finetuned - M_base
+```
+
+The task vector T captures the parameter-space direction learned during fine-tuning.
+
+### Alpha Sweep
+```
+For α in [{experiment_metrics.alpha_range[0]}, {experiment_metrics.alpha_range[1]}]:
+    M(α) = M_base + α·T
+    L(α) = loss of M(α)
+```
+
+We evaluate the model at {experiment_metrics.num_alpha_samples} evenly-spaced α values to map the loss landscape.
+
+### Evaluation Metrics
+- **General Loss:** Evaluated on neutral/general texts
+- **Task Loss:** Evaluated on task-specific texts
+- **Functional Return:** |L(α) - L(M_base)|
+
+---
+
+## Connection to Theoretical Background
+
+**Paper Reference:** Eckmann & Tlusty (2025), arXiv:2502.14367v3
+
+The paper proves that for rotation groups SO(3)/SU(2), almost any walk W can be scaled to reach a 180° rotation R(n,π), which when squared returns to identity: R(n,π)² = I. This property is abundant (density 2/π ≈ 64%).
+
+**Our Experiment:**
+- **Rotation groups:** Multiplicative group with composition W₁ ∘ W₂
+- **Task vectors:** Additive vector space with addition v₁ + v₂
+- **Key difference:** Task vectors lack the group structure required for the theorem
+
+**Question:** Do neural loss landscapes exhibit analogous "functional return" properties under scaling?
+
+**Finding:** {"Yes - found zero-crossings suggesting special α values" if zero_crossings else "No - loss is monotonic, no rotation-like symmetry detected"}
+
+---
+
+## Practical Recommendations
+
+### 1. For Model Deployment
+"""
+
+    if min_general.alpha != 0:
+        report += f"""
+Use **α = {min_general.alpha:+.4f}** for the best balance of task performance and general knowledge preservation.
+"""
+    else:
+        report += """
+The base model (α = 0) performs best for general knowledge. Consider if fine-tuning is necessary for your use case.
+"""
+
+    report += f"""
+### 2. For Task-Specific Applications
+
+Use **α = {min_task.alpha:+.4f}** to maximize task-specific performance (sentiment analysis in this case).
+
+### 3. For Model Merging
+"""
+
+    if zero_crossings:
+        report += f"""
+The zero-crossing α values {', '.join(f'{zc.alpha:+.4f}' for zc in zero_crossings[:3])} could be useful for model merging scenarios where you want to incorporate task knowledge without significantly degrading general performance.
+"""
+    else:
+        report += """
+No special α values were found for model merging. Standard α = 1.0 (full task vector) or empirically tuned values should be used.
+"""
+
+    report += f"""
+---
+
+## Files Generated
+
+1. **experiment_report.md** - This comprehensive report
+2. **loss_landscape_sweep.png** - Visualization of loss landscape
+3. **loss_landscape_results.json** - Detailed numerical results
+4. **experiment_metrics.json** - Complete experiment metrics
+
+---
+
+## Experiment Timeline
+
+- **Started:** {experiment_metrics.start_time}
+- **Fine-tuning completed:** {experiment_metrics.finetuning_end_time}
+- **Alpha sweep completed:** {experiment_metrics.sweep_end_time}
+- **Finished:** {experiment_metrics.end_time}
+- **Total duration:** {experiment_metrics.duration_seconds / 60:.1f} minutes
+
+---
+
+## Appendix: Sample Results
+
+### First 20 Alpha Samples
+
+| # | α | General Loss | Task Loss | |ΔL| |
+|---|---|--------------|-----------|------|
+"""
+
+    for i, result in enumerate(results[:20], 1):
+        report += f"| {i} | {result.alpha:+.4f} | {result.loss:.4f} | {result.task_performance:.4f} | {result.functional_return:.4f} |\n"
+
+    report += f"""
+### Last 20 Alpha Samples
+
+| # | α | General Loss | Task Loss | |ΔL| |
+|---|---|--------------|-----------|------|
+"""
+
+    for i, result in enumerate(results[-20:], len(results) - 19):
+        report += f"| {i} | {result.alpha:+.4f} | {result.loss:.4f} | {result.task_performance:.4f} | {result.functional_return:.4f} |\n"
+
+    report += """
+---
+
+*Report generated by Task Vector Loss Landscape Explorer*
+"""
+
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write(report)
 
 
 def plot_results(
     results: list[AlphaSweepResult],
     analysis: dict,
-    output_path: str = "loss_landscape_sweep.png"
+    output_path: str = "loss_landscape_sweep.png",
 ):
     """Visualize loss landscape L(M_base + αT) vs α."""
 
@@ -430,95 +936,147 @@ def plot_results(
     # Create 2x2 grid
     fig, axes = plt.subplots(2, 2, figsize=(14, 10))
     fig.suptitle(
-        'Task Vector Loss Landscape: L(M_base + αT)\n'
-        'Inspired by Eckmann & Tlusty (2025)',
-        fontsize=14, fontweight='bold', y=0.995
+        "Task Vector Loss Landscape: L(M_base + αT)\n"
+        "Inspired by Eckmann & Tlusty (2025)",
+        fontsize=14,
+        fontweight="bold",
+        y=0.995,
     )
 
     # ─── Plot 1: MAIN - Loss vs α (KEY PLOT!) ───
-    axes[0, 0].plot(alphas, losses, 'b-', linewidth=2.5, label='General Loss', alpha=0.8)
-    axes[0, 0].plot(alphas, task_perfs, 'g-', linewidth=2.0, label='Task Loss', alpha=0.6)
-    axes[0, 0].axhline(
-        y=base_loss, color='red', linestyle='--',
-        linewidth=2, label='L(M_base)', alpha=0.7
+    axes[0, 0].plot(
+        alphas, losses, "b-", linewidth=2.5, label="General Loss", alpha=0.8
     )
-    axes[0, 0].axvline(x=0, color='gray', linestyle='--', alpha=0.4)
+    axes[0, 0].plot(
+        alphas, task_perfs, "g-", linewidth=2.0, label="Task Loss", alpha=0.6
+    )
+    axes[0, 0].axhline(
+        y=base_loss,
+        color="red",
+        linestyle="--",
+        linewidth=2,
+        label="L(M_base)",
+        alpha=0.7,
+    )
+    axes[0, 0].axvline(x=0, color="gray", linestyle="--", alpha=0.4)
 
     # Highlight zero-crossings
-    if analysis['zero_crossings']:
-        zc_alphas = [r.alpha for r in analysis['zero_crossings']]
-        zc_losses = [r.loss for r in analysis['zero_crossings']]
-        axes[0, 0].scatter(zc_alphas, zc_losses, color='orange', s=150,
-                          zorder=5, marker='*', edgecolors='black', linewidth=1,
-                          label='Zero-crossings')
+    if analysis["zero_crossings"]:
+        zc_alphas = [r.alpha for r in analysis["zero_crossings"]]
+        zc_losses = [r.loss for r in analysis["zero_crossings"]]
+        axes[0, 0].scatter(
+            zc_alphas,
+            zc_losses,
+            color="orange",
+            s=150,
+            zorder=5,
+            marker="*",
+            edgecolors="black",
+            linewidth=1,
+            label="Zero-crossings",
+        )
 
     # Highlight general minimum
-    min_gen_result = analysis['min_general_loss']
-    axes[0, 0].scatter([min_gen_result.alpha], [min_gen_result.loss], color='blue', s=150,
-                      zorder=5, marker='D', edgecolors='black', linewidth=1,
-                      label=f'Min General (α={min_gen_result.alpha:.2f})')
+    min_gen_result = analysis["min_general_loss"]
+    axes[0, 0].scatter(
+        [min_gen_result.alpha],
+        [min_gen_result.loss],
+        color="blue",
+        s=150,
+        zorder=5,
+        marker="D",
+        edgecolors="black",
+        linewidth=1,
+        label=f"Min General (α={min_gen_result.alpha:.2f})",
+    )
 
     # Highlight task minimum
-    min_task_result = analysis['min_task_loss']
-    axes[0, 0].scatter([min_task_result.alpha], [min_task_result.task_performance], color='green', s=150,
-                      zorder=5, marker='D', edgecolors='black', linewidth=1,
-                      label=f'Min Task (α={min_task_result.alpha:.2f})')
+    min_task_result = analysis["min_task_loss"]
+    axes[0, 0].scatter(
+        [min_task_result.alpha],
+        [min_task_result.task_performance],
+        color="green",
+        s=150,
+        zorder=5,
+        marker="D",
+        edgecolors="black",
+        linewidth=1,
+        label=f"Min Task (α={min_task_result.alpha:.2f})",
+    )
 
-    axes[0, 0].set_xlabel('α', fontsize=12)
-    axes[0, 0].set_ylabel('Loss', fontsize=12)
-    axes[0, 0].set_title('Loss Landscape (KEY PLOT)', fontsize=12, fontweight='bold')
-    axes[0, 0].legend(fontsize=8, loc='best')
+    axes[0, 0].set_xlabel("α", fontsize=12)
+    axes[0, 0].set_ylabel("Loss", fontsize=12)
+    axes[0, 0].set_title("Loss Landscape (KEY PLOT)", fontsize=12, fontweight="bold")
+    axes[0, 0].legend(fontsize=8, loc="best")
     axes[0, 0].grid(True, alpha=0.3)
 
     # ─── Plot 2: Functional Return |L(α) - L_base| ───
-    axes[0, 1].plot(alphas, functional_returns, 'r-', linewidth=2.5, alpha=0.8)
-    axes[0, 1].axhline(y=0, color='green', linestyle='--', alpha=0.5, linewidth=1.5)
-    axes[0, 1].axvline(x=0, color='gray', linestyle='--', alpha=0.4)
+    axes[0, 1].plot(alphas, functional_returns, "r-", linewidth=2.5, alpha=0.8)
+    axes[0, 1].axhline(y=0, color="green", linestyle="--", alpha=0.5, linewidth=1.5)
+    axes[0, 1].axvline(x=0, color="gray", linestyle="--", alpha=0.4)
 
     # Highlight zero-crossings
-    if analysis['zero_crossings']:
-        zc_alphas = [r.alpha for r in analysis['zero_crossings']]
-        zc_returns = [r.functional_return for r in analysis['zero_crossings']]
-        axes[0, 1].scatter(zc_alphas, zc_returns, color='green', s=150,
-                          zorder=5, marker='*', edgecolors='black', linewidth=1)
+    if analysis["zero_crossings"]:
+        zc_alphas = [r.alpha for r in analysis["zero_crossings"]]
+        zc_returns = [r.functional_return for r in analysis["zero_crossings"]]
+        axes[0, 1].scatter(
+            zc_alphas,
+            zc_returns,
+            color="green",
+            s=150,
+            zorder=5,
+            marker="*",
+            edgecolors="black",
+            linewidth=1,
+        )
 
-    axes[0, 1].set_xlabel('α', fontsize=12)
-    axes[0, 1].set_ylabel('|L(α) - L(M_base)|', fontsize=12)
-    axes[0, 1].set_title('Functional Return', fontsize=12, fontweight='bold')
+    axes[0, 1].set_xlabel("α", fontsize=12)
+    axes[0, 1].set_ylabel("|L(α) - L(M_base)|", fontsize=12)
+    axes[0, 1].set_title("Functional Return", fontsize=12, fontweight="bold")
     axes[0, 1].grid(True, alpha=0.3)
 
     # ─── Plot 3: Signed Delta L(α) - L_base ───
     deltas = [r.loss - r.base_loss for r in results]
-    axes[1, 0].plot(alphas, deltas, 'b-', linewidth=2, alpha=0.8)
-    axes[1, 0].axhline(y=0, color='red', linestyle='--', linewidth=2, alpha=0.7)
-    axes[1, 0].axvline(x=0, color='gray', linestyle='--', alpha=0.4)
-    axes[1, 0].fill_between(alphas, 0, deltas, alpha=0.2, color='blue')
+    axes[1, 0].plot(alphas, deltas, "b-", linewidth=2, alpha=0.8)
+    axes[1, 0].axhline(y=0, color="red", linestyle="--", linewidth=2, alpha=0.7)
+    axes[1, 0].axvline(x=0, color="gray", linestyle="--", alpha=0.4)
+    axes[1, 0].fill_between(alphas, 0, deltas, alpha=0.2, color="blue")
 
     # Highlight zero-crossings
-    if analysis['zero_crossings']:
-        zc_alphas = [r.alpha for r in analysis['zero_crossings']]
-        zc_deltas = [r.loss - r.base_loss for r in analysis['zero_crossings']]
-        axes[1, 0].scatter(zc_alphas, zc_deltas, color='green', s=150,
-                          zorder=5, marker='*', edgecolors='black', linewidth=1)
+    if analysis["zero_crossings"]:
+        zc_alphas = [r.alpha for r in analysis["zero_crossings"]]
+        zc_deltas = [r.loss - r.base_loss for r in analysis["zero_crossings"]]
+        axes[1, 0].scatter(
+            zc_alphas,
+            zc_deltas,
+            color="green",
+            s=150,
+            zorder=5,
+            marker="*",
+            edgecolors="black",
+            linewidth=1,
+        )
 
-    axes[1, 0].set_xlabel('α', fontsize=12)
-    axes[1, 0].set_ylabel('L(α) - L(M_base)', fontsize=12)
-    axes[1, 0].set_title('Signed Loss Delta', fontsize=12, fontweight='bold')
+    axes[1, 0].set_xlabel("α", fontsize=12)
+    axes[1, 0].set_ylabel("L(α) - L(M_base)", fontsize=12)
+    axes[1, 0].set_title("Signed Loss Delta", fontsize=12, fontweight="bold")
     axes[1, 0].grid(True, alpha=0.3)
 
     # ─── Plot 4: Task Performance vs α ───
-    axes[1, 1].plot(alphas, task_perfs, 'g-', linewidth=2, alpha=0.8, label='Task Loss')
-    axes[1, 1].axhline(y=base_loss, color='gray', linestyle='--', alpha=0.5, label='Base Loss')
-    axes[1, 1].axvline(x=0, color='gray', linestyle='--', alpha=0.4)
+    axes[1, 1].plot(alphas, task_perfs, "g-", linewidth=2, alpha=0.8, label="Task Loss")
+    axes[1, 1].axhline(
+        y=base_loss, color="gray", linestyle="--", alpha=0.5, label="Base Loss"
+    )
+    axes[1, 1].axvline(x=0, color="gray", linestyle="--", alpha=0.4)
 
-    axes[1, 1].set_xlabel('α', fontsize=12)
-    axes[1, 1].set_ylabel('Task-Specific Loss', fontsize=12)
-    axes[1, 1].set_title('Task Performance', fontsize=12, fontweight='bold')
+    axes[1, 1].set_xlabel("α", fontsize=12)
+    axes[1, 1].set_ylabel("Task-Specific Loss", fontsize=12)
+    axes[1, 1].set_title("Task Performance", fontsize=12, fontweight="bold")
     axes[1, 1].legend(fontsize=9)
     axes[1, 1].grid(True, alpha=0.3)
 
     plt.tight_layout()
-    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    plt.savefig(output_path, dpi=300, bbox_inches="tight")
     print(f"\n📊 Plot saved to {output_path}")
     plt.close()
 
@@ -531,12 +1089,14 @@ def main():
 
     Inspired by Eckmann & Tlusty (2025)'s rotation group self-inverse walks.
     """
+    experiment_start_time = time.time()
 
     print(f"\n{'='*70}")
     print("TASK VECTOR LOSS LANDSCAPE EXPERIMENT")
     print("Inspired by Eckmann & Tlusty (2025)")
     print(f"{'='*70}")
-    print("""
+    print(
+        """
 RESEARCH QUESTION:
 ─────────────────
 What does the loss look like along the 1D line M(α) = M_base + αT?
@@ -561,15 +1121,16 @@ CONNECTION TO PAPER:
 Eckmann & Tlusty prove that rotation group walks [W(λ)]² = I have abundant
 special λ values (180° rotations). We test if neural loss landscapes exhibit
 analogous structure under task vector scaling.
-""")
+"""
+    )
 
     # Configuration
-    model_name = "google/gemma-3-12b-it"
+    model_name = "google/gemma-3-4b-it"
 
     # Device detection with MPS support for Apple Silicon
     if torch.cuda.is_available():
         device = "cuda"
-    elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+    elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
         device = "mps"
     else:
         device = "cpu"
@@ -577,8 +1138,16 @@ analogous structure under task vector scaling.
     output_dir = "./outputs"
     os.makedirs(output_dir, exist_ok=True)
 
+    # Initialize experiment metrics
+    experiment_metrics = ExperimentMetrics(
+        start_time=datetime.fromtimestamp(experiment_start_time).isoformat(),
+        model_name=model_name,
+        device=device,
+    )
+
     print(f"Model: {model_name}")
-    print(f"Device: {device}\n")
+    print(f"Device: {device}")
+    print(f"Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
 
     # Load tokenizer
     print("Loading tokenizer...")
@@ -589,9 +1158,7 @@ analogous structure under task vector scaling.
     print("Loading base model...")
     device_map = get_device_map()
     base_model = AutoModelForCausalLM.from_pretrained(
-        model_name,
-        torch_dtype=torch.bfloat16,
-        device_map=device_map
+        model_name, torch_dtype=torch.bfloat16, device_map=device_map
     )
 
     # For MPS/CPU, manually move to device if device_map is None
@@ -641,25 +1208,48 @@ analogous structure under task vector scaling.
     if device_map is None and device != "cpu":
         ft_model = ft_model.to(device)  # type: ignore[assignment]
 
-    finetuned_model = fine_tune_model(
+    finetuned_model, ft_metrics = fine_tune_model(
         base_model=ft_model,
         tokenizer=tokenizer,
         train_texts=train_texts,
         output_dir=f"{output_dir}/finetuned_tmp",
         num_epochs=2,
-        learning_rate=5e-5
+        learning_rate=5e-5,
     )
+
+    # Update experiment metrics with fine-tuning data
+    experiment_metrics.finetuning_start_time = ft_metrics["start_time"]
+    experiment_metrics.finetuning_end_time = ft_metrics["end_time"]
+    experiment_metrics.finetuning_duration_seconds = ft_metrics["duration_seconds"]
+    experiment_metrics.training_examples = ft_metrics["training_examples"]
+    experiment_metrics.num_epochs = ft_metrics["num_epochs"]
+    experiment_metrics.learning_rate = ft_metrics["learning_rate"]
+    experiment_metrics.final_training_loss = ft_metrics["final_loss"]
+    experiment_metrics.training_steps = ft_metrics["training_steps"]
+    experiment_metrics.training_history = ft_metrics["training_history"]
 
     # Compute task vector
     print("Computing task vector T = M_finetuned - M_base...")
+    tv_start = time.time()
     task_vector = compute_task_vector(base_model, finetuned_model)
+    tv_elapsed = time.time() - tv_start
 
     # Calculate task vector magnitude
     tv_magnitude = np.sqrt(sum((v**2).sum().item() for v in task_vector.values()))
-    print(f"Task vector magnitude: ||T|| = {tv_magnitude:.4f}\n")
+    print(f"Task vector magnitude: ||T|| = {tv_magnitude:.4f}")
+    print(f"Computation time: {tv_elapsed:.2f}s\n")
+
+    # Update experiment metrics
+    experiment_metrics.task_vector_magnitude = tv_magnitude
+    experiment_metrics.task_vector_computation_time = tv_elapsed
+
+    # Count model parameters
+    num_params = sum(p.numel() for p in base_model.parameters())
+    experiment_metrics.model_parameters = num_params
+    print(f"Model parameters: {num_params:,}\n")
 
     # Run experiment
-    results = sweep_alpha_values(
+    results, sweep_metrics = sweep_alpha_values(
         base_model=base_model,
         task_vector=task_vector,
         tokenizer=tokenizer,
@@ -667,53 +1257,96 @@ analogous structure under task vector scaling.
         task_eval_texts=task_eval_texts,
         alpha_range=(-3.0, 3.0),
         num_samples=100,
-        device=device
+        device=device,
     )
+
+    # Update experiment metrics with sweep timing
+    experiment_metrics.sweep_start_time = sweep_metrics["start_time"]
+    experiment_metrics.sweep_end_time = sweep_metrics["end_time"]
+    experiment_metrics.sweep_duration_seconds = sweep_metrics["duration_seconds"]
+    experiment_metrics.time_per_alpha_seconds = sweep_metrics["time_per_alpha_seconds"]
 
     # Analyze results
     analysis = analyze_results(results)
+
+    # Update experiment metrics with sweep and results data
+    min_general = analysis["min_general_loss"]
+    min_task = analysis["min_task_loss"]
+    zero_crossings = analysis["zero_crossings"]
+
+    experiment_metrics.num_alpha_samples = len(results)
+    experiment_metrics.alpha_range = (-3.0, 3.0)
+    experiment_metrics.min_general_loss_alpha = min_general.alpha
+    experiment_metrics.min_general_loss = min_general.loss
+    experiment_metrics.min_task_loss_alpha = min_task.alpha
+    experiment_metrics.min_task_loss = min_task.task_performance
+    experiment_metrics.num_zero_crossings = len(zero_crossings)
+    experiment_metrics.zero_crossing_alphas = [zc.alpha for zc in zero_crossings]
+
+    # Generate markdown report
+    generate_markdown_report(
+        experiment_metrics=experiment_metrics,
+        analysis=analysis,
+        results=results,
+        output_path=f"{output_dir}/experiment_report.md",
+    )
+    print(f"📝 Markdown report saved to {output_dir}/experiment_report.md")
 
     # Plot results
     plot_results(results, analysis, f"{output_dir}/loss_landscape_sweep.png")
 
     # Save detailed results
     results_path = f"{output_dir}/loss_landscape_results.json"
-    with open(results_path, 'w', encoding='utf-8') as f:
-        json.dump({
-            'metadata': {
-                'paper_reference': 'Eckmann & Tlusty (2025), arXiv:2502.14367v3',
-                'description': 'Loss landscape sweep along task vector direction',
-                'task': 'sentiment_analysis',
-                'task_vector_magnitude': tv_magnitude,
-                'model': model_name,
-                'alpha_range': [-3.0, 3.0],
-                'num_samples': 100,
+    with open(results_path, "w", encoding="utf-8") as f:
+        json.dump(
+            {
+                "metadata": {
+                    "paper_reference": "Eckmann & Tlusty (2025), arXiv:2502.14367v3",
+                    "description": "Loss landscape sweep along task vector direction",
+                    "task": "sentiment_analysis",
+                    "task_vector_magnitude": tv_magnitude,
+                    "model": model_name,
+                    "alpha_range": [-3.0, 3.0],
+                    "num_samples": 100,
+                },
+                "methodology": {
+                    "experiment": "M(α) = M_base + αT",
+                    "primary_metric": "L(α) = loss of M(α)",
+                    "question": "Does L(α) cross L(M_base) at any α ≠ 0?",
+                },
+                "key_results": {
+                    "min_general_loss": asdict(analysis["min_general_loss"]),
+                    "min_task_loss": asdict(analysis["min_task_loss"]),
+                    "best_return": asdict(analysis["best_return"]),
+                    "zero_crossings": [asdict(r) for r in analysis["zero_crossings"]],
+                },
+                "top_10_by_return": [asdict(r) for r in analysis["sorted_by_return"]],
+                "all_results": [asdict(r) for r in results],
             },
-            'methodology': {
-                'experiment': 'M(α) = M_base + αT',
-                'primary_metric': 'L(α) = loss of M(α)',
-                'question': 'Does L(α) cross L(M_base) at any α ≠ 0?',
-            },
-            'key_results': {
-                'min_general_loss': asdict(analysis['min_general_loss']),
-                'min_task_loss': asdict(analysis['min_task_loss']),
-                'best_return': asdict(analysis['best_return']),
-                'zero_crossings': [asdict(r) for r in analysis['zero_crossings']],
-            },
-            'top_10_by_return': [asdict(r) for r in analysis['sorted_by_return']],
-            'all_results': [asdict(r) for r in results],
-        }, f, indent=2)
+            f,
+            indent=2,
+        )
     print(f"📄 Results saved to {results_path}")
+
+    # Complete experiment metrics and save
+    experiment_end_time = time.time()
+    experiment_metrics.end_time = datetime.fromtimestamp(experiment_end_time).isoformat()
+    experiment_metrics.duration_seconds = experiment_end_time - experiment_start_time
+
+    metrics_path = f"{output_dir}/experiment_metrics.json"
+    with open(metrics_path, "w", encoding="utf-8") as f:
+        json.dump(asdict(experiment_metrics), f, indent=2)
+    print(f"📊 Experiment metrics saved to {metrics_path}")
 
     # Summary
     print(f"\n{'='*70}")
     print("SUMMARY")
     print(f"{'='*70}\n")
 
-    min_general = analysis['min_general_loss']
-    min_task = analysis['min_task_loss']
-    best_return = analysis['best_return']
-    zero_crossings = analysis['zero_crossings']
+    min_general = analysis["min_general_loss"]
+    min_task = analysis["min_task_loss"]
+    best_return = analysis["best_return"]
+    zero_crossings = analysis["zero_crossings"]
 
     print("MINIMUM GENERAL LOSS (Best General Knowledge):")
     print(f"  α = {min_general.alpha:+.4f}")
@@ -743,7 +1376,9 @@ analogous structure under task vector scaling.
     if zero_crossings:
         print(f"  ✓ Found {len(zero_crossings)} crossing(s)!")
         for i, zc in enumerate(zero_crossings[:5], 1):
-            print(f"     {i}. α = {zc.alpha:+.4f}, L(α) = {zc.loss:.4f}, |ΔL| = {zc.functional_return:.6f}")
+            print(
+                f"     {i}. α = {zc.alpha:+.4f}, L(α) = {zc.loss:.4f}, |ΔL| = {zc.functional_return:.6f}"
+            )
     else:
         print("  ✗ No zero-crossings found")
         print("  → Loss is monotonic along task vector direction")
@@ -751,7 +1386,8 @@ analogous structure under task vector scaling.
     print(f"\n{'='*70}")
     print("INTERPRETATION")
     print(f"{'='*70}")
-    print("""
+    print(
+        """
 CONNECTION TO PAPER:
 ───────────────────
 Eckmann & Tlusty (2025) prove that rotation group walks have abundant special
@@ -780,7 +1416,62 @@ PRACTICAL IMPLICATIONS:
 • Minimum α: Best scaling for task performance
 • Zero-crossings: Special α values for model merging
 • Landscape shape: Insights into parameter space geometry
-""")
+"""
+    )
+
+    # Final experiment metrics summary
+    total_duration = experiment_metrics.duration_seconds
+    print(f"\n{'='*70}")
+    print("EXPERIMENT METRICS SUMMARY")
+    print(f"{'='*70}\n")
+
+    print(f"Total Duration: {total_duration / 60:.1f} minutes ({total_duration:.0f}s)")
+    print(f"  - Fine-tuning: {experiment_metrics.finetuning_duration_seconds / 60:.1f}m "
+          f"({experiment_metrics.finetuning_duration_seconds / total_duration * 100:.1f}%)")
+    print(f"  - Alpha sweep: {experiment_metrics.sweep_duration_seconds / 60:.1f}m "
+          f"({experiment_metrics.sweep_duration_seconds / total_duration * 100:.1f}%)")
+
+    print(f"\nModel: {experiment_metrics.model_name}")
+    print(f"  Parameters: {experiment_metrics.model_parameters:,}")
+    print(f"  Device: {experiment_metrics.device}")
+
+    print(f"\nFine-tuning:")
+    print(f"  Training examples: {experiment_metrics.training_examples}")
+    print(f"  Epochs: {experiment_metrics.num_epochs}")
+    print(f"  Steps: {experiment_metrics.training_steps}")
+    print(f"  Learning rate: {experiment_metrics.learning_rate:.2e}")
+    print(f"  Final loss: {experiment_metrics.final_training_loss:.4f}")
+    print(f"  Avg time/step: {experiment_metrics.finetuning_duration_seconds / experiment_metrics.training_steps:.2f}s")
+
+    print(f"\nTask Vector:")
+    print(f"  Magnitude ||T||: {experiment_metrics.task_vector_magnitude:.4f}")
+    print(f"  Computation time: {experiment_metrics.task_vector_computation_time:.2f}s")
+
+    print(f"\nAlpha Sweep:")
+    print(f"  Samples: {experiment_metrics.num_alpha_samples}")
+    print(f"  Range: [{experiment_metrics.alpha_range[0]:.1f}, {experiment_metrics.alpha_range[1]:.1f}]")
+    print(f"  Avg time/sample: {experiment_metrics.time_per_alpha_seconds:.2f}s")
+
+    print(f"\nKey Results:")
+    print(f"  Min general loss α: {experiment_metrics.min_general_loss_alpha:+.4f} (L={experiment_metrics.min_general_loss:.4f})")
+    print(f"  Min task loss α: {experiment_metrics.min_task_loss_alpha:+.4f} (L={experiment_metrics.min_task_loss:.4f})")
+    print(f"  Zero-crossings: {experiment_metrics.num_zero_crossings}")
+    if experiment_metrics.zero_crossing_alphas:
+        print(f"  Zero-crossing α values: {', '.join(f'{a:+.4f}' for a in experiment_metrics.zero_crossing_alphas[:5])}")
+
+    print(f"\n{'='*70}")
+    print("EXPERIMENT COMPLETE")
+    print(f"{'='*70}")
+    print(f"Started:  {experiment_metrics.start_time}")
+    print(f"Finished: {experiment_metrics.end_time}")
+    print(f"Duration: {total_duration / 60:.1f} minutes")
+    print(f"\nOutputs saved to: {output_dir}/")
+    print(f"  - {output_dir}/experiment_report.md (comprehensive analysis)")
+    print(f"  - {output_dir}/loss_landscape_sweep.png (visualization)")
+    print(f"  - {output_dir}/loss_landscape_results.json (detailed data)")
+    print(f"  - {output_dir}/experiment_metrics.json (metrics)")
+    print(f"{'='*70}\n")
+    print("📋 Copy experiment_report.md to share with LLMs for analysis!")
 
 
 if __name__ == "__main__":
