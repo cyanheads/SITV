@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sitv"
-version = "0.5.1"
+version = "0.7.3"
 description = "Modular loss landscape explorer for neural network task vectors"
 requires-python = ">=3.12"
 dependencies = [
@@ -66,3 +66,8 @@ no_implicit_optional = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
+# Workaround for scipy linking issues on macOS with conda
+# Run tests with: DYLD_LIBRARY_PATH=/Users/casey/anaconda3/lib:$DYLD_LIBRARY_PATH pytest
+env = [
+    "DYLD_LIBRARY_PATH=/Users/casey/anaconda3/lib:${DYLD_LIBRARY_PATH}"
+]
