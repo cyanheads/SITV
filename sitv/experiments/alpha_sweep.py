@@ -14,6 +14,7 @@ from typing import Dict, List, Any, Optional
 from transformers import PreTrainedModel
 
 from sitv.experiments.base import Experiment
+from sitv.experiments.config import SamplingConfig
 from sitv.data.models import AlphaSweepResult
 from sitv.core.evaluation import EvaluationService
 from sitv.core.validation import validate_alpha_sweep_config, ValidationError
@@ -66,6 +67,7 @@ class AlphaSweepExperiment(Experiment):
         device: str = "cuda",
         enable_squaring_test: bool = True,
         sampling_strategy: str = "uniform",
+        sampling_config: Optional[SamplingConfig] = None,
     ):
         """Initialize the alpha sweep experiment.
 
@@ -81,6 +83,7 @@ class AlphaSweepExperiment(Experiment):
             device: Device for computation
             enable_squaring_test: Whether to test M(2α) as well
             sampling_strategy: Sampling strategy ("uniform", "adaptive", "bayesian")
+            sampling_config: Sampling configuration (adaptive/bayesian parameters)
 
         Raises:
             ValidationError: If any configuration parameter is invalid
@@ -105,6 +108,7 @@ class AlphaSweepExperiment(Experiment):
         self.num_samples = num_samples
         self.enable_squaring_test = enable_squaring_test
         self.sampling_strategy = sampling_strategy.lower()
+        self.sampling_config = sampling_config or SamplingConfig()
         self.evaluator = EvaluationService(tokenizer, device)
         self.failure_tracker = FailureTracker(
             max_consecutive_failures=5,
@@ -131,12 +135,17 @@ class AlphaSweepExperiment(Experiment):
         elif self.sampling_strategy == "adaptive":
             return AdaptiveSampler(
                 alpha_range=self.alpha_range,
-                num_samples=self.num_samples
+                num_samples=self.num_samples,
+                coarse_samples=self.sampling_config.adaptive_coarse_samples,
+                refine_factor=self.sampling_config.adaptive_refine_factor,
+                curvature_threshold=self.sampling_config.adaptive_curvature_threshold,
             )
         elif self.sampling_strategy == "bayesian":
             return BayesianSampler(
                 alpha_range=self.alpha_range,
-                num_samples=self.num_samples
+                num_samples=self.num_samples,
+                n_initial=self.sampling_config.bayesian_n_initial,
+                acquisition=self.sampling_config.bayesian_acquisition,
             )
         else:
             raise ValueError(

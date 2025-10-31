@@ -312,6 +312,7 @@ class ExperimentOrchestrator:
             device=self.device,
             enable_squaring_test=self.config.alpha_sweep.enable_squaring_test,
             sampling_strategy=self.config.alpha_sweep.sampling.strategy,
+            sampling_config=self.config.alpha_sweep.sampling,
         )
 
         # Run experiment
