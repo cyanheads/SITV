@@ -62,6 +62,7 @@ class AlphaSweepExperiment(Experiment):
         general_eval_texts: List[str],
         task_eval_texts: List[str],
         general_eval_categories: Optional[List[str]] = None,
+        opposite_sentiment_eval_texts: Optional[List[str]] = None,
         alpha_range: tuple[float, float] = (-3.0, 3.0),
         num_samples: int = 100,
         device: str = "cuda",
@@ -78,6 +79,7 @@ class AlphaSweepExperiment(Experiment):
             general_eval_texts: Neutral evaluation texts
             task_eval_texts: Task-specific evaluation texts
             general_eval_categories: Category labels for general_eval_texts (optional)
+            opposite_sentiment_eval_texts: Opposite sentiment texts for preference calculation (optional)
             alpha_range: Range of α values to test (min, max)
             num_samples: Number of α samples
             device: Device for computation
@@ -104,6 +106,7 @@ class AlphaSweepExperiment(Experiment):
         self.general_eval_texts = general_eval_texts
         self.general_eval_categories = general_eval_categories
         self.task_eval_texts = task_eval_texts
+        self.opposite_sentiment_eval_texts = opposite_sentiment_eval_texts
         self.alpha_range = alpha_range
         self.num_samples = num_samples
         self.enable_squaring_test = enable_squaring_test
@@ -300,7 +303,7 @@ class AlphaSweepExperiment(Experiment):
                 loss=fallback_loss,
                 base_loss=base_loss,
                 functional_return=abs(fallback_loss - base_loss),
-                task_performance=fallback_loss,
+                task_eval_loss=fallback_loss,
                 loss_2alpha=0.0,
                 functional_return_2alpha=0.0,
                 perplexity=float('inf'),
@@ -338,8 +341,8 @@ class AlphaSweepExperiment(Experiment):
         # Compute functional return
         functional_return = abs(loss_alpha - base_loss)
 
-        # Task performance
-        task_performance = self.evaluator.evaluate_task_performance(
+        # Task evaluation loss
+        task_eval_loss = self.evaluator.evaluate_task_performance(
             self.base_model,
             self.task_eval_texts
         )
@@ -369,16 +372,29 @@ class AlphaSweepExperiment(Experiment):
         perplexity = np.exp(loss_alpha)
         perplexity_2alpha = np.exp(loss_2alpha) if self.enable_squaring_test else 0.0
 
+        # Sentiment preference (if opposite sentiment texts provided)
+        sentiment_preference = 0.0
+        task_eval_loss_negative = 0.0
+        if self.opposite_sentiment_eval_texts:
+            _, task_eval_loss_negative, sentiment_preference = \
+                self.evaluator.evaluate_sentiment_preference(
+                    self.base_model,
+                    self.task_eval_texts,
+                    self.opposite_sentiment_eval_texts
+                )
+
         return AlphaSweepResult(
             alpha=alpha,
             loss=loss_alpha,
             base_loss=base_loss,
             functional_return=functional_return,
-            task_performance=task_performance,
+            task_eval_loss=task_eval_loss,
             loss_2alpha=loss_2alpha,
             functional_return_2alpha=functional_return_2alpha,
             perplexity=perplexity,
             perplexity_2alpha=perplexity_2alpha,
+            sentiment_preference=sentiment_preference,
+            task_eval_loss_negative=task_eval_loss_negative,
             category_losses=category_losses,
         )
 

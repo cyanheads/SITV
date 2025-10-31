@@ -140,7 +140,7 @@ class MarkdownReportGenerator:
         return f"""## Executive Summary
 
 - **Best General α**: {min_general.alpha:+.4f} (Loss: {min_general.loss:.4f})
-- **Best Task α**: {min_task.alpha:+.4f} (Loss: {min_task.task_performance:.4f})
+- **Best Task α**: {min_task.alpha:+.4f} (Loss: {min_task.task_eval_loss:.4f})
 - **Zero-Crossings**: {zero_crossings} found
 - **Total Duration**: {total_duration:.1f} minutes"""
 
@@ -320,7 +320,7 @@ class MarkdownReportGenerator:
 
             section += f"| {result.alpha:+.3f} | {result.loss:.4f} | {result.loss_2alpha:.4f} | "
             section += f"{result.functional_return:.6f} | {result.functional_return_2alpha:.6f} | "
-            section += f"{result.task_performance:.4f} | {perplexity:.2f} | {perplexity_2alpha:.2f} |\n"
+            section += f"{result.task_eval_loss:.4f} | {perplexity:.2f} | {perplexity_2alpha:.2f} |\n"
 
         # Calculate step size safely
         alpha_step = 0.0
@@ -361,7 +361,7 @@ class MarkdownReportGenerator:
         # Calculate statistics
         all_losses = [r.loss for r in results]
         all_functional_returns = [r.functional_return for r in results]
-        all_task_perfs = [r.task_performance for r in results]
+        all_task_perfs = [r.task_eval_loss for r in results]
 
         # Guard against empty arrays (shouldn't happen if results is non-empty, but be safe)
         if not all_losses or not all_functional_returns or not all_task_perfs:

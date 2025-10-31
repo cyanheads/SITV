@@ -246,6 +246,7 @@ class ExperimentConfig:
 
     Attributes:
         model_name: HuggingFace model identifier
+        seed: Random seed for reproducibility (None for non-deterministic)
         output_dir: Output directory for results
         device: Device for computation (auto-detected if None)
         task_name: Name of task to run
@@ -259,6 +260,9 @@ class ExperimentConfig:
 
     model_name: str = field(
         default_factory=lambda: _get('model.name', 'google/gemma-3-4b-it')
+    )
+    seed: Optional[int] = field(
+        default_factory=lambda: _get('reproducibility.seed', 42)
     )
     output_dir: str = field(
         default_factory=lambda: _get('output.dir', 'outputs')

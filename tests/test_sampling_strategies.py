@@ -82,7 +82,7 @@ class TestUniformSampler:
         mock_results = [
             AlphaSweepResult(
                 alpha=0.0, loss=1.0, base_loss=1.0,
-                functional_return=0.0, task_performance=1.0
+                functional_return=0.0, task_eval_loss=1.0
             )
         ]
         samples2 = sampler.generate_samples(results=mock_results)
@@ -99,7 +99,7 @@ class TestUniformSampler:
         mock_results = [
             AlphaSweepResult(
                 alpha=0.0, loss=1.0, base_loss=1.0,
-                functional_return=0.0, task_performance=1.0
+                functional_return=0.0, task_eval_loss=1.0
             )
         ]
         assert sampler.should_continue(mock_results) is False
@@ -153,7 +153,7 @@ class TestAdaptiveSampler:
         mock_results = [
             AlphaSweepResult(
                 alpha=float(i)/10, loss=1.0, base_loss=1.0,
-                functional_return=0.0, task_performance=1.0
+                functional_return=0.0, task_eval_loss=1.0
             )
             for i in range(10)
         ]
@@ -182,7 +182,7 @@ class TestAdaptiveSampler:
                 loss=loss,
                 base_loss=2.0,
                 functional_return=abs(loss - 2.0),
-                task_performance=loss
+                task_eval_loss=loss
             ))
 
         # Second pass: refinement
@@ -314,7 +314,7 @@ class TestAdaptiveSampler:
                 loss=2.0,  # Constant loss
                 base_loss=2.0,
                 functional_return=0.0,
-                task_performance=2.0
+                task_eval_loss=2.0
             ))
 
         # Second pass should return empty

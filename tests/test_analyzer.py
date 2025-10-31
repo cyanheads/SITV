@@ -16,35 +16,35 @@ class TestResultAnalyzer:
                 loss=4.5,
                 base_loss=4.5,
                 functional_return=0.0,
-                task_performance=4.5,
+                task_eval_loss=4.5,
             ),
             AlphaSweepResult(
                 alpha=0.5,
                 loss=3.2,
                 base_loss=4.5,
                 functional_return=1.3,
-                task_performance=3.2,
+                task_eval_loss=3.2,
             ),
             AlphaSweepResult(
                 alpha=1.0,
                 loss=2.8,  # Minimum loss
                 base_loss=4.5,
                 functional_return=1.7,
-                task_performance=2.8,
+                task_eval_loss=2.8,
             ),
             AlphaSweepResult(
                 alpha=1.5,
                 loss=3.5,
                 base_loss=4.5,
                 functional_return=1.0,
-                task_performance=3.5,
+                task_eval_loss=3.5,
             ),
             AlphaSweepResult(
                 alpha=2.0,
                 loss=4.45,  # Near zero-crossing
                 base_loss=4.5,
                 functional_return=0.05,
-                task_performance=4.45,
+                task_eval_loss=4.45,
             ),
         ]
         return results
@@ -58,7 +58,7 @@ class TestResultAnalyzer:
                 loss=4.5,
                 base_loss=4.5,
                 functional_return=0.0,
-                task_performance=4.5,
+                task_eval_loss=4.5,
                 loss_2alpha=4.5,
                 functional_return_2alpha=0.0,
             ),
@@ -67,7 +67,7 @@ class TestResultAnalyzer:
                 loss=3.2,
                 base_loss=4.5,
                 functional_return=1.3,
-                task_performance=3.2,
+                task_eval_loss=3.2,
                 loss_2alpha=4.48,  # Squaring return point
                 functional_return_2alpha=0.02,
             ),
@@ -76,7 +76,7 @@ class TestResultAnalyzer:
                 loss=2.8,
                 base_loss=4.5,
                 functional_return=1.7,
-                task_performance=2.8,
+                task_eval_loss=2.8,
                 loss_2alpha=5.0,
                 functional_return_2alpha=0.5,
             ),
@@ -109,7 +109,7 @@ class TestResultAnalyzer:
 
         assert "min_task_loss" in analysis
         assert analysis["min_task_loss"].alpha == 1.0
-        assert analysis["min_task_loss"].task_performance == 2.8
+        assert analysis["min_task_loss"].task_eval_loss == 2.8
 
     def test_analyze_finds_best_return(self, sample_results):
         """Should find result with best (smallest) functional return."""
@@ -172,14 +172,14 @@ class TestResultAnalyzer:
                 loss=4.48,
                 base_loss=4.5,
                 functional_return=0.02,
-                task_performance=4.48,
+                task_eval_loss=4.48,
             ),
             AlphaSweepResult(
                 alpha=0.2,  # Far enough from zero
                 loss=4.48,
                 base_loss=4.5,
                 functional_return=0.02,
-                task_performance=4.48,
+                task_eval_loss=4.48,
             ),
         ]
 
@@ -215,7 +215,7 @@ class TestResultAnalyzer:
                 loss=3.0,
                 base_loss=4.5,
                 functional_return=1.5,
-                task_performance=3.0,
+                task_eval_loss=3.0,
                 loss_2alpha=4.48,
                 functional_return_2alpha=0.02,
             ),
@@ -224,7 +224,7 @@ class TestResultAnalyzer:
                 loss=3.0,
                 base_loss=4.5,
                 functional_return=1.5,
-                task_performance=3.0,
+                task_eval_loss=3.0,
                 loss_2alpha=4.48,
                 functional_return_2alpha=0.02,
             ),
@@ -253,7 +253,7 @@ class TestResultAnalyzer:
                 loss=3.0,
                 base_loss=4.5,
                 functional_return=1.5,
-                task_performance=3.0,
+                task_eval_loss=3.0,
             )
         ]
 
@@ -276,7 +276,7 @@ class TestResultAnalyzerEdgeCases:
                 loss=3.0,
                 base_loss=3.0,
                 functional_return=0.0,
-                task_performance=3.0,
+                task_eval_loss=3.0,
             )
             for i in range(5)
         ]
@@ -296,7 +296,7 @@ class TestResultAnalyzerEdgeCases:
                 loss=3.0 + i * 0.5,
                 base_loss=3.0,
                 functional_return=i * 0.5,
-                task_performance=3.0 + i * 0.5,
+                task_eval_loss=3.0 + i * 0.5,
             )
             for i in range(5)
         ]
@@ -316,21 +316,21 @@ class TestResultAnalyzerEdgeCases:
                 loss=4.0,
                 base_loss=4.5,
                 functional_return=0.5,
-                task_performance=4.0,
+                task_eval_loss=4.0,
             ),
             AlphaSweepResult(
                 alpha=0.0,
                 loss=4.5,
                 base_loss=4.5,
                 functional_return=0.0,
-                task_performance=4.5,
+                task_eval_loss=4.5,
             ),
             AlphaSweepResult(
                 alpha=1.0,
                 loss=3.5,
                 base_loss=4.5,
                 functional_return=1.0,
-                task_performance=3.5,
+                task_eval_loss=3.5,
             ),
         ]
 

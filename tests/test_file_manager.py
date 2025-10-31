@@ -35,14 +35,14 @@ class TestFileManager:
                 loss=4.5,
                 base_loss=4.5,
                 functional_return=0.0,
-                task_performance=4.5,
+                task_eval_loss=4.5,
             ),
             AlphaSweepResult(
                 alpha=1.0,
                 loss=3.2,
                 base_loss=4.5,
                 functional_return=1.3,
-                task_performance=3.2,
+                task_eval_loss=3.2,
             ),
         ]
 
@@ -70,7 +70,7 @@ class TestFileManager:
                 loss=4.5,
                 base_loss=4.5,
                 functional_return=0.0,
-                task_performance=4.5,
+                task_eval_loss=4.5,
             )
         ]
 
@@ -215,7 +215,7 @@ class TestFileManager:
                 loss=4.5,
                 base_loss=4.5,
                 functional_return=0.0,
-                task_performance=4.5,
+                task_eval_loss=4.5,
             )
         ]
 

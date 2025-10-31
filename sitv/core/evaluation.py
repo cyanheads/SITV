@@ -170,3 +170,35 @@ class EvaluationService:
             category_losses[category] = loss
 
         return category_losses
+
+    def evaluate_sentiment_preference(
+        self,
+        model: nn.Module,
+        positive_texts: List[str],
+        negative_texts: List[str]
+    ) -> tuple[float, float, float]:
+        """Evaluate model's sentiment preference.
+
+        Computes loss on both positive and negative sentiment texts to measure
+        whether the task vector has successfully learned a directional preference.
+
+        Args:
+            model: Model to evaluate
+            positive_texts: List of positive sentiment examples
+            negative_texts: List of negative sentiment examples
+
+        Returns:
+            Tuple of (positive_loss, negative_loss, preference_score)
+            where preference_score = negative_loss - positive_loss
+            (positive score means model prefers positive sentiment)
+
+        Examples:
+            >>> pos_loss, neg_loss, pref = evaluator.evaluate_sentiment_preference(
+            ...     model, positive_examples, negative_examples
+            ... )
+            >>> print(f"Preference: {pref:+.4f} (>0 prefers positive)")
+        """
+        positive_loss = self.evaluate(model, positive_texts)
+        negative_loss = self.evaluate(model, negative_texts)
+        preference_score = negative_loss - positive_loss
+        return positive_loss, negative_loss, preference_score

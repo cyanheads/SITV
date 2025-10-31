@@ -55,6 +55,7 @@ class FineTuner:
         max_length: int = 512,
         save_strategy: str = "no",
         logging_steps: int = 10,
+        seed: int = 42,
     ):
         """Initialize the fine-tuner.
 
@@ -66,6 +67,7 @@ class FineTuner:
             max_length: Maximum sequence length for tokenization
             save_strategy: Model save strategy ("no", "steps", "epoch")
             logging_steps: Number of steps between logging
+            seed: Random seed for data shuffling and sampling
         """
         self.output_dir = output_dir
         self.num_epochs = num_epochs
@@ -74,6 +76,7 @@ class FineTuner:
         self.max_length = max_length
         self.save_strategy = save_strategy
         self.logging_steps = logging_steps
+        self.seed = seed
 
     def fine_tune(
         self,
@@ -122,6 +125,7 @@ class FineTuner:
             learning_rate=self.learning_rate,
             save_strategy=self.save_strategy,
             logging_steps=self.logging_steps,
+            seed=self.seed,  # Ensure reproducible data sampling
             report_to=[],  # Disable wandb/tensorboard
             remove_unused_columns=False,
             gradient_checkpointing=True,  # Save memory for large models

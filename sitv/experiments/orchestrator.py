@@ -6,6 +6,9 @@ experimental workflow from model loading to result generation.
 """
 
 import time
+import random
+import numpy as np
+import torch
 from datetime import datetime
 from typing import List, Optional
 
@@ -19,6 +22,30 @@ from sitv.analysis import ResultAnalyzer
 from sitv.reporting import MarkdownReportGenerator
 from sitv.visualization import ResultPlotter
 from sitv.io import FileManager, PathManager
+
+
+def set_random_seed(seed: Optional[int]) -> None:
+    """Set random seed for reproducibility across all libraries.
+
+    Args:
+        seed: Random seed value. If None, uses non-deterministic behavior.
+    """
+    if seed is None:
+        return
+
+    # Python standard library
+    random.seed(seed)
+
+    # NumPy
+    np.random.seed(seed)
+
+    # PyTorch
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+
+    # Make PyTorch deterministic (may impact performance)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
 
 
 class ExperimentOrchestrator:
@@ -49,6 +76,10 @@ class ExperimentOrchestrator:
             config: Experiment configuration
         """
         self.config = config
+
+        # Set random seed for reproducibility
+        set_random_seed(config.seed)
+
         self.metrics = ExperimentMetrics(
             start_time=datetime.now().isoformat()
         )
@@ -208,6 +239,7 @@ class ExperimentOrchestrator:
             max_length=self.config.fine_tuning.max_length,
             save_strategy=self.config.fine_tuning.save_strategy,
             logging_steps=self.config.fine_tuning.logging_steps,
+            seed=self.config.seed if self.config.seed is not None else 42,
         )
 
         # Fine-tune the model (note: this modifies base_model in-place)
@@ -299,6 +331,24 @@ class ExperimentOrchestrator:
             self.config.evaluation.general_dataset
         )
 
+        # For sentiment tasks, load opposite sentiment for preference calculation
+        opposite_sentiment_eval_texts = None
+        if "sentiment" in self.config.task_name:
+            # Determine opposite sentiment
+            if "positive" in self.config.task_name:
+                opposite_task_name = "sentiment_negative_eval"
+            elif "negative" in self.config.task_name:
+                opposite_task_name = "sentiment_positive_eval"
+            else:
+                opposite_task_name = None
+
+            if opposite_task_name:
+                try:
+                    opposite_sentiment_eval_texts = loader.load_eval(opposite_task_name)
+                    print(f"  Loaded {len(opposite_sentiment_eval_texts)} opposite sentiment examples for preference calculation")
+                except Exception as e:
+                    print(f"  Warning: Could not load opposite sentiment texts: {e}")
+
         # Create experiment
         experiment = AlphaSweepExperiment(
             base_model=base_model,
@@ -307,6 +357,7 @@ class ExperimentOrchestrator:
             general_eval_texts=general_eval_texts,  # Use general dataset for L(α)
             general_eval_categories=general_eval_categories,  # Category labels for breakdown
             task_eval_texts=task.eval_texts,         # Use task-specific for task performance
+            opposite_sentiment_eval_texts=opposite_sentiment_eval_texts,  # Opposite sentiment for preference
             alpha_range=self.config.alpha_sweep.alpha_range,
             num_samples=self.config.alpha_sweep.num_samples,
             device=self.device,
@@ -336,7 +387,7 @@ class ExperimentOrchestrator:
         self.metrics.min_general_loss_alpha = analysis["min_general_loss"].alpha
         self.metrics.min_general_loss = analysis["min_general_loss"].loss
         self.metrics.min_task_loss_alpha = analysis["min_task_loss"].alpha
-        self.metrics.min_task_loss = analysis["min_task_loss"].task_performance
+        self.metrics.min_task_loss = analysis["min_task_loss"].task_eval_loss
         self.metrics.num_zero_crossings = len(analysis["zero_crossings"])
         self.metrics.zero_crossing_alphas = [zc.alpha for zc in analysis["zero_crossings"]]
 
@@ -407,6 +458,7 @@ class ExperimentOrchestrator:
             max_length=self.config.fine_tuning.max_length,
             save_strategy=self.config.fine_tuning.save_strategy,
             logging_steps=self.config.fine_tuning.logging_steps,
+            seed=self.config.seed if self.config.seed is not None else 42,
         )
 
         finetuned_model_2, ft_metrics_2 = fine_tuner.fine_tune(

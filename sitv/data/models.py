@@ -19,21 +19,23 @@ class AlphaSweepResult:
 
     Attributes:
         alpha: Scaling factor α
-        loss: L(M_base + αT)
+        loss: L(M_base + αT) evaluated on general dataset (broad language modeling)
         base_loss: L(M_base) - reference point
         functional_return: |L(M_base + αT) - L(M_base)|
-        task_performance: Task-specific loss at M_base + αT
+        task_eval_loss: Loss on task-specific evaluation data (e.g., sentiment_positive_eval.txt)
         loss_2alpha: L(M_base + 2αT) - test [W(λ)]² = I analog
         functional_return_2alpha: |L(M_base + 2αT) - L(M_base)|
         perplexity: exp(loss)
         perplexity_2alpha: exp(loss_2alpha)
+        sentiment_preference: Difference between negative and positive sentiment loss (pos means prefers positive)
+        task_eval_loss_negative: Loss on opposite sentiment eval data (for preference calculation)
     """
 
     alpha: float
     loss: float
     base_loss: float
     functional_return: float
-    task_performance: float
+    task_eval_loss: float
 
     # Squaring test results
     loss_2alpha: float = 0.0
@@ -42,6 +44,10 @@ class AlphaSweepResult:
     # Additional metrics
     perplexity: float = 0.0
     perplexity_2alpha: float = 0.0
+
+    # Sentiment preference metrics
+    sentiment_preference: float = 0.0
+    task_eval_loss_negative: float = 0.0
 
     # Per-category losses (optional, populated when using "combined" dataset)
     category_losses: dict[str, float] = field(default_factory=dict)

@@ -56,7 +56,7 @@ class ResultAnalyzer:
         """
         # Sort results by different criteria
         sorted_by_loss = sorted(results, key=lambda r: r.loss)
-        sorted_by_task_loss = sorted(results, key=lambda r: r.task_performance)
+        sorted_by_task_loss = sorted(results, key=lambda r: r.task_eval_loss)
         sorted_by_return = sorted(results, key=lambda r: r.functional_return)
 
         # Find zero-crossings
@@ -159,14 +159,14 @@ class ResultAnalyzer:
         print(f"  L(M_base) = {min_general_result.base_loss:.4f}")
         print(f"  Δ = {min_general_result.loss - min_general_result.base_loss:+.4f}\n")
 
-        # Minimum task-specific loss
+        # Minimum task-specific evaluation loss
         min_task_result = sorted_by_task_loss[0]
-        print("Minimum Task-Specific Loss (best task performance):")
+        print("Minimum Task-Specific Loss (best on task evaluation data):")
         print(f"  α = {min_task_result.alpha:+.4f}")
-        print(f"  Task L(α) = {min_task_result.task_performance:.4f}")
+        print(f"  Task Eval L(α) = {min_task_result.task_eval_loss:.4f}")
         print(f"  General L(α) = {min_task_result.loss:.4f}")
         print(
-            f"  Δ from base = {min_task_result.task_performance - min_task_result.base_loss:+.4f}\n"
+            f"  Δ from base = {min_task_result.task_eval_loss - min_task_result.base_loss:+.4f}\n"
         )
 
         # Best functional return

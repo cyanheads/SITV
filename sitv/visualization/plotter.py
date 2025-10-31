@@ -66,7 +66,7 @@ class ResultPlotter:
         losses = [r.loss for r in results]
         base_loss = results[0].base_loss if results else 0
         functional_returns = [r.functional_return for r in results]
-        task_perfs = [r.task_performance for r in results]
+        task_perfs = [r.task_eval_loss for r in results]
 
         # Extract squaring test data if available
         if enable_squaring_test and analysis.get("has_squaring_data", False):
@@ -109,7 +109,7 @@ class ResultPlotter:
 
         # Highlight task minimum
         min_task_result = analysis['min_task_loss']
-        axes[0, 0].scatter([min_task_result.alpha], [min_task_result.task_performance],
+        axes[0, 0].scatter([min_task_result.alpha], [min_task_result.task_eval_loss],
                           color='green', s=150, zorder=5, marker='D',
                           edgecolors='black', linewidth=1,
                           label=f'Min Task (α={min_task_result.alpha:.2f})')

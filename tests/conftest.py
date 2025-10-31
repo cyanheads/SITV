@@ -62,7 +62,7 @@ def mock_alpha_sweep_result():
                 loss=0.5 + 0.1 * abs(alpha),
                 base_loss=0.6,
                 functional_return=abs(0.5 + 0.1 * abs(alpha) - 0.6),
-                task_performance=0.5 + 0.1 * abs(alpha),
+                task_eval_loss=0.5 + 0.1 * abs(alpha),
             )
         )
     return results

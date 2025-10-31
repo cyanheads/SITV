@@ -20,7 +20,7 @@ class TestAlphaSweepResult:
             loss=0.5,
             base_loss=0.6,
             functional_return=0.1,
-            task_performance=0.55,
+            task_eval_loss=0.55,
         )
         assert result.alpha == 1.0
         assert result.loss == 0.5
@@ -34,7 +34,7 @@ class TestAlphaSweepResult:
             loss=0.5,
             base_loss=0.6,
             functional_return=0.1,
-            task_performance=0.55,
+            task_eval_loss=0.55,
             loss_2alpha=0.7,
             functional_return_2alpha=0.15,
             perplexity=1.65,
@@ -52,7 +52,7 @@ class TestAlphaSweepResult:
             loss=0.5,
             base_loss=0.6,
             functional_return=0.1,
-            task_performance=0.55,
+            task_eval_loss=0.55,
         )
         json_str = json.dumps(asdict(result))
         assert "alpha" in json_str
