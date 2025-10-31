@@ -44,6 +44,7 @@ class AlphaSweepExperiment(Experiment):
         tokenizer,
         general_eval_texts: List[str],
         task_eval_texts: List[str],
+        general_eval_categories: List[str] = None,
         alpha_range: tuple[float, float] = (-3.0, 3.0),
         num_samples: int = 100,
         device: str = "cuda",
@@ -57,6 +58,7 @@ class AlphaSweepExperiment(Experiment):
             tokenizer: Tokenizer for evaluation
             general_eval_texts: Neutral evaluation texts
             task_eval_texts: Task-specific evaluation texts
+            general_eval_categories: Category labels for general_eval_texts (optional)
             alpha_range: Range of α values to test (min, max)
             num_samples: Number of α samples
             device: Device for computation
@@ -65,6 +67,7 @@ class AlphaSweepExperiment(Experiment):
         super().__init__(base_model, tokenizer, device)
         self.task_vector = task_vector
         self.general_eval_texts = general_eval_texts
+        self.general_eval_categories = general_eval_categories
         self.task_eval_texts = task_eval_texts
         self.alpha_range = alpha_range
         self.num_samples = num_samples
@@ -193,6 +196,15 @@ class AlphaSweepExperiment(Experiment):
                 base_loss
             )
 
+        # Per-category losses (if categories provided)
+        category_losses = {}
+        if self.general_eval_categories:
+            category_losses = self.evaluator.evaluate_by_category(
+                self.base_model,
+                self.general_eval_texts,
+                self.general_eval_categories
+            )
+
         # Compute perplexities
         perplexity = np.exp(loss_alpha)
         perplexity_2alpha = np.exp(loss_2alpha) if self.enable_squaring_test else 0.0
@@ -207,6 +219,7 @@ class AlphaSweepExperiment(Experiment):
             functional_return_2alpha=functional_return_2alpha,
             perplexity=perplexity,
             perplexity_2alpha=perplexity_2alpha,
+            category_losses=category_losses,
         )
 
     def _evaluate_squaring_test(

@@ -69,6 +69,7 @@ class ExperimentOrchestrator:
         self.metrics.model_name = config.model_name
         self.metrics.device = self.device
         self.metrics.task_name = config.task_name
+        self.metrics.general_eval_dataset = config.evaluation.general_dataset
 
     def run(self) -> None:
         """Run the complete experiment workflow.
@@ -80,6 +81,7 @@ class ExperimentOrchestrator:
         print(f"{'='*70}")
         print(f"Model: {self.config.model_name}")
         print(f"Task: {self.config.task_name}")
+        print(f"General Eval Dataset: {self.config.evaluation.general_dataset}")
         print(f"Device: {self.device}")
         print(f"Output: {self.config.output_dir}")
         print(f"Analysis Only: {self.config.analysis_only}")
@@ -261,10 +263,12 @@ class ExperimentOrchestrator:
         tasks = get_predefined_tasks(self.config.fine_tuning.data_repetition_factor)
         task = tasks[self.config.task_name]
 
-        # Load general evaluation dataset
+        # Load general evaluation dataset with category labels
         from sitv.data.loader import DatasetLoader
         loader = DatasetLoader()
-        general_eval_texts = loader.load_general(self.config.evaluation.general_dataset)
+        general_eval_texts, general_eval_categories = loader.load_general_with_categories(
+            self.config.evaluation.general_dataset
+        )
 
         # Create experiment
         experiment = AlphaSweepExperiment(
@@ -272,6 +276,7 @@ class ExperimentOrchestrator:
             task_vector=task_vector,
             tokenizer=tokenizer,
             general_eval_texts=general_eval_texts,  # Use general dataset for L(α)
+            general_eval_categories=general_eval_categories,  # Category labels for breakdown
             task_eval_texts=task.eval_texts,         # Use task-specific for task performance
             alpha_range=self.config.alpha_sweep.alpha_range,
             num_samples=self.config.alpha_sweep.num_samples,
