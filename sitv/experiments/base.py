@@ -92,6 +92,27 @@ class Experiment(ABC):
                 if name in original_params:
                     param.copy_(original_params[name])
 
+    def preload_task_vector_to_device(
+        self,
+        task_vector: Dict[str, torch.Tensor]
+    ) -> Dict[str, torch.Tensor]:
+        """Pre-move task vector tensors to model device.
+
+        This avoids repeated device transfers in tight loops, significantly
+        improving performance for large models.
+
+        Args:
+            task_vector: Task vector with tensors on any device
+
+        Returns:
+            Task vector with all tensors on the model's device
+        """
+        print("Pre-loading task vector to device...")
+        device_task_vector = {}
+        for name, tensor in task_vector.items():
+            device_task_vector[name] = tensor.to(self.device)
+        return device_task_vector
+
     def apply_task_vector(
         self,
         original_params: Dict[str, torch.Tensor],
@@ -102,15 +123,19 @@ class Experiment(ABC):
 
         Args:
             original_params: Original model parameters
-            task_vector: Task vector to apply
+            task_vector: Task vector to apply (should be pre-loaded to device)
             alpha: Scaling factor
+
+        Note:
+            For best performance, pre-load task_vector to device using
+            preload_task_vector_to_device() before calling this in a loop.
         """
         with torch.no_grad():
             for name, param in self.base_model.named_parameters():
                 if name in task_vector and name in original_params:
+                    # Task vector should already be on correct device
                     param.copy_(
-                        original_params[name]
-                        + alpha * task_vector[name].to(param.device)
+                        original_params[name] + alpha * task_vector[name]
                     )
 
     def apply_2d_composition(
@@ -125,18 +150,23 @@ class Experiment(ABC):
 
         Args:
             original_params: Original model parameters
-            task_vector_1: First task vector
-            task_vector_2: Second task vector
+            task_vector_1: First task vector (should be pre-loaded to device)
+            task_vector_2: Second task vector (should be pre-loaded to device)
             alpha: Scaling factor for T1
             beta: Scaling factor for T2
+
+        Note:
+            For best performance, pre-load both task vectors to device using
+            preload_task_vector_to_device() before calling this in a loop.
         """
         with torch.no_grad():
             for name, param in self.base_model.named_parameters():
                 if name in original_params:
+                    # Task vectors should already be on correct device
                     param.copy_(
                         original_params[name]
-                        + alpha * task_vector_1[name].to(param.device)
-                        + beta * task_vector_2[name].to(param.device)
+                        + alpha * task_vector_1[name]
+                        + beta * task_vector_2[name]
                     )
 
     def format_eta(self, avg_time: float, remaining: int) -> str:
