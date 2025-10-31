@@ -5,6 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2025-10-31
+
+### Added
+
+- **Reproducibility Support** ([config.yaml](config.yaml), [sitv/experiments/orchestrator.py](sitv/experiments/orchestrator.py)):
+  - Added `reproducibility.seed` configuration parameter for deterministic experiments
+  - Implemented `set_random_seed()` function to set seeds across Python, NumPy, and PyTorch
+  - Added seed parameter to `ExperimentConfig`, `ExperimentOrchestrator`, and `FineTuner`
+  - Enabled PyTorch deterministic mode (cudnn.deterministic=True, cudnn.benchmark=False)
+  - Default seed value: 42 (configurable via config.yaml)
+
+- **Sentiment Preference Evaluation** ([sitv/core/evaluation.py](sitv/core/evaluation.py), [sitv/experiments/alpha_sweep.py](sitv/experiments/alpha_sweep.py)):
+  - Added `evaluate_sentiment_preference()` method to EvaluationService
+  - Computes preference score as `negative_loss - positive_loss` (positive score indicates preference for positive sentiment)
+  - Added `sentiment_preference` and `task_eval_loss_negative` fields to AlphaSweepResult
+  - Orchestrator now automatically loads opposite sentiment texts for preference calculation
+  - Integrated into alpha sweep experiment workflow for sentiment tasks
+
+### Changed
+
+- **Field Naming Clarity** (16 files):
+  - Renamed `task_performance` → `task_eval_loss` throughout codebase for better clarity
+  - Updated field name in `AlphaSweepResult` dataclass ([sitv/data/models.py](sitv/data/models.py))
+  - Updated all references in analyzer, plotter, markdown reporter, and orchestrator
+  - Updated all test files to use new field name
+  - **Breaking change**: JSON files from previous versions will have `task_performance` instead of `task_eval_loss`
+
+- **Enhanced Documentation** ([sitv/data/models.py](sitv/data/models.py)):
+  - Improved docstring for AlphaSweepResult to clarify evaluation metrics
+  - Documented that `loss` is evaluated on general dataset (broad language modeling)
+  - Documented that `task_eval_loss` is evaluated on task-specific evaluation data
+  - Added documentation for new sentiment preference fields
+
+### Technical Details
+
+- **Reproducibility**: Full deterministic behavior when seed is set (may impact performance slightly)
+- **Sentiment Analysis**: Preference calculation enables quantitative measurement of directional task vector effects
+- **Breaking Change**: Field rename affects saved JSON results and requires code updates for external analysis scripts
+- **Backward Compatibility**: Set `reproducibility.seed: null` in config.yaml to disable deterministic mode
+
 ## [0.7.3] - 2025-10-31
 
 ### Added
