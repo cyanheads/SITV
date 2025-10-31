@@ -85,6 +85,29 @@ class ExperimentOrchestrator:
         print(f"Device: {self.device}")
         print(f"Output: {self.config.output_dir}")
         print(f"Analysis Only: {self.config.analysis_only}")
+
+        # Fine-tuning configuration
+        if not self.config.analysis_only:
+            print(f"\nFine-Tuning:")
+            print(f"  Epochs: {self.config.fine_tuning.num_epochs}")
+            print(f"  Learning rate: {self.config.fine_tuning.learning_rate:.2e}")
+            print(f"  Batch size: {self.config.fine_tuning.batch_size}")
+            print(f"  Max length: {self.config.fine_tuning.max_length}")
+            print(f"  Data repetition: {self.config.fine_tuning.data_repetition_factor}x")
+
+        # Alpha sweep configuration
+        print(f"\nAlpha Sweep:")
+        print(f"  Range: [{self.config.alpha_sweep.alpha_range[0]:.1f}, {self.config.alpha_sweep.alpha_range[1]:.1f}]")
+        print(f"  Samples: {self.config.alpha_sweep.num_samples}")
+        print(f"  Squaring test: {self.config.alpha_sweep.enable_squaring_test}")
+
+        # 2D composition configuration
+        if self.config.enable_2d_composition:
+            print(f"\n2D Composition:")
+            print(f"  Alpha range: {self.config.composition_2d.alpha_range}")
+            print(f"  Beta range: {self.config.composition_2d.beta_range}")
+            print(f"  Grid size: {self.config.composition_2d.num_samples_per_dim}×{self.config.composition_2d.num_samples_per_dim}")
+
         print(f"{'='*70}\n")
 
         # Phase 1: Load or fine-tune models
