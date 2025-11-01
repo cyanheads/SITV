@@ -174,7 +174,7 @@ class SymmetryAnalyzer:
 
         # Create orthogonal rotation matrix
         Q = self._generate_orthogonal_matrix(size)
-        Q = Q.to(param.device)
+        Q = Q.to(device=param.device, dtype=param.dtype)
 
         # Apply rotation to subspace
         with torch.no_grad():

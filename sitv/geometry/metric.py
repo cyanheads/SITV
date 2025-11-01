@@ -74,7 +74,8 @@ class FisherMetricService:
         self,
         model: nn.Module,
         texts: list[str],
-        batch_size: int = 8
+        batch_size: int = 8,
+        show_progress: bool = True
     ) -> dict[str, torch.Tensor | dict[str, Any]]:
         """Compute Fisher Information Matrix for model parameters.
 
@@ -86,6 +87,7 @@ class FisherMetricService:
             model: Model to compute Fisher for
             texts: Dataset samples for Fisher estimation
             batch_size: Batch size for gradient computation
+            show_progress: Whether to display progress bars (default: True)
 
         Returns:
             Dictionary mapping parameter names to Fisher matrices:
@@ -109,11 +111,11 @@ class FisherMetricService:
         model.eval()
 
         if self.approximation_type == FisherApproximationType.DIAGONAL:
-            return cast(dict[str, torch.Tensor | dict[str, Any]], self._compute_diagonal_fisher(model, texts, batch_size))
+            return cast(dict[str, torch.Tensor | dict[str, Any]], self._compute_diagonal_fisher(model, texts, batch_size, show_progress))
         elif self.approximation_type == FisherApproximationType.KFAC:
-            return cast(dict[str, torch.Tensor | dict[str, Any]], self._compute_kfac_fisher(model, texts, batch_size))
+            return cast(dict[str, torch.Tensor | dict[str, Any]], self._compute_kfac_fisher(model, texts, batch_size, show_progress))
         elif self.approximation_type == FisherApproximationType.FULL:
-            return self._compute_full_fisher(model, texts, batch_size)
+            return self._compute_full_fisher(model, texts, batch_size, show_progress)
         else:
             raise ValueError(f"Unknown approximation type: {self.approximation_type}")
 
@@ -136,7 +138,8 @@ class FisherMetricService:
         self,
         model: nn.Module,
         texts: list[str],
-        batch_size: int
+        batch_size: int,
+        show_progress: bool = True
     ) -> dict[str, torch.Tensor]:
         """Compute diagonal Fisher approximation.
 
@@ -149,6 +152,7 @@ class FisherMetricService:
             model: Model to compute Fisher for
             texts: Dataset samples
             batch_size: Batch size for processing
+            show_progress: Whether to display progress bars
 
         Returns:
             Dictionary mapping parameter names to diagonal Fisher (1D tensors)
@@ -198,11 +202,13 @@ class FisherMetricService:
             count += len(batch_texts)
 
             # Update progress
-            tracker.end_iteration()
-            msg = f"  Batch progress: {tracker.get_status()}"
-            print(f"{msg:<80}", end='\r', flush=True)
+            if show_progress:
+                tracker.end_iteration()
+                msg = f"  Batch progress: {tracker.get_status()}"
+                print(f"{msg:<80}", end='\r', flush=True)
 
-        print()  # New line after completion
+        if show_progress:
+            print()  # New line after completion
 
         # Average and add floor for numerical stability
         for name in fisher_diag:
@@ -214,7 +220,8 @@ class FisherMetricService:
         self,
         model: nn.Module,
         texts: list[str],
-        batch_size: int
+        batch_size: int,
+        show_progress: bool = True
     ) -> dict[str, torch.Tensor]:
         """Compute KFAC (Kronecker-Factored) Fisher approximation.
 
@@ -228,6 +235,7 @@ class FisherMetricService:
             model: Model to compute Fisher for
             texts: Dataset samples
             batch_size: Batch size for processing
+            show_progress: Whether to display progress bars
 
         Returns:
             Dictionary with Fisher approximations per layer
@@ -239,13 +247,14 @@ class FisherMetricService:
         # For now, fall back to diagonal approximation
         # Full KFAC requires forward hooks to capture activations
         # TODO: Implement proper KFAC with activation statistics
-        return self._compute_diagonal_fisher(model, texts, batch_size)
+        return self._compute_diagonal_fisher(model, texts, batch_size, show_progress)
 
     def _compute_full_fisher(
         self,
         model: nn.Module,
         texts: list[str],
-        batch_size: int
+        batch_size: int,
+        show_progress: bool = True
     ) -> dict[str, torch.Tensor | dict[str, Any]]:
         """Compute full Fisher Information Matrix.
 
@@ -256,6 +265,7 @@ class FisherMetricService:
             model: Model to compute Fisher for
             texts: Dataset samples
             batch_size: Batch size for processing
+            show_progress: Whether to display progress bars
 
         Returns:
             Dictionary with full Fisher matrices per parameter
@@ -327,11 +337,13 @@ class FisherMetricService:
             count += len(batch_texts)
 
             # Update progress
-            tracker.end_iteration()
-            msg = f"  Batch progress: {tracker.get_status()}"
-            print(f"{msg:<80}", end='\r', flush=True)
+            if show_progress:
+                tracker.end_iteration()
+                msg = f"  Batch progress: {tracker.get_status()}"
+                print(f"{msg:<80}", end='\r', flush=True)
 
-        print()  # New line after completion
+        if show_progress:
+            print()  # New line after completion
 
         # Average and add regularization
         fisher_full = fisher_full / count
@@ -538,8 +550,8 @@ class FisherMetricService:
         # Get model parameters to check requires_grad status
         model_params = {n: p for n, p in model.named_parameters()}
 
-        # Get Fisher at base point
-        F_base = self.compute_fisher_information_matrix(model, data_texts, batch_size)
+        # Get Fisher at base point (suppress progress bars for nested computation)
+        F_base = self.compute_fisher_information_matrix(model, data_texts, batch_size, show_progress=False)
 
         christoffel = {}
 
@@ -627,9 +639,9 @@ class FisherMetricService:
                     perturbation = epsilon * torch.randn_like(param.data).sign_()
                     param.data.add_(perturbation)
 
-                # Recompute Fisher at perturbed point
+                # Recompute Fisher at perturbed point (suppress progress bars for nested computation)
                 F_perturbed = self.compute_fisher_information_matrix(
-                    model, data_texts, batch_size
+                    model, data_texts, batch_size, show_progress=False
                 )
 
                 # Extract tensor values (skip metadata keys like "_full_matrix")
