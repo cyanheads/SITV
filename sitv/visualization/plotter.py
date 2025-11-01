@@ -306,7 +306,7 @@ class ResultPlotter:
             >>> html_path, png_path = plotter.plot_3d_composition(results_3d)
         """
         try:
-            import plotly.graph_objects as go  # type: ignore[import-untyped]
+            import plotly.graph_objects as go  # type: ignore[import-not-found, import-untyped]
             plotly_available = True
         except ImportError:
             plotly_available = False
@@ -978,7 +978,7 @@ class ResultPlotter:
         task_names = sorted(task_datasets.keys())
 
         # Find common alpha range
-        all_alphas = set()
+        all_alphas: set[float] = set()
         for data in task_datasets.values():
             all_alphas.update(r.alpha for r in data['results'])
         alphas_sorted = sorted(all_alphas)

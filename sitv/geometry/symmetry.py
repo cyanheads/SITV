@@ -203,6 +203,7 @@ class SymmetryAnalyzer:
         A = torch.randn(n, n, device=self.device)
 
         # QR decomposition
+        Q: torch.Tensor
         Q, R = torch.linalg.qr(A)
 
         # Ensure proper rotation (det = +1, not -1)
@@ -552,9 +553,10 @@ class SymmetryAnalyzer:
         canonical = {}
 
         # Compute total Frobenius norm
-        total_norm = torch.sqrt(
-            sum(torch.sum(p ** 2) for p in params.values())
-        )
+        total_norm_squared = torch.tensor(0.0, device=self.device)
+        for p in params.values():
+            total_norm_squared = total_norm_squared + torch.sum(p ** 2)
+        total_norm = torch.sqrt(total_norm_squared)
 
         # Normalize all parameters
         for name, param in params.items():

@@ -84,7 +84,8 @@ class TaskVectorService:
             # Update progress (print every 10 params or for large models)
             tracker.end_iteration()
             if tracker.current % 10 == 0 or len(params_list) > 100:
-                print(f"  {tracker.get_status()}", end='\r')
+                msg = f"  Parameter progress: {tracker.get_status()}"
+                print(f"{msg:<80}", end='\r', flush=True)
 
         print()  # New line after completion
         return task_vector

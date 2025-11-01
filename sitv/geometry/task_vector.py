@@ -6,7 +6,7 @@ using the Fisher Information Matrix as the metric tensor and geodesic paths
 for interpolation.
 """
 
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 import torch
 from transformers import PreTrainedModel
@@ -67,7 +67,7 @@ class GeodesicTaskVectorService:
         )
 
         # Cache for Fisher metrics
-        self._fisher_cache: Dict[str, Dict[str, torch.Tensor]] = {}
+        self._fisher_cache: Dict[str, Dict[str, torch.Tensor | Dict[str, Any]]] = {}
 
     def compute(
         self,
@@ -110,8 +110,10 @@ class GeodesicTaskVectorService:
             fisher = self.get_or_compute_fisher(base_model, data_texts, "base")
 
             # Use logarithm map to get tangent vector
+            # Note: For full Fisher approximation with metadata, cast to expected type
+            from typing import cast as typing_cast
             task_vector = self.geodesic_integrator.log_map(
-                base_params, ft_params, fisher
+                base_params, ft_params, typing_cast(Optional[Dict[str, torch.Tensor]], fisher)
             )
         else:
             # Fall back to Euclidean subtraction (which is the log map in flat space)
@@ -221,7 +223,7 @@ class GeodesicTaskVectorService:
         model: PreTrainedModel,
         data_texts: list[str],
         cache_key: str
-    ) -> Dict[str, torch.Tensor]:
+    ) -> Dict[str, torch.Tensor | Dict[str, Any]]:
         """Get Fisher metric from cache or compute it.
 
         Args:

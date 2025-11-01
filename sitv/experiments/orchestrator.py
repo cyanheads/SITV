@@ -17,7 +17,7 @@ import torch
 
 from sitv.analysis import ResultAnalyzer
 from sitv.core import TaskVectorService, get_device_string
-from sitv.data.models import ExperimentMetrics, TwoDSweepResult, ThreeDSweepResult
+from sitv.data.models import ExperimentMetrics, ThreeDSweepResult, TwoDSweepResult
 from sitv.data.tasks import get_predefined_tasks
 from sitv.experiments import AlphaSweepExperiment, Composition2DExperiment
 from sitv.experiments.composition_3d import Composition3DExperiment
@@ -574,7 +574,6 @@ class ExperimentOrchestrator:
         plotter.plot_2d_composition(results_2d, plot_path_2d)
 
         # Save 2D results
-        import json
         results_2d_path = f"{self.config.output_dir}/loss_landscape_2d_results.json"
         with open(results_2d_path, 'w') as f:
             json.dump([
@@ -713,7 +712,6 @@ class ExperimentOrchestrator:
         plotter.plot_3d_composition(results_3d, plot_path_interactive, plot_path_slices)
 
         # Save 3D results
-        import json
         results_3d_path = f"{self.config.output_dir}/loss_landscape_3d_results.json"
         with open(results_3d_path, 'w') as f:
             json.dump([
@@ -900,21 +898,30 @@ class ExperimentOrchestrator:
         fisher_time = time.time() - start_fisher
 
         # Compute Riemannian norm
-        riem_magnitude = geo_service.compute_magnitude(task_vector, fisher)
+        # Note: Cast fisher to expected type (full Fisher with metadata handled separately)
+        from typing import cast
+        riem_magnitude = geo_service.compute_magnitude(
+            task_vector,
+            cast(dict[str, torch.Tensor] | None, fisher)
+        )
 
         # Compute Christoffel symbols and detect curvature (v0.13.0)
         christoffel_rms = 0.0
         curvature_detected = False
         if self.config.geometry.geodesic_integration.recompute_metric_every > 0:
-            print("\n  Computing Christoffel symbols to detect curvature...")
             christoffel_start = time.time()
+
+            # Get num_samples from christoffel_computation config
+            num_samples = self.config.geometry.christoffel_computation.num_samples
+            num_samples = min(num_samples, len(training_texts))
 
             # Compute Christoffel symbols via finite differences
             christoffel = geo_service.fisher_service.compute_christoffel_symbols_finite_diff(
                 model=base_model,
                 base_params={name: param.data for name, param in base_model.named_parameters()},
-                data_texts=training_texts[:100],  # Use subset for speed
-                epsilon=self.config.geometry.geodesic_integration.metric_epsilon
+                data_texts=training_texts[:num_samples],
+                epsilon=self.config.geometry.geodesic_integration.metric_epsilon,
+                config=self.config.geometry.christoffel_computation
             )
 
             # Compute RMS of Christoffel symbols
@@ -961,7 +968,8 @@ class ExperimentOrchestrator:
         # It will be moved back to GPU when needed during geodesic operations
         import torch
         self.fisher_metric = {
-            name: tensor.cpu() for name, tensor in fisher.items()
+            name: (tensor.cpu() if isinstance(tensor, torch.Tensor) else tensor)
+            for name, tensor in fisher.items()
         }
 
         # Delete any remaining GPU references
@@ -979,7 +987,7 @@ class ExperimentOrchestrator:
         # Compute curvature analysis if enabled
         if self.config.geometry.curvature_analysis.enabled:
             print("\n  Computing curvature analysis...")
-            self._compute_curvature_analysis(base_model, fisher)
+            self._compute_curvature_analysis(base_model, self.fisher_metric)
 
         # Compute symmetry analysis if enabled
         if self.config.geometry.symmetry_analysis.enabled:
