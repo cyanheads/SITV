@@ -285,7 +285,7 @@ class CriticalPointFinder:
             Sorted list of unique indices near zero-crossings
         """
         # Use set for efficient duplicate prevention
-        indices_set = set()
+        indices_set: set[int] = set()
 
         # Find sign changes
         signs = np.sign(values)

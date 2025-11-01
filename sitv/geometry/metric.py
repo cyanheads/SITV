@@ -230,7 +230,7 @@ class FisherMetricService:
         model: nn.Module,
         texts: list[str],
         batch_size: int
-    ) -> dict[str, torch.Tensor]:
+    ) -> dict[str, torch.Tensor | dict]:
         """Compute full Fisher Information Matrix.
 
         WARNING: This computes the full O(n²) covariance matrix.
