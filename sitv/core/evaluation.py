@@ -143,11 +143,23 @@ class EvaluationService:
             loss: Average cross-entropy loss
 
         Returns:
-            Perplexity (exp(loss))
+            Perplexity (exp(loss)). Returns float('inf') if loss is too large
+            to prevent overflow (loss > 88.0 for float32 safety margin).
 
         Examples:
             >>> perplexity = evaluator.compute_perplexity(loss)
         """
+        # Validate input
+        if not torch.isfinite(torch.tensor(loss)):
+            return float('inf')
+
+        # Prevent overflow: exp(88.7) is near float32 max (~3.4e38)
+        # Use 88.0 as safety margin
+        if loss > 88.0:
+            return float('inf')
+
+        # Negative loss is physically meaningless for cross-entropy
+        # but we'll allow it and return the computed value
         return torch.exp(torch.tensor(loss)).item()
 
     def evaluate_with_perplexity(

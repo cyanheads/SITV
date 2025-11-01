@@ -275,30 +275,31 @@ class CriticalPointFinder:
     ) -> List[int]:
         """Find indices where values cross zero.
 
+        Detects both sign changes and points very close to zero.
+        Automatically deduplicates cases where a point satisfies both criteria.
+
         Args:
             values: Array of values
 
         Returns:
-            List of indices near zero-crossings
+            Sorted list of unique indices near zero-crossings
         """
-        indices = []
+        # Use set for efficient duplicate prevention
+        indices_set = set()
 
         # Find sign changes
         signs = np.sign(values)
         sign_changes = np.diff(signs)
         crossing_indices = np.where(sign_changes != 0)[0]
-
-        for idx in crossing_indices:
-            indices.append(idx)
+        indices_set.update(crossing_indices)
 
         # Also include points very close to zero
+        # (may overlap with sign changes, but set handles duplicates)
         near_zero = np.where(np.abs(values) < self.gradient_threshold)[0]
-        indices.extend(near_zero)
+        indices_set.update(near_zero)
 
-        # Remove duplicates and sort
-        indices = sorted(set(indices))
-
-        return indices
+        # Return sorted list
+        return sorted(indices_set)
 
     def _interpolate_curvature(
         self,

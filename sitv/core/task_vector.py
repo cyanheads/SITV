@@ -89,10 +89,15 @@ class TaskVectorService:
             >>> magnitude = TaskVectorService.compute_magnitude(task_vector)
             >>> print(f"Task vector magnitude: {magnitude:.4f}")
         """
-        total_norm = 0.0
+        # Use torch operations for numerical stability and precision
+        # Compute sum of squared norms in tensor space before converting to float
+        total_norm_sq = torch.tensor(0.0, dtype=torch.float64)
         for param in task_vector.values():
-            total_norm += torch.sum(param ** 2).item()
-        return float(total_norm ** 0.5)
+            # Use float64 for accumulation to prevent precision loss
+            param_norm_sq = torch.sum(param.double() ** 2)
+            total_norm_sq += param_norm_sq
+
+        return float(torch.sqrt(total_norm_sq).item())
 
     @staticmethod
     def apply(
@@ -112,6 +117,9 @@ class TaskVectorService:
         Returns:
             Modified model with task vector applied
 
+        Raises:
+            ValueError: If alpha is not finite (NaN or Inf)
+
         Note:
             This modifies the model in-place but returns it for convenience.
 
@@ -120,6 +128,13 @@ class TaskVectorService:
             ...     base_model, task_vector, alpha=1.5, device=device
             ... )
         """
+        # Validate alpha is finite
+        if not torch.isfinite(torch.tensor(alpha)):
+            raise ValueError(
+                f"Alpha must be finite, got {alpha}. "
+                "NaN or Inf values are not allowed."
+            )
+
         with torch.no_grad():
             for name, param in base_model.named_parameters():
                 if name in task_vector:

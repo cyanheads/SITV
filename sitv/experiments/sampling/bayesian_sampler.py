@@ -312,12 +312,16 @@ class BayesianSampler(BaseSampler):
         # Best observed value so far (minimize loss)
         f_best = np.min(self.gp_state.losses)
 
-        # Compute EI
-        with np.errstate(divide='warn', invalid='warn'):
-            improvement = f_best - mu - self.xi
-            Z = improvement / sigma
-            ei = improvement * self._normal_cdf(Z) + sigma * self._normal_pdf(Z)
-            ei[sigma == 0.0] = 0.0
+        # Compute EI with numerical stability
+        # Add epsilon to sigma to prevent division by zero
+        epsilon = 1e-6
+        sigma_safe = sigma + epsilon
+
+        improvement = f_best - mu - self.xi
+        Z = improvement / sigma_safe
+        ei = improvement * self._normal_cdf(Z) + sigma_safe * self._normal_pdf(Z)
+        # Set EI to 0 where sigma was originally 0 (no uncertainty)
+        ei[sigma == 0.0] = 0.0
 
         result: np.ndarray = ei.flatten()
         return result

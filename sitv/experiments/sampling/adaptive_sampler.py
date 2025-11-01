@@ -197,6 +197,9 @@ class AdaptiveSampler(BaseSampler):
     ) -> List[float]:
         """Find regions with high curvature (second derivative).
 
+        Uses proper finite difference formula for non-uniform grids with
+        numerical stability protection.
+
         Args:
             alphas: Array of alpha values
             losses: Array of loss values
@@ -207,13 +210,26 @@ class AdaptiveSampler(BaseSampler):
         if len(alphas) < 3:
             return []
 
-        # Compute second derivative (discrete)
-        second_deriv = np.diff(losses, n=2) / (np.diff(alphas[:-1]) * np.diff(alphas[1:]))
+        # Compute second derivative using proper finite difference for non-uniform grids
+        # For interior points: d²f/dx² ≈ 2*((f[i+1]-f[i])/h_f - (f[i]-f[i-1])/h_b) / (h_f + h_b)
+        second_deriv = np.zeros(len(alphas) - 2)
+        for i in range(1, len(alphas) - 1):
+            h_forward = alphas[i+1] - alphas[i]
+            h_backward = alphas[i] - alphas[i-1]
+
+            # Add epsilon to prevent division by very small values
+            epsilon = 1e-10
+            h_forward = max(h_forward, epsilon)
+            h_backward = max(h_backward, epsilon)
+
+            first_deriv_forward = (losses[i+1] - losses[i]) / h_forward
+            first_deriv_backward = (losses[i] - losses[i-1]) / h_backward
+            second_deriv[i-1] = 2 * (first_deriv_forward - first_deriv_backward) / (h_forward + h_backward)
 
         # Find regions with high absolute curvature
         high_curvature_idx = np.where(np.abs(second_deriv) > self.curvature_threshold)[0]
 
-        # Return alpha values at these points
+        # Return alpha values at these points (offset by 1 since second_deriv is shorter)
         return [alphas[i + 1] for i in high_curvature_idx]
 
     def _find_zero_crossing_regions(
