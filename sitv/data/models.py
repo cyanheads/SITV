@@ -29,6 +29,10 @@ class AlphaSweepResult:
         perplexity_2alpha: exp(loss_2alpha)
         sentiment_preference: Difference between negative and positive sentiment loss (pos means prefers positive)
         task_eval_loss_negative: Loss on opposite sentiment eval data (for preference calculation)
+        category_losses: Per-category losses (optional, populated when using "combined" dataset)
+        euclidean_distance: ||α·T|| Euclidean norm from base
+        geodesic_distance: Geodesic distance from base (if Riemannian geometry enabled)
+        geometry_overhead_seconds: Additional computation time for Riemannian vs Euclidean
     """
 
     alpha: float
@@ -51,6 +55,11 @@ class AlphaSweepResult:
 
     # Per-category losses (optional, populated when using "combined" dataset)
     category_losses: dict[str, float] = field(default_factory=dict)
+
+    # Riemannian geometry metrics (NEW)
+    euclidean_distance: float = 0.0  # ||α·T|| Euclidean norm
+    geodesic_distance: float = 0.0   # Geodesic distance (if enabled)
+    geometry_overhead_seconds: float = 0.0  # Extra time for Riemannian operations
 
 
 @dataclass
@@ -136,6 +145,17 @@ class ExperimentMetrics:
         multi_task_mode: Whether multi-task comparison was run
         enable_2d_composition: Whether 2D composition was enabled
         task_vector_2_magnitude: L2 norm of second task vector (for 2D)
+
+        # Riemannian geometry
+        geometry_enabled: Whether Riemannian geometry was enabled
+        metric_type: Type of metric used (euclidean, fisher_diagonal, fisher_kfac, fisher_full)
+        fisher_computation_time: Time to compute Fisher Information Matrix
+        fisher_num_samples: Number of samples used for Fisher estimation
+        fisher_condition_number: Condition number of Fisher matrix (max/min eigenvalue)
+        task_vector_magnitude_euclidean: Euclidean norm ||T||
+        task_vector_magnitude_riemannian: Riemannian norm ||T||_g
+        geodesic_integration_enabled: Whether geodesic integration was used
+        geodesic_num_steps: Number of RK4 steps per geodesic evaluation
     """
 
     start_time: str
@@ -192,6 +212,17 @@ class ExperimentMetrics:
     # 2D composition metrics
     enable_2d_composition: bool = False
     task_vector_2_magnitude: float = 0.0
+
+    # Riemannian geometry metrics (NEW)
+    geometry_enabled: bool = False
+    metric_type: str = "euclidean"  # euclidean | fisher_diagonal | fisher_kfac | fisher_full
+    fisher_computation_time: float = 0.0
+    fisher_num_samples: int = 0
+    fisher_condition_number: float = 0.0  # Max eigenvalue / min eigenvalue (if available)
+    task_vector_magnitude_euclidean: float = 0.0  # ||T|| Euclidean
+    task_vector_magnitude_riemannian: float = 0.0  # ||T||_g Riemannian
+    geodesic_integration_enabled: bool = False
+    geodesic_num_steps: int = 0  # RK4 integration steps per evaluation
 
 
 class FineTuningProgressCallback(TrainerCallback):
