@@ -5,6 +5,101 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0] - 2025-11-01
+
+### Added
+
+- **3D Task Vector Composition** ([sitv/experiments/composition_3d.py](sitv/experiments/composition_3d.py)):
+  - Implemented complete 3D composition experiment exploring `L(M_base + α·T1 + β·T2 + γ·T3)`
+  - Added `Composition3DExperiment` class for three-task interaction analysis
+  - Supports configurable grid sampling (5³ to 20³ evaluations)
+  - Uses in-place parameter modification for memory efficiency
+  - Integrated batched evaluation and mixed precision support
+
+- **3D Composition Data Models** ([sitv/data/models.py](sitv/data/models.py)):
+  - Added `ThreeDSweepResult` dataclass for 3D composition results
+  - Added 3D composition metrics to `ExperimentMetrics`:
+    - `enable_3d_composition`, `task_name_3d_1/2/3`
+    - `task_vector_3d_1/2/3_magnitude`
+  - Tracks full three-task configuration and vector magnitudes
+
+- **3D Composition Configuration** ([sitv/experiments/config.py](sitv/experiments/config.py), [config.yaml](config.yaml)):
+  - Added `Composition3DConfig` dataclass with alpha/beta/gamma ranges
+  - Added `enable_3d_composition` flag to experiment configuration
+  - Added comprehensive configuration section to config.yaml with:
+    - Three task selection (task_1, task_2, task_3)
+    - Independent scaling ranges for each dimension
+    - Configurable grid resolution (default: 10×10×10 = 1,000 evaluations)
+    - Timing estimates for quick/standard/high-res configurations
+
+- **3D Visualization** ([sitv/visualization/plotter.py](sitv/visualization/plotter.py)):
+  - Added `plot_3d_composition()` method generating interactive 3D plots and 2D slices
+  - Interactive 3D scatter plot (HTML via plotly) with rotation and zoom
+  - 2D cross-sectional slices showing loss at different γ values (6-panel PNG)
+  - Automatic optimal point detection and marking
+  - Base model reference point visualization
+
+- **Multi-Task Comparison Plotting** ([sitv/visualization/plotter.py](sitv/visualization/plotter.py)):
+  - Added `plot_multi_task_comparison()` with 5 layout modes:
+    - `overlaid`: 2×2 grid with all tasks on same plots
+    - `side_by_side`: 3×2 grid, one row per task
+    - `grid`: 3×3 grid with loss, return, and squaring test
+    - `publication`: Single panel with insets for publication quality
+    - `heatmap`: Averaged loss landscape revealing universal structure
+  - Added comprehensive statistics tables and comparative metrics
+  - Color-coded task differentiation with consistent styling
+  - Support for 800+ lines of advanced visualization code
+
+- **3D Composition Orchestration** ([sitv/experiments/orchestrator.py](sitv/experiments/orchestrator.py)):
+  - Added `_run_3d_composition()` method for three-task workflow
+  - Added `_fine_tune_and_compute_task_vector()` helper for task vector generation
+  - Automatic fine-tuning on second and third tasks
+  - Reuses main task vector when matching 3D task_1
+  - Generates 3D visualizations and saves results to JSON
+  - Integrated into main experiment workflow
+
+- **3D Composition Reporting** ([sitv/reporting/markdown.py](sitv/reporting/markdown.py)):
+  - Added `_create_3d_composition_section()` method for comprehensive 3D analysis
+  - Reports optimal composition point (α*, β*, γ*)
+  - Reports worst-case composition and closest return to base
+  - Includes loss landscape statistics (mean, std, range)
+  - Provides interpretation guidance for three-way task interactions
+  - Documents visualization file locations
+
+- **Composition Analysis Module** ([sitv/analysis/composition_analyzer.py](sitv/analysis/composition_analyzer.py)):
+  - Added `CompositionAnalyzer` class for analyzing multi-task compositions
+  - Exported through `sitv.analysis` module
+  - Provides specialized analysis for 2D and 3D composition results
+
+### Changed
+
+- **Base Experiment Enhancement** ([sitv/experiments/base.py](sitv/experiments/base.py)):
+  - Added `apply_3d_composition()` method for three-task vector composition
+  - Validates all three scaling factors (alpha, beta, gamma) for finiteness
+  - Uses optimized floating-point accumulation order for numerical stability
+  - Supports pre-loaded task vectors to device for performance
+
+- **Experiment Orchestrator Workflow** ([sitv/experiments/orchestrator.py](sitv/experiments/orchestrator.py)):
+  - Enhanced configuration display to show 3D composition settings
+  - Added Phase 5 for 3D composition experiments (after 2D composition)
+  - Stores 3D results in `self.results_3d` for report generation
+  - Passes 3D results to markdown report generator
+
+- **Markdown Report Generation** ([sitv/reporting/markdown.py](sitv/reporting/markdown.py)):
+  - Updated `generate()` and `_build_report()` to accept `results_3d` parameter
+  - Enhanced report structure to include 3D composition analysis when available
+  - Maintains backward compatibility with 1D and 2D only experiments
+
+### Technical Details
+
+- **3D Composition**: Full implementation of three-task interaction analysis with volumetric loss landscapes
+- **Computational Cost**: Scales cubically - 10³ = 1,000 evaluations typical, 20³ = 8,000 for high-resolution
+- **Memory Efficiency**: In-place parameter modification handles 3D grids without memory explosion
+- **Visualization**: Interactive plotly 3D plots enable rotation and exploration of loss landscape structure
+- **Multi-Task Analysis**: Advanced comparison plotting reveals universal patterns across different tasks
+- **Line Count**: Added 800+ lines of visualization code and 200+ lines for 3D experiment infrastructure
+- **Breaking Changes**: None - 3D composition is opt-in via `composition_3d.enable` configuration
+
 ## [0.10.2] - 2025-10-31
 
 ### Fixed
