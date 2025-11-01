@@ -69,6 +69,9 @@ class AlphaSweepExperiment(Experiment):
         enable_squaring_test: bool = True,
         sampling_strategy: str = "uniform",
         sampling_config: Optional[SamplingConfig] = None,
+        eval_batch_size: int = 8,
+        eval_enable_mixed_precision: bool = True,
+        eval_max_length: int = 512,
     ):
         """Initialize the alpha sweep experiment.
 
@@ -86,6 +89,9 @@ class AlphaSweepExperiment(Experiment):
             enable_squaring_test: Whether to test M(2α) as well
             sampling_strategy: Sampling strategy ("uniform", "adaptive", "bayesian")
             sampling_config: Sampling configuration (adaptive/bayesian parameters)
+            eval_batch_size: Batch size for evaluation (default: 8)
+            eval_enable_mixed_precision: Use FP16/BF16 for evaluation (default: True)
+            eval_max_length: Max sequence length for evaluation (default: 512)
 
         Raises:
             ValidationError: If any configuration parameter is invalid
@@ -112,7 +118,13 @@ class AlphaSweepExperiment(Experiment):
         self.enable_squaring_test = enable_squaring_test
         self.sampling_strategy = sampling_strategy.lower()
         self.sampling_config = sampling_config or SamplingConfig()
-        self.evaluator = EvaluationService(tokenizer, device)
+        self.evaluator = EvaluationService(
+            tokenizer,
+            device,
+            batch_size=eval_batch_size,
+            enable_mixed_precision=eval_enable_mixed_precision,
+            max_length=eval_max_length
+        )
         self.failure_tracker = FailureTracker(
             max_consecutive_failures=5,
             max_total_failures_pct=0.3

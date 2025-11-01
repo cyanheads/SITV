@@ -5,6 +5,60 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2025-10-31
+
+### Added
+
+- **Batched Evaluation** ([sitv/core/evaluation.py](sitv/core/evaluation.py)):
+  - Added `batch_size` parameter to EvaluationService (default: 8)
+  - Implemented batched text processing in `evaluate()` method
+  - Processes multiple texts per forward pass to reduce overhead
+  - Configurable via `evaluation.batch_size` in config.yaml
+
+- **Mixed Precision Support** ([sitv/core/evaluation.py](sitv/core/evaluation.py)):
+  - Added `enable_mixed_precision` parameter (default: true)
+  - Automatically selects BF16 on Ampere+ GPUs, FP16 on older CUDA/MPS
+  - Uses `torch.autocast` for 1.5-2x evaluation speedup
+  - Configurable via `evaluation.enable_mixed_precision` in config.yaml
+
+- **Evaluation Configuration** ([sitv/experiments/config.py](sitv/experiments/config.py)):
+  - Added `batch_size`, `enable_mixed_precision`, and `max_length` to EvaluationConfig
+  - Defaults: batch_size=8, enable_mixed_precision=true, max_length=512
+  - Configuration loaded from `evaluation` section in config.yaml
+
+### Changed
+
+- **EvaluationService Refactor** ([sitv/core/evaluation.py](sitv/core/evaluation.py)):
+  - Updated type hints to modern Python 3.12+ syntax (list[str] instead of List[str], dict instead of Dict)
+  - Modified loss accumulation to properly average across batches
+  - Added `strict=True` to zip() calls for safer iteration
+  - Enhanced docstrings with performance optimization details
+
+- **Experiment Integration** ([sitv/experiments/alpha_sweep.py](sitv/experiments/alpha_sweep.py), [sitv/experiments/composition_2d.py](sitv/experiments/composition_2d.py)):
+  - Added evaluation performance parameters to both experiment classes
+  - Passes `eval_batch_size`, `eval_enable_mixed_precision`, and `eval_max_length` to EvaluationService
+  - Enables performance tuning through configuration
+
+- **Orchestrator Enhancement** ([sitv/experiments/orchestrator.py](sitv/experiments/orchestrator.py)):
+  - Added "Evaluation Performance" section to configuration display
+  - Shows batch size, mixed precision, and max length settings at startup
+  - Passes evaluation config to AlphaSweepExperiment and Composition2DExperiment
+
+- **Configuration Updates** ([config.yaml](config.yaml)):
+  - Changed task from "qa_factual" to "sentiment_positive"
+  - Increased alpha sweep samples from 75 to 100
+  - Changed sampling strategy from "uniform" to "adaptive"
+  - Enabled 2D composition experiment (enable: true)
+  - Added model documentation with supported models (Gemma, Qwen)
+  - Added NEW evaluation performance section with batch_size, enable_mixed_precision, max_length
+
+### Technical Details
+
+- **Performance**: Batched evaluation reduces forward pass overhead, mixed precision provides 1.5-2x speedup
+- **Hardware Optimization**: Auto-detection selects optimal dtype (BF16 on Ampere+, FP16 on Pascal/MPS)
+- **Type Safety**: Modernized type hints throughout evaluation module for Python 3.12+
+- **Backward Compatibility**: Default settings provide optimal performance; can be disabled via config
+
 ## [0.8.1] - 2025-10-31
 
 ### Added

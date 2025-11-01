@@ -135,6 +135,12 @@ class ExperimentOrchestrator:
         print(f"  Samples: {self.config.alpha_sweep.num_samples}")
         print(f"  Squaring test: {self.config.alpha_sweep.enable_squaring_test}")
 
+        # Evaluation optimization settings
+        print(f"\nEvaluation Performance:")
+        print(f"  Batch size: {self.config.evaluation.batch_size}")
+        print(f"  Mixed precision: {self.config.evaluation.enable_mixed_precision}")
+        print(f"  Max length: {self.config.evaluation.max_length}")
+
         # 2D composition configuration
         if self.config.enable_2d_composition:
             print(f"\n2D Composition:")
@@ -364,6 +370,9 @@ class ExperimentOrchestrator:
             enable_squaring_test=self.config.alpha_sweep.enable_squaring_test,
             sampling_strategy=self.config.alpha_sweep.sampling.strategy,
             sampling_config=self.config.alpha_sweep.sampling,
+            eval_batch_size=self.config.evaluation.batch_size,
+            eval_enable_mixed_precision=self.config.evaluation.enable_mixed_precision,
+            eval_max_length=self.config.evaluation.max_length,
         )
 
         # Run experiment
@@ -507,6 +516,9 @@ class ExperimentOrchestrator:
             beta_range=self.config.composition_2d.beta_range,
             num_samples_per_dim=self.config.composition_2d.num_samples_per_dim,
             device=self.device,
+            eval_batch_size=self.config.evaluation.batch_size,
+            eval_enable_mixed_precision=self.config.evaluation.enable_mixed_precision,
+            eval_max_length=self.config.evaluation.max_length,
         )
 
         results_2d, metadata_2d = experiment.run()

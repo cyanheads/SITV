@@ -45,6 +45,9 @@ class Composition2DExperiment(Experiment):
         beta_range: tuple[float, float] = (-2.0, 2.0),
         num_samples_per_dim: int = 20,
         device: str = "cuda",
+        eval_batch_size: int = 8,
+        eval_enable_mixed_precision: bool = True,
+        eval_max_length: int = 512,
     ):
         """Initialize the 2D composition experiment.
 
@@ -58,6 +61,9 @@ class Composition2DExperiment(Experiment):
             beta_range: Range for β (T2 scaling)
             num_samples_per_dim: Samples per dimension (total = num²)
             device: Device for computation
+            eval_batch_size: Batch size for evaluation (default: 8)
+            eval_enable_mixed_precision: Use FP16/BF16 for evaluation (default: True)
+            eval_max_length: Max sequence length for evaluation (default: 512)
         """
         super().__init__(base_model, tokenizer, device)
         self.task_vector_1 = task_vector_1
@@ -66,7 +72,13 @@ class Composition2DExperiment(Experiment):
         self.alpha_range = alpha_range
         self.beta_range = beta_range
         self.num_samples_per_dim = num_samples_per_dim
-        self.evaluator = EvaluationService(tokenizer, device)
+        self.evaluator = EvaluationService(
+            tokenizer,
+            device,
+            batch_size=eval_batch_size,
+            enable_mixed_precision=eval_enable_mixed_precision,
+            max_length=eval_max_length
+        )
 
     def run(self) -> tuple[List[TwoDSweepResult], Dict[str, Any]]:
         """Run the 2D composition experiment.

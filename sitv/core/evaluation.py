@@ -6,33 +6,67 @@ on text datasets.
 """
 
 import torch
-import torch.nn as nn
-from typing import Dict, List
+from torch import nn
 
 
 class EvaluationService:
     """Service for evaluating language models.
 
     This service handles model evaluation on text datasets, computing
-    perplexity and loss metrics.
+    perplexity and loss metrics. Supports batched evaluation and mixed
+    precision for improved performance.
 
     Attributes:
         tokenizer: HuggingFace tokenizer for text preprocessing
         device: Device to run evaluation on
+        batch_size: Number of texts to process per forward pass
+        enable_mixed_precision: Whether to use FP16/BF16 for evaluation
+        max_length: Maximum sequence length for tokenization
     """
 
-    def __init__(self, tokenizer, device: str = "cuda"):
+    def __init__(
+        self,
+        tokenizer,
+        device: str = "cuda",
+        batch_size: int = 8,
+        enable_mixed_precision: bool = True,
+        max_length: int = 512
+    ):
         """Initialize the evaluation service.
 
         Args:
             tokenizer: HuggingFace tokenizer
             device: Device for evaluation ("cuda", "mps", or "cpu")
+            batch_size: Number of texts to evaluate per forward pass (default: 8)
+            enable_mixed_precision: Use FP16/BF16 for faster evaluation (default: True)
+            max_length: Maximum sequence length for tokenization (default: 512)
         """
         self.tokenizer = tokenizer
         self.device = device
+        self.batch_size = batch_size
+        self.enable_mixed_precision = enable_mixed_precision
+        self.max_length = max_length
 
-    def evaluate(self, model: nn.Module, texts: List[str]) -> float:
+        # Determine dtype for mixed precision
+        # BF16 is preferred on Ampere+ GPUs, FP16 on older CUDA or MPS
+        self.autocast_dtype = None
+        if enable_mixed_precision:
+            if device == "cuda" and torch.cuda.is_available():
+                # Check if BF16 is available (Ampere or newer)
+                if torch.cuda.is_bf16_supported():
+                    self.autocast_dtype = torch.bfloat16
+                else:
+                    self.autocast_dtype = torch.float16
+            elif device == "mps":
+                # MPS supports FP16
+                self.autocast_dtype = torch.float16
+            # CPU doesn't benefit from mixed precision, keep None
+
+    def evaluate(self, model: nn.Module, texts: list[str]) -> float:
         """Evaluate model perplexity on evaluation texts.
+
+        Uses batched evaluation and mixed precision for improved performance.
+        Processes texts in batches to reduce forward pass overhead.
 
         Args:
             model: Model to evaluate
@@ -51,26 +85,38 @@ class EvaluationService:
         count = 0
 
         with torch.no_grad():
-            for text in texts:
+            # Process texts in batches for efficiency
+            for i in range(0, len(texts), self.batch_size):
+                batch_texts = texts[i:i + self.batch_size]
+
+                # Tokenize batch with padding
                 inputs = self.tokenizer(
-                    text,
+                    batch_texts,
                     return_tensors="pt",
                     truncation=True,
-                    max_length=512,
+                    max_length=self.max_length,
                     padding=True
                 )
                 inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
-                outputs = model(**inputs, labels=inputs["input_ids"])
-                total_loss += outputs.loss.item()
-                count += 1
+                # Use mixed precision if enabled
+                if self.autocast_dtype is not None:
+                    with torch.autocast(device_type=self.device, dtype=self.autocast_dtype):
+                        outputs = model(**inputs, labels=inputs["input_ids"])
+                else:
+                    outputs = model(**inputs, labels=inputs["input_ids"])
+
+                # Accumulate loss from batch
+                # outputs.loss is already averaged over the batch
+                total_loss += outputs.loss.item() * len(batch_texts)
+                count += len(batch_texts)
 
         return total_loss / count if count > 0 else 0.0
 
     def evaluate_task_performance(
         self,
         model: nn.Module,
-        task_eval_texts: List[str]
+        task_eval_texts: list[str]
     ) -> float:
         """Evaluate how well the model performs on a specific task.
 
@@ -107,7 +153,7 @@ class EvaluationService:
     def evaluate_with_perplexity(
         self,
         model: nn.Module,
-        texts: List[str]
+        texts: list[str]
     ) -> tuple[float, float]:
         """Evaluate model and return both loss and perplexity.
 
@@ -129,9 +175,9 @@ class EvaluationService:
     def evaluate_by_category(
         self,
         model: nn.Module,
-        texts: List[str],
-        categories: List[str]
-    ) -> Dict[str, float]:
+        texts: list[str],
+        categories: list[str]
+    ) -> dict[str, float]:
         """Evaluate model separately for each category.
 
         This method groups texts by category and computes loss for each group,
@@ -157,14 +203,14 @@ class EvaluationService:
             )
 
         # Group texts by category
-        category_texts: Dict[str, List[str]] = {}
-        for text, category in zip(texts, categories):
+        category_texts: dict[str, list[str]] = {}
+        for text, category in zip(texts, categories, strict=True):
             if category not in category_texts:
                 category_texts[category] = []
             category_texts[category].append(text)
 
         # Evaluate each category
-        category_losses: Dict[str, float] = {}
+        category_losses: dict[str, float] = {}
         for category, cat_texts in category_texts.items():
             loss = self.evaluate(model, cat_texts)
             category_losses[category] = loss
@@ -174,8 +220,8 @@ class EvaluationService:
     def evaluate_sentiment_preference(
         self,
         model: nn.Module,
-        positive_texts: List[str],
-        negative_texts: List[str]
+        positive_texts: list[str],
+        negative_texts: list[str]
     ) -> tuple[float, float, float]:
         """Evaluate model's sentiment preference.
 

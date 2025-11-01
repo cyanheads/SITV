@@ -225,15 +225,27 @@ class FineTuningConfig:
 
 @dataclass
 class EvaluationConfig:
-    """Configuration for evaluation datasets.
+    """Configuration for evaluation datasets and performance.
 
     Attributes:
         general_dataset: Name of general evaluation dataset to use
             (e.g., 'mixed_domain', 'wikitext', 'coding', 'common_knowledge')
+        batch_size: Number of texts to process per forward pass
+        enable_mixed_precision: Whether to use FP16/BF16 for faster evaluation
+        max_length: Maximum sequence length for tokenization
     """
 
     general_dataset: str = field(
         default_factory=lambda: _get('evaluation.general_dataset', 'mixed_domain')
+    )
+    batch_size: int = field(
+        default_factory=lambda: _get('evaluation.batch_size', 8)
+    )
+    enable_mixed_precision: bool = field(
+        default_factory=lambda: _get('evaluation.enable_mixed_precision', True)
+    )
+    max_length: int = field(
+        default_factory=lambda: _get('evaluation.max_length', 512)
     )
 
 
