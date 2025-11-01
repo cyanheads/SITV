@@ -2,20 +2,17 @@
 
 # Model Configuration
 model:
-  name: "google/gemma-3-4b-it" # Options: google/gemma-3-4b-it, Qwen/Qwen2.5-7B-Instruct, Qwen/Qwen2.5-14B-Instruct
+  name: "google/gemma-3-4b-it" # Options: google/gemma-3-4b-it
   device: null # null = auto-detect (cuda/mps/cpu)
   # Supported models:
   # - google/gemma-3-4b-it (4B params, early 2025) - Fast, previously tested
-  # - Qwen/Qwen2.5-7B-Instruct (7B params, Oct 2024) - SOTA, recommended for comparison
-  # - Qwen/Qwen2.5-14B-Instruct (14B params, Oct 2024) - Best quality, needs ~32GB VRAM
   #
   # Model-specific notes:
-  # Qwen models: Use chat_template for proper formatting, excellent multilingual support
   # Gemma models: Instruction-tuned variant recommended (_it suffix)
 
 # Task Configuration
 task:
-  name: "sentiment_positive" # Options: sentiment_positive, sentiment_negative, instruction_following, qa_factual
+  name: "sentiment_negative" # Options: sentiment_positive, sentiment_negative, instruction_following, qa_factual
 
 # Evaluation Configuration
 evaluation:
@@ -25,7 +22,7 @@ evaluation:
   # Use "combined" to evaluate on all general datasets together (120 examples total)
 
   # Performance Optimization (NEW)
-  batch_size: 8 # Number of texts per forward pass (8-16 recommended, higher = faster but more memory)
+  batch_size: 32 # Number of texts per forward pass (8-16 recommended, higher = faster but more memory)
   enable_mixed_precision: true # Use FP16/BF16 for 1.5-2x speedup (BF16 auto-selected on Ampere+ GPUs)
   max_length: 1024 # Maximum sequence length for evaluation tokenization
 
@@ -52,9 +49,9 @@ alpha_sweep:
   alpha_max: 1.5 # Positive range is where most interesting effects occur
   num_samples: 100 # H200 power - ultra high resolution curves
   enable_squaring_test: true # Test M(2α) for self-inverse properties
-  threshold: 0.15 # Zero-crossing detection threshold
-  sampling_strategy: "adaptive" # Sampling Strategy: "uniform" (100% samples) | "adaptive" (40-60%, multi-resolution) | "bayesian" (10-20%, GP-based, 80-90% speedup!)
-  adaptive_coarse_samples: 60
+  threshold: 0.20 # Zero-crossing detection threshold
+  sampling_strategy: "uniform" # Sampling Strategy: "uniform" (100% samples) | "adaptive" (40-60%, multi-resolution) | "bayesian" (10-20%, GP-based, 80-90% speedup!)
+  # adaptive_coarse_samples: 60
   # adaptive_refine_factor: 3
   # adaptive_curvature_threshold: 0.5
   # bayesian_n_initial: 10 | bayesian_acquisition: "ei" | NOTE: Requires `pip install -e ".[bayesian]"`
@@ -70,6 +67,49 @@ composition_2d:
   beta_min: -2.0
   beta_max: 2.0
   num_samples_per_dim: 30 # 60×60 = 3,600 evaluations - publication quality heatmap
+
+# Riemannian Geometry Configuration (NEW - Experimental)
+# Enables proper Riemannian geometry on parameter manifolds instead of Euclidean vector operations
+# Based on Fisher Information Matrix as metric tensor
+geometry:
+  enabled: true # Set true to enable Riemannian geometry features
+  metric_type: "fisher_diagonal" # Options: euclidean | fisher_diagonal | fisher_kfac | fisher_full
+  cache_metric: true # Cache Fisher matrix for reuse (recommended)
+  parallel_transport: false # Use parallel transport for task vectors (experimental, not fully tested)
+
+  # Fisher Information Matrix Approximation
+  fisher_approximation:
+    sampling_strategy: "subset" # Options: full | subset | batch
+    num_samples: 1000 # Number of samples for FIM computation (if subset)
+    block_size: 256 # Block size for KFAC approximation
+    eigenvalue_floor: 1.0e-6 # Regularization for numerical stability
+
+  # Geodesic Integration (uses geodesics instead of straight lines)
+  geodesic_integration:
+    enabled: true # Use geodesic interpolation M_base + αT → exp_M(α·v)
+    num_steps: 100 # Runge-Kutta integration steps
+    tolerance: 1.0e-6 # Integration error tolerance
+    step_size_control: false # Adaptive step size (slower but more accurate)
+    max_iterations: 1000 # Maximum solver iterations
+
+  # Symmetry Analysis (detect rotation/permutation/scaling symmetries)
+  # NOTE: Phase 4 - Not yet implemented
+  symmetry_analysis:
+    enabled: false # Perform symmetry group detection (NOT IMPLEMENTED YET)
+    detect_rotations: true # Test for rotation invariance
+    detect_permutations: true # Test for neuron permutation symmetries
+    detect_scaling: true # Test for layer-wise scaling symmetries
+    quotient_space: false # Work in canonical parameter space
+    symmetry_tolerance: 0.01 # Tolerance for L(R·θ) ≈ L(θ)
+
+  # Curvature Analysis (compute sectional/Ricci/scalar curvature)
+  # NOTE: Phase 3 - Not yet implemented
+  curvature_analysis:
+    enabled: false # Compute Riemannian curvature tensors (NOT IMPLEMENTED YET)
+    compute_sectional: true # Sectional curvature K(X,Y)
+    compute_ricci: false # Ricci curvature (expensive)
+    compute_scalar: false # Scalar curvature (expensive)
+    num_tangent_samples: 10 # Random tangent vectors for curvature estimation
 
 # Hardware Optimization & Use Case Settings
 # Current (H200): batch_size=32, max_length=1024, num_samples=200, data_repetition=100×6epochs, 2D=60×60

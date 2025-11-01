@@ -268,6 +268,7 @@ class ExperimentConfig:
         composition_2d: 2D composition configuration
         fine_tuning: Fine-tuning configuration
         evaluation: Evaluation configuration
+        geometry: Riemannian geometry configuration
     """
 
     model_name: str = field(
@@ -297,6 +298,13 @@ class ExperimentConfig:
     composition_2d: Composition2DConfig = field(default_factory=Composition2DConfig)
     fine_tuning: FineTuningConfig = field(default_factory=FineTuningConfig)
     evaluation: EvaluationConfig = field(default_factory=EvaluationConfig)
+
+    # Geometry configuration (lazy import to avoid circular dependency)
+    @property
+    def geometry(self):
+        """Geometry configuration (lazy loaded to avoid circular imports)."""
+        from sitv.geometry.config import GeometryConfig
+        return GeometryConfig()
 
     @classmethod
     def from_args(cls, args) -> "ExperimentConfig":
@@ -338,7 +346,7 @@ class ExperimentConfig:
             >>> config = ExperimentConfig()
             >>> config_dict = config.to_dict()
         """
-        return {
+        config_dict = {
             "model_name": self.model_name,
             "output_dir": self.output_dir,
             "device": self.device,
@@ -373,4 +381,6 @@ class ExperimentConfig:
                 "save_strategy": self.fine_tuning.save_strategy,
                 "logging_steps": self.fine_tuning.logging_steps,
             },
+            "geometry": self.geometry.to_dict(),
         }
+        return config_dict
