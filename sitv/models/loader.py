@@ -138,11 +138,14 @@ class ModelService:
 
         print(f"\nSaving models for future analysis...")
         print(f"  Base model → {base_path}")
-        print(f"  Fine-tuned model → {ft_path}")
-
-        # Save models (saves config, weights, etc.)
+        print(f"  Saving base model...", end='', flush=True)
         base_model.save_pretrained(base_path)
+        print(" ✓")
+
+        print(f"  Fine-tuned model → {ft_path}")
+        print(f"  Saving fine-tuned model...", end='', flush=True)
         finetuned_model.save_pretrained(ft_path)
+        print(" ✓")
 
         print("Models saved successfully!\n")
 
