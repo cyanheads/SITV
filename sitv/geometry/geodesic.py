@@ -76,6 +76,22 @@ class GeodesicIntegrator:
             >>> # Geodesic from base_params in direction of task_vector
             >>> point = integrator.exponential_map(base_params, task_vector, t=0.5)
         """
+        # Ensure all tensors are on the integrator's device to avoid device mismatch
+        # (base_point might be on CUDA, tangent_vector on CPU, christoffel on CPU)
+        base_point = {
+            name: tensor.to(self.device) if tensor.device != self.device else tensor
+            for name, tensor in base_point.items()
+        }
+        tangent_vector = {
+            name: tensor.to(self.device) if tensor.device != self.device else tensor
+            for name, tensor in tangent_vector.items()
+        }
+        if christoffel is not None:
+            christoffel = {
+                name: tensor.to(self.device) if tensor.device != self.device else tensor
+                for name, tensor in christoffel.items()
+            }
+
         # If no metric provided, fall back to Euclidean (straight line)
         if fisher_metric is None or christoffel is None:
             return self._euclidean_exponential(base_point, tangent_vector, t)
