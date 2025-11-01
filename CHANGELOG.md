@@ -5,6 +5,71 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.2] - 2025-11-01
+
+### Added
+
+- **Christoffel Computation Configuration** ([sitv/geometry/config.py](sitv/geometry/config.py), [config.yaml](config.yaml)):
+  - Added `ChristoffelComputationConfig` dataclass for fine-grained control over curvature detection
+  - Added `skip_vision_tower` flag to skip vision_tower parameters (not modified during text fine-tuning)
+  - Added `skip_frozen` flag to filter parameters where requires_grad=False
+  - Added `num_samples` parameter for Fisher computation sample count (reduced from 100 to 20)
+  - Added `parameter_sample_fraction` for statistical sampling of parameters (1.0 = all, 0.1 = 10%)
+  - Added `max_parameters` limit for quick testing (null = unlimited)
+  - Documented 90% speedup achieved by skipping vision_tower (21 min → 2-3 min)
+
+- **Enhanced Progress Reporting** ([sitv/core/task_vector.py](sitv/core/task_vector.py), [sitv/geometry/metric.py](sitv/geometry/metric.py)):
+  - Added padded console output with flush for cleaner progress display
+  - Added parameter name truncation for long names (60 char limit)
+  - Added multi-level progress tracking (overall + current parameter)
+  - Improved formatting to clear previous longer lines
+
+### Changed
+
+- **Comprehensive README Documentation** ([README.md](README.md)):
+  - Updated project description with "anthill hypothesis" and experimental cartography framing
+  - Added complete Riemannian geometry section documenting Fisher metrics, geodesics, and curvature analysis
+  - Added multi-dimensional task vector composition section (2D and 3D)
+  - Enhanced output files documentation with all experiment types
+  - Added comprehensive interpretation guides for geometry and composition results
+  - Updated project structure with current module counts (53 modules, 14,742 lines of code)
+  - Added changelog reference link for version history
+
+- **Christoffel Symbol Computation Optimization** ([sitv/geometry/metric.py](sitv/geometry/metric.py)):
+  - Implemented parameter filtering logic reducing computation from ~21 min to 2-3 min (90% speedup)
+  - Added statistics logging showing total, filtered, and processed parameter counts
+  - Added support for parameter sampling (parameter_sample_fraction and max_parameters)
+  - Enhanced progress display with overall progress and current parameter details
+  - Added config parameter to `compute_christoffel_symbols_finite_diff()` method
+  - Improved robustness with type checking for Fisher metric tensor values
+
+- **Orchestrator Enhancement** ([sitv/experiments/orchestrator.py](sitv/experiments/orchestrator.py)):
+  - Updated to use `christoffel_computation.num_samples` from config instead of hardcoded 100
+  - Added type casting for Fisher metrics when computing Riemannian norm
+  - Improved GPU memory management by handling metadata in Fisher metrics
+  - Enhanced Christoffel computation to respect config-driven filtering and sampling
+
+- **Type Safety Improvements** (5 files):
+  - Enhanced type annotations in geometry modules for better static analysis
+  - Fixed type handling for Fisher metrics containing metadata dictionaries
+  - Improved type safety in symmetry analysis with explicit tensor typing
+  - Added proper type casting for geodesic task vector operations
+  - Fixed plotly import type annotations
+
+- **Geometry Configuration** ([sitv/geometry/config.py](sitv/geometry/config.py)):
+  - Integrated `ChristoffelComputationConfig` into `GeometryConfig` dataclass
+  - Added comprehensive serialization for christoffel_computation settings
+  - Enhanced configuration export with all filtering and sampling parameters
+
+### Technical Details
+
+- **Performance**: 90% speedup in Christoffel computation by skipping vision_tower parameters (21 min → 2-3 min)
+- **Parameter Filtering**: Automatic detection of parameters not modified during text fine-tuning
+- **Statistical Sampling**: Support for partial parameter sampling for quick curvature detection
+- **Documentation**: Complete feature coverage in README for all versions through v0.14.1
+- **Type Safety**: Improved static type checking throughout geometry module
+- **User Experience**: Better progress reporting with clearer formatting and multi-level tracking
+
 ## [0.14.1] - 2025-11-01
 
 ### Added
