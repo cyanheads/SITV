@@ -331,6 +331,21 @@ class FisherMetricService:
         Examples:
             >>> norm = fisher_service.compute_riemannian_norm(task_vector, fisher)
         """
+        # Ensure vector and Fisher are on the same device
+        # Get device from first Fisher tensor
+        if fisher and self.approximation_type != FisherApproximationType.EUCLIDEAN:
+            first_fisher_key = next(iter(fisher.keys()))
+            if first_fisher_key != "_full_matrix":
+                fisher_device = fisher[first_fisher_key].device
+            else:
+                fisher_device = fisher["_full_matrix"].device
+
+            # Move vector to Fisher's device if needed
+            vector = {
+                name: tensor.to(fisher_device) if tensor.device != fisher_device else tensor
+                for name, tensor in vector.items()
+            }
+
         if self.approximation_type == FisherApproximationType.EUCLIDEAN:
             # Euclidean norm: ||v||² = Σ ||v_i||²
             norm_sq = sum(
