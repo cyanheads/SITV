@@ -5,6 +5,61 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.0] - 2025-11-01
+
+### Added
+
+- **Composition Analysis Module** ([sitv/reporting/comparison_report.py](sitv/reporting/comparison_report.py)):
+  - Added `ComparisonReportGenerator` class for multi-task comparison reports
+  - Refactored comparison report generation logic from scripts into reusable reporting module
+  - Generates comparative metrics tables across multiple task vectors
+  - Provides detailed per-task analysis with optimal scaling factors and zero-crossings
+  - Analyzes variance in optimal α values and self-inverse properties across tasks
+  - Exported through `sitv.reporting` module for consistent API
+
+- **Automatic Composition Analysis** ([sitv/experiments/orchestrator.py](sitv/experiments/orchestrator.py)):
+  - Added `_run_composition_analysis()` method to automatically analyze 2D composition results
+  - Integrated `CompositionAnalyzer` to detect task interaction patterns after 2D sweeps
+  - Added `composition_analysis` field to store analysis results
+  - Runs automatically when `composition_2d.enable_analysis` is enabled
+  - Detects interaction types (additive vs non-additive) and generates predictions
+  - Saves analysis results and visualizations to output directory
+
+- **Enhanced 2D Composition Reporting** ([sitv/reporting/markdown.py](sitv/reporting/markdown.py)):
+  - Added `_create_composition_analysis_section()` method for comprehensive composition analysis in reports
+  - Reports 1D task vector properties (optimal α, curvature, zero-crossings)
+  - Reports 2D composition properties (optimal (α, β), loss at optimal)
+  - Analyzes task independence with R² score and interaction RMS
+  - Generates prediction tables comparing strategies (independent, weighted, balanced)
+  - Provides practical implications based on interaction strength
+  - References saved analysis files and visualizations
+
+### Changed
+
+- **Configuration Enhancement** ([config.yaml](config.yaml), [sitv/experiments/config.py](sitv/experiments/config.py)):
+  - Added `enable_analysis` flag to composition_2d configuration (default: true)
+  - Enables automatic composition analysis after 2D sweeps when enabled
+  - Added `enable_analysis` field to `Composition2DConfig` dataclass
+
+- **Report Generation Pipeline** ([sitv/experiments/orchestrator.py](sitv/experiments/orchestrator.py)):
+  - Updated `_generate_outputs()` to pass composition analysis results to markdown generator
+  - Enhanced report generation to include composition analysis section when available
+  - Reports now show predictability of 2D optimal composition from 1D properties
+
+- **Comparison Script Refactoring** ([scripts/compare_tasks.py](scripts/compare_tasks.py)):
+  - Removed ~110 lines of inline `generate_comparison_report()` function
+  - Replaced with call to `ComparisonReportGenerator` class from `sitv.reporting`
+  - Improved code organization and reusability
+  - Maintained identical functionality with cleaner architecture
+
+### Technical Details
+
+- **Composition Analysis**: Predicts optimal 2D composition from 1D task properties using multiple strategies
+- **Interaction Detection**: Quantifies task independence with R² score and interaction RMS metrics
+- **Automation**: Analysis runs automatically after 2D sweeps when enabled via configuration
+- **Modularity**: Comparison report generation moved from scripts to core reporting module
+- **Breaking Changes**: None - composition analysis is opt-in via configuration flag
+
 ## [0.11.0] - 2025-11-01
 
 ### Added
