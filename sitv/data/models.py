@@ -259,6 +259,12 @@ class ExperimentMetrics:
     geodesic_integration_enabled: bool = False
     geodesic_num_steps: int = 0  # RK4 integration steps per evaluation
 
+    # Curvature detection (v0.13.0 - TRUE GEOMETRIC STRUCTURE DETECTION)
+    christoffel_rms: float = 0.0  # RMS of Christoffel symbols (0 = flat space)
+    metric_recompute_count: int = 0  # Number of metric recomputations during integration
+    recompute_metric_every: int = 0  # Recompute interval (0 = never)
+    curvature_detected: bool = False  # True if Christoffel symbols are significantly non-zero
+
 
 class FineTuningProgressCallback(TrainerCallback):
     """Custom callback for detailed fine-tuning progress reporting.

@@ -12,7 +12,7 @@ model:
 
 # Task Configuration
 task:
-  name: "sentiment_negative" # Options: sentiment_positive, sentiment_negative, instruction_following, qa_factual
+  name: "sentiment_positive" # Options: sentiment_positive, sentiment_negative, instruction_following, qa_factual
 
 # Evaluation Configuration
 evaluation:
@@ -72,7 +72,7 @@ composition_2d:
 # 3D Composition Configuration (Three-Task Interaction)
 # Explores L(M_base + α·T1 + β·T2 + γ·T3)
 composition_3d:
-  enable: false # Set true to run 3D composition experiment (WARNING: computationally expensive!)
+  enable: true # Set true to run 3D composition experiment (WARNING: computationally expensive!)
   task_1: "sentiment_negative" # First task vector
   task_2: "sentiment_positive" # Second task vector
   task_3: "instruction_following" # Third task vector
@@ -88,13 +88,23 @@ composition_3d:
   # - Standard: 10×10×10 = 1,000 evaluations (~ 1-3 hours)
   # - High-res: 20×20×20 = 8,000 evaluations (~ 8-24 hours)
 
-# Riemannian Geometry Configuration (NEW - Experimental)
-# Enables proper Riemannian geometry on parameter manifolds instead of Euclidean vector operations
-# Based on Fisher Information Matrix as metric tensor
+# Riemannian Geometry Configuration (TRUE GEOMETRIC STRUCTURE DETECTION)
+# Enables proper Riemannian geometry on parameter manifolds to detect curvature and structure
+# Based on Fisher Information Matrix as metric tensor with varying-metric geodesics
+#
+# NEW CAPABILITIES (v0.13.0):
+# - Finite difference Christoffel symbol computation (detects metric variation)
+# - Proper geodesic equation integration with acceleration term
+# - Metric recomputation every N steps along geodesic path
+# - Can now detect if neural network parameter spaces are curved!
+#
+# RESEARCH QUESTION: Do task vector paths curve in Fisher geometry?
+# This configuration will help answer whether neural networks have rich geometric structure
+# like an "anthill" with intrinsic curvature, or are approximately flat Euclidean spaces.
 geometry:
   enabled: true # Set true to enable Riemannian geometry features
   metric_type: "fisher_diagonal" # Options: euclidean | fisher_diagonal | fisher_kfac | fisher_full
-  cache_metric: true # Cache Fisher matrix for reuse (recommended)
+  cache_metric: false # MUST be false when recompute_metric_every > 0 (to allow varying metric)
   parallel_transport: false # Use parallel transport for task vectors (experimental, not fully tested)
 
   # Fisher Information Matrix Approximation
@@ -107,10 +117,27 @@ geometry:
   # Geodesic Integration (uses geodesics instead of straight lines)
   geodesic_integration:
     enabled: true # Use geodesic interpolation M_base + αT → exp_M(α·v)
-    num_steps: 100 # Runge-Kutta integration steps
+    num_steps: 20 # Runge-Kutta integration steps (reduced from 100 for speed)
     tolerance: 1.0e-6 # Integration error tolerance
     step_size_control: false # Adaptive step size (slower but more accurate)
     max_iterations: 1000 # Maximum solver iterations
+    recompute_metric_every: 5 # Recompute Fisher/Christoffel every N steps (0=never, recommended: 4-10)
+    metric_epsilon: 1.0e-3 # Finite difference epsilon for Christoffel computation
+
+    # COMPUTATIONAL COST with recompute_metric_every > 0:
+    # - Each metric recomputation requires full Fisher computation (~2-3s for 4B model)
+    # - With num_steps=20, recompute_every=5 → 4 recomputations per alpha
+    # - Expected time per alpha: 10-15 seconds (vs 2s without recomputation)
+    # - For 100 alphas: ~20-25 minutes (vs 3 minutes without recomputation)
+    #
+    # VALIDATION TEST SETTINGS (gemma-2-2b-it):
+    # - num_steps: 10
+    # - recompute_every: 2
+    # - num_samples: 10 alphas only
+    # - Expected: ~5-10 minutes total
+    #
+    # If Christoffel symbols are non-zero → CURVATURE DETECTED!
+    # If geodesic deviates from straight line → GEOMETRIC STRUCTURE EXISTS!
 
   # Symmetry Analysis (detect rotation/permutation/scaling symmetries)
   # NOTE: Phase 4 - Not yet implemented
