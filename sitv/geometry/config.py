@@ -157,6 +157,35 @@ class CurvatureAnalysisConfig:
 
 
 @dataclass
+class ChristoffelComputationConfig:
+    """Configuration for Christoffel symbol computation.
+
+    Attributes:
+        skip_vision_tower: Skip parameters with 'vision_tower' in name
+        skip_frozen: Skip parameters where requires_grad=False
+        num_samples: Number of data samples to use for Fisher computation
+        parameter_sample_fraction: Fraction of parameters to compute (0.0-1.0, 1.0=all)
+        max_parameters: Maximum number of parameters to process (None=unlimited)
+    """
+
+    skip_vision_tower: bool = field(
+        default_factory=lambda: _get('geometry.christoffel_computation.skip_vision_tower', True)
+    )
+    skip_frozen: bool = field(
+        default_factory=lambda: _get('geometry.christoffel_computation.skip_frozen', True)
+    )
+    num_samples: int = field(
+        default_factory=lambda: _get('geometry.christoffel_computation.num_samples', 20)
+    )
+    parameter_sample_fraction: float = field(
+        default_factory=lambda: _get('geometry.christoffel_computation.parameter_sample_fraction', 1.0)
+    )
+    max_parameters: int | None = field(
+        default_factory=lambda: _get('geometry.christoffel_computation.max_parameters', None)
+    )
+
+
+@dataclass
 class GeometryConfig:
     """Complete geometry configuration.
 
@@ -169,6 +198,7 @@ class GeometryConfig:
         metric_type: Type of metric tensor to use
         fisher_approximation: Fisher matrix approximation settings
         geodesic_integration: Geodesic integration settings
+        christoffel_computation: Christoffel symbol computation settings
         symmetry_analysis: Symmetry detection settings
         curvature_analysis: Curvature computation settings
         cache_metric: Whether to cache computed Fisher metrics
@@ -196,6 +226,9 @@ class GeometryConfig:
     )
     geodesic_integration: GeodesicIntegrationConfig = field(
         default_factory=GeodesicIntegrationConfig
+    )
+    christoffel_computation: ChristoffelComputationConfig = field(
+        default_factory=ChristoffelComputationConfig
     )
     symmetry_analysis: SymmetryAnalysisConfig = field(
         default_factory=SymmetryAnalysisConfig
@@ -236,6 +269,13 @@ class GeometryConfig:
                 "num_steps": self.geodesic_integration.num_steps,
                 "tolerance": self.geodesic_integration.tolerance,
                 "step_size_control": self.geodesic_integration.step_size_control,
+            },
+            "christoffel_computation": {
+                "skip_vision_tower": self.christoffel_computation.skip_vision_tower,
+                "skip_frozen": self.christoffel_computation.skip_frozen,
+                "num_samples": self.christoffel_computation.num_samples,
+                "parameter_sample_fraction": self.christoffel_computation.parameter_sample_fraction,
+                "max_parameters": self.christoffel_computation.max_parameters,
             },
             "symmetry_analysis": {
                 "enabled": self.symmetry_analysis.enabled,

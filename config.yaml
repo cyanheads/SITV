@@ -139,6 +139,22 @@ geometry:
     # If Christoffel symbols are non-zero → CURVATURE DETECTED!
     # If geodesic deviates from straight line → GEOMETRIC STRUCTURE EXISTS!
 
+  # Christoffel Symbol Computation (curvature detection)
+  # v0.14.2 - Optimized parameter filtering for faster curvature detection
+  christoffel_computation:
+    skip_vision_tower: true # Skip vision_tower parameters (not modified during text fine-tuning)
+    skip_frozen: true # Skip parameters where requires_grad=False
+    num_samples: 30 # Number of data samples for Fisher computation (balanced speed/quality)
+    parameter_sample_fraction: 1.0 # Fraction of parameters to compute (1.0 = all, 0.1 = 10%)
+    max_parameters: null # Maximum number of parameters to process (null = unlimited)
+
+    # PERFORMANCE NOTES:
+    # - skip_vision_tower: true reduces computation from ~21 min to ~2-3 min (90% speedup!)
+    # - skip_frozen: true filters out frozen parameters
+    # - num_samples: 30 balances speed and quality (20=fast/noisy, 50=research-quality, 100=original)
+    # - parameter_sample_fraction: 0.1 samples 10% of parameters for statistical curvature detection
+    # - max_parameters: 50 limits computation to first 50 parameters for quick testing
+
   # Symmetry Analysis (detect rotation/permutation/scaling symmetries)
   # v0.14.0 - Fully implemented with quotient space projection
   symmetry_analysis:

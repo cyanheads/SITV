@@ -12,13 +12,16 @@ where p(x|θ) is the model's probability distribution and E[·] is expectation
 over the data distribution.
 """
 
-from typing import Optional
+from typing import TYPE_CHECKING, Any, cast
 
 import torch
 from torch import nn
 
 from sitv.geometry.config import FisherApproximationType
 from sitv.utils.progress import ProgressTracker
+
+if TYPE_CHECKING:
+    from sitv.geometry.config import ChristoffelComputationConfig
 
 
 class FisherMetricService:
@@ -65,14 +68,14 @@ class FisherMetricService:
         self.max_length = max_length
 
         # Cache for computed Fisher matrices
-        self._cached_fisher: Optional[dict[str, torch.Tensor]] = None
+        self._cached_fisher: dict[str, torch.Tensor] | None = None
 
     def compute_fisher_information_matrix(
         self,
         model: nn.Module,
         texts: list[str],
         batch_size: int = 8
-    ) -> dict[str, torch.Tensor]:
+    ) -> dict[str, torch.Tensor | dict[str, Any]]:
         """Compute Fisher Information Matrix for model parameters.
 
         The Fisher matrix is computed as the expected outer product of
@@ -96,7 +99,7 @@ class FisherMetricService:
         """
         if self.approximation_type == FisherApproximationType.EUCLIDEAN:
             # Return identity (no actual Fisher computation needed)
-            return self._identity_metric(model)
+            return cast(dict[str, torch.Tensor | dict[str, Any]], self._identity_metric(model))
 
         # Sample subset of data if needed
         if len(texts) > self.num_samples:
@@ -106,9 +109,9 @@ class FisherMetricService:
         model.eval()
 
         if self.approximation_type == FisherApproximationType.DIAGONAL:
-            return self._compute_diagonal_fisher(model, texts, batch_size)
+            return cast(dict[str, torch.Tensor | dict[str, Any]], self._compute_diagonal_fisher(model, texts, batch_size))
         elif self.approximation_type == FisherApproximationType.KFAC:
-            return self._compute_kfac_fisher(model, texts, batch_size)
+            return cast(dict[str, torch.Tensor | dict[str, Any]], self._compute_kfac_fisher(model, texts, batch_size))
         elif self.approximation_type == FisherApproximationType.FULL:
             return self._compute_full_fisher(model, texts, batch_size)
         else:
@@ -196,7 +199,8 @@ class FisherMetricService:
 
             # Update progress
             tracker.end_iteration()
-            print(f"  {tracker.get_status()}", end='\r')
+            msg = f"  Batch progress: {tracker.get_status()}"
+            print(f"{msg:<80}", end='\r', flush=True)
 
         print()  # New line after completion
 
@@ -242,7 +246,7 @@ class FisherMetricService:
         model: nn.Module,
         texts: list[str],
         batch_size: int
-    ) -> dict[str, torch.Tensor | dict]:
+    ) -> dict[str, torch.Tensor | dict[str, Any]]:
         """Compute full Fisher Information Matrix.
 
         WARNING: This computes the full O(n²) covariance matrix.
@@ -260,7 +264,7 @@ class FisherMetricService:
             MemoryError: If model is too large for full Fisher
         """
         # Flatten all parameters into a single vector
-        param_shapes = {}
+        param_shapes: dict[str, tuple[int, ...]] = {}
         param_list = []
         for name, param in model.named_parameters():
             if param.requires_grad:
@@ -324,7 +328,8 @@ class FisherMetricService:
 
             # Update progress
             tracker.end_iteration()
-            print(f"  {tracker.get_status()}", end='\r')
+            msg = f"  Batch progress: {tracker.get_status()}"
+            print(f"{msg:<80}", end='\r', flush=True)
 
         print()  # New line after completion
 
@@ -334,7 +339,10 @@ class FisherMetricService:
 
         # Split back into per-parameter matrices
         # For simplicity, return as single matrix with metadata
-        fisher_dict = {"_full_matrix": fisher_full, "_param_shapes": param_shapes}
+        fisher_dict: dict[str, torch.Tensor | dict[str, Any]] = {
+            "_full_matrix": fisher_full,
+            "_param_shapes": param_shapes
+        }
         return fisher_dict
 
     def compute_riemannian_norm(
@@ -476,7 +484,8 @@ class FisherMetricService:
         base_params: dict[str, torch.Tensor],
         data_texts: list[str],
         epsilon: float = 1e-3,
-        batch_size: int = 8
+        batch_size: int = 8,
+        config: "ChristoffelComputationConfig | None" = None
     ) -> dict[str, torch.Tensor]:
         """Compute Christoffel symbols via finite differences of Fisher metric.
 
@@ -493,13 +502,16 @@ class FisherMetricService:
             data_texts: Dataset samples for Fisher computation
             epsilon: Finite difference step size (default: 1e-3)
             batch_size: Batch size for Fisher computation
+            config: Configuration for Christoffel computation (filtering, sampling, etc.)
 
         Returns:
             Dictionary mapping parameter names to Christoffel symbol tensors
 
         Note:
             This is computationally expensive as it requires recomputing the
-            Fisher matrix for perturbed parameters. Use sparingly or cache results.
+            Fisher matrix for perturbed parameters. The config parameter allows
+            filtering parameters (e.g., skip vision_tower, skip frozen params) to
+            significantly reduce computation time.
 
         Mathematical Note:
             For a diagonal metric g_ii(θ), the non-zero Christoffel symbols are:
@@ -516,6 +528,16 @@ class FisherMetricService:
             ...     model, base_params, data_texts
             ... )
         """
+        # Import here to avoid circular dependency
+        from sitv.geometry.config import ChristoffelComputationConfig
+
+        # Use default config if none provided
+        if config is None:
+            config = ChristoffelComputationConfig()
+
+        # Get model parameters to check requires_grad status
+        model_params = {n: p for n, p in model.named_parameters()}
+
         # Get Fisher at base point
         F_base = self.compute_fisher_information_matrix(model, data_texts, batch_size)
 
@@ -527,16 +549,65 @@ class FisherMetricService:
         # Simplification: For diagonal metric with slow variation, we approximate
         # using forward differences in random directions to detect metric curvature
 
-        # Count parameters to process for progress tracking
-        num_params = sum(
-            1 for name in base_params.keys()
-            if name in F_base and not name.startswith("_")
-        )
-        tracker = ProgressTracker(total=num_params)
+        # Filter parameters based on config
+        params_to_process = []
+        stats = {
+            "total": 0,
+            "filtered_vision_tower": 0,
+            "filtered_frozen": 0,
+            "filtered_internal": 0,
+            "processed": 0,
+        }
 
         for name, param in base_params.items():
+            stats["total"] += 1
+
+            # Skip internal metadata keys
             if name not in F_base or name.startswith("_"):
+                stats["filtered_internal"] += 1
                 continue
+
+            # Skip vision_tower parameters if configured
+            if config.skip_vision_tower and "vision_tower" in name:
+                stats["filtered_vision_tower"] += 1
+                christoffel[name] = torch.zeros_like(param.data)
+                continue
+
+            # Skip frozen parameters if configured
+            if config.skip_frozen and name in model_params:
+                if not model_params[name].requires_grad:
+                    stats["filtered_frozen"] += 1
+                    christoffel[name] = torch.zeros_like(param.data)
+                    continue
+
+            params_to_process.append((name, param))
+
+        stats["processed"] = len(params_to_process)
+
+        # Apply max_parameters limit if specified
+        if config.max_parameters is not None and len(params_to_process) > config.max_parameters:
+            params_to_process = params_to_process[:config.max_parameters]
+            stats["processed"] = config.max_parameters
+
+        # Apply parameter sampling if fraction < 1.0
+        if config.parameter_sample_fraction < 1.0:
+            import random
+            sample_size = max(1, int(len(params_to_process) * config.parameter_sample_fraction))
+            params_to_process = random.sample(params_to_process, sample_size)
+            stats["processed"] = sample_size
+
+        # Log filtering statistics
+        print("\n  Computing Christoffel symbols to detect curvature...")
+        print(f"  Total parameters: {stats['total']}")
+        print(f"  Filtered (vision_tower): {stats['filtered_vision_tower']}")
+        print(f"  Filtered (frozen): {stats['filtered_frozen']}")
+        print(f"  Filtered (internal): {stats['filtered_internal']}")
+        print(f"  Processing: {stats['processed']} parameters\n")
+
+        # Count parameters to process for progress tracking
+        tracker = ProgressTracker(total=stats["processed"])
+
+        for name, param in params_to_process:
 
             tracker.start_iteration()
 
@@ -561,13 +632,19 @@ class FisherMetricService:
                     model, data_texts, batch_size
                 )
 
+                # Extract tensor values (skip metadata keys like "_full_matrix")
+                F_base_val = F_base[name]
+                F_perturbed_val = F_perturbed[name]
+                assert isinstance(F_base_val, torch.Tensor), f"Expected tensor for {name}"
+                assert isinstance(F_perturbed_val, torch.Tensor), f"Expected tensor for {name}"
+
                 # Compute derivative of Fisher: ∂F/∂θ ≈ (F_new - F_old) / ε
-                dF_dtheta = (F_perturbed[name] - F_base[name]) / epsilon
+                dF_dtheta = (F_perturbed_val - F_base_val) / epsilon
 
                 # Simplified Christoffel for diagonal metric:
                 # Γ ≈ (1/2) F⁻¹ (∂F/∂θ)
                 # Add small epsilon to prevent division by zero
-                christoffel[name] = 0.5 * dF_dtheta / (F_base[name] + 1e-8)
+                christoffel[name] = 0.5 * dF_dtheta / (F_base_val + 1e-8)
 
             finally:
                 # Restore original parameters
@@ -577,11 +654,16 @@ class FisherMetricService:
                 # Update progress
                 tracker.end_iteration()
                 param_shape = "x".join(str(d) for d in param.shape)
-                print(
-                    f"  [{tracker.current}/{tracker.total}] {tracker.get_status()} "
-                    f"| Current: {name} (shape: {param_shape})",
-                    end='\r'
+
+                # Truncate long parameter names for better display
+                display_name = name if len(name) <= 60 else f"...{name[-57:]}"
+
+                # Format with padding to clear previous longer lines
+                msg = (
+                    f"  Overall: [{tracker.current}/{tracker.total}] {tracker.get_status()} "
+                    f"| Current: {display_name} (shape: {param_shape})"
                 )
+                print(f"{msg:<150}", end='\r', flush=True)
 
         print()  # New line after completion
         return christoffel
@@ -594,7 +676,7 @@ class FisherMetricService:
         """
         self._cached_fisher = fisher
 
-    def get_cached_fisher(self) -> Optional[dict[str, torch.Tensor]]:
+    def get_cached_fisher(self) -> dict[str, torch.Tensor] | None:
         """Retrieve cached Fisher matrix.
 
         Returns:
