@@ -5,6 +5,103 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.0] - 2025-11-01
+
+### Added
+
+- **Symmetry Detection Module** ([sitv/geometry/symmetry.py](sitv/geometry/symmetry.py)):
+  - Added `SymmetryAnalyzer` class for detecting parameter space symmetries
+  - Implemented rotation symmetry detection via random orthogonal transformations
+  - Implemented permutation symmetry detection with neuron reordering tests
+  - Implemented scaling symmetry detection for layer-wise rescaling
+  - Added quotient space projection to canonical parameter forms
+  - Supports tolerance-based symmetry detection (configurable threshold)
+  - Generates comprehensive symmetry analysis reports with violation tracking
+
+- **Quotient Space Operations** ([sitv/geometry/symmetry.py](sitv/geometry/symmetry.py)):
+  - Added `compute_canonical_representative()` for symmetry-invariant parameter forms
+  - Added `project_to_quotient_space()` for working in reduced parameter space
+  - Permutation quotient: sorts neurons by weight magnitude (decreasing order)
+  - Scaling quotient: normalizes parameters to unit Frobenius norm
+  - Addresses theoretical critique from arXiv:2506.13018 on parameter redundancy
+
+- **Symmetry Configuration** ([sitv/geometry/config.py](sitv/geometry/config.py), [config.yaml](config.yaml)):
+  - Updated `SymmetryAnalysisConfig` with full configuration options
+  - Added `detect_rotations`, `detect_permutations`, `detect_scaling` flags
+  - Added `quotient_space` flag for canonical form projection
+  - Added `symmetry_tolerance` parameter for invariance threshold
+
+- **Symmetry Tests** ([tests/geometry/test_symmetry.py](tests/geometry/test_symmetry.py)):
+  - Created comprehensive test suite with 25+ tests
+  - Tests for orthogonal matrix generation (QR decomposition)
+  - Tests for all three symmetry types (rotation, permutation, scaling)
+  - Tests for canonical form computation and idempotence
+  - Tests for quotient space projection
+  - Mock evaluator for isolated symmetry testing
+
+### Changed
+
+- **Geometry Module Exports** ([sitv/geometry/__init__.py](sitv/geometry/__init__.py)):
+  - Exported `SymmetryAnalyzer` and `SymmetryAnalysisConfig`
+  - Updated module docstring to describe symmetry detection capabilities
+
+### Technical Details
+
+- **Rotation Symmetry**: Uses QR decomposition to generate random orthogonal matrices, tests L(R·θ) ≈ L(θ)
+- **Permutation Symmetry**: Randomly permutes neurons within layers, propagates to connected layers
+- **Scaling Symmetry**: Tests layer-wise rescaling invariance L(λ·θ) ≈ L(θ)
+- **Quotient Space**: Reduces parameter redundancy by working modulo symmetries
+- **Performance**: ~30 evaluations for full symmetry analysis (10 tests × 3 types)
+
+## [0.13.0] - 2025-11-01
+
+### Added
+
+- **Curvature Analysis Module** ([sitv/geometry/curvature.py](sitv/geometry/curvature.py)):
+  - Added `CurvatureAnalyzer` class for computing Riemannian curvature on parameter manifolds
+  - Implemented sectional curvature K(X,Y) computation via finite differences
+  - Implemented Ricci curvature (trace of sectional curvatures)
+  - Implemented scalar curvature (total curvature at a point)
+  - Added curvature distribution estimation via random tangent sampling
+  - Supports caching of curvature results for reuse
+  - Provides human-readable interpretations (flat, positively curved, negatively curved)
+
+- **Geometric Helper Methods** ([sitv/geometry/curvature.py](sitv/geometry/curvature.py)):
+  - Added random tangent vector sampling on parameter manifolds
+  - Added Gram-Schmidt orthogonalization in Riemannian metric
+  - Added tangent vector normalization (unit length in metric)
+  - Added Riemannian inner product computation (⟨v,w⟩_g)
+  - Added Riemann tensor component approximation via parallel transport
+
+- **Curvature Configuration** ([sitv/geometry/config.py](sitv/geometry/config.py), [config.yaml](config.yaml)):
+  - Updated `CurvatureAnalysisConfig` with full implementation
+  - Added `compute_sectional`, `compute_ricci`, `compute_scalar` flags
+  - Added `num_tangent_samples` parameter for statistical curvature estimation
+  - Default: sectional curvature only (fast), Ricci/scalar optional (expensive)
+
+- **Curvature Tests** ([tests/geometry/test_curvature.py](tests/geometry/test_curvature.py)):
+  - Created comprehensive test suite with 20+ tests
+  - Tests for sectional curvature properties (symmetry, finite values, zero for parallel vectors)
+  - Tests for Riemannian inner product (symmetry, positive-definiteness)
+  - Tests for tangent vector operations (normalization, orthogonalization)
+  - Tests for curvature distribution estimation
+  - Tests for caching functionality
+  - Parametrized tests for multiple sample counts
+
+### Changed
+
+- **Geometry Module Exports** ([sitv/geometry/__init__.py](sitv/geometry/__init__.py)):
+  - Exported `CurvatureAnalyzer` and `CurvatureAnalysisConfig`
+  - Updated module docstring to describe curvature analysis capabilities
+
+### Technical Details
+
+- **Sectional Curvature**: Measures curvature of 2D planes, K(X,Y) = R(X,Y,Y,X) / (||X||²||Y||² - ⟨X,Y⟩²)
+- **Finite Differences**: Approximates Riemann tensor via metric variation along parallelograms
+- **Sample-Based Estimation**: Uses 10-20 random tangent pairs for statistical curvature distribution
+- **Computational Cost**: O(k·n) for k samples, sectional curvature is fast and informative
+- **Interpretation**: Positive = sphere-like (geodesics converge), Negative = hyperbolic (geodesics diverge)
+
 ## [0.12.0] - 2025-11-01
 
 ### Added

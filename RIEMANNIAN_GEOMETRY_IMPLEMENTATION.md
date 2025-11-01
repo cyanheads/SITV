@@ -418,19 +418,29 @@ python examples/compare_euclidean_vs_riemannian.py
 - [ ] **Comparison plots**: Euclidean vs Riemannian loss landscapes
 - [ ] **Integration test**: Small-scale validation on test model
 
-### 🔮 Phase 3: Curvature Analysis (FUTURE)
-- [ ] Sectional curvature K(X,Y) computation
-- [ ] Ricci curvature tensor
-- [ ] Scalar curvature
-- [ ] Covariant derivatives with Christoffel correction
-- [ ] Curvature heatmaps in visualizations
+### ✅ Phase 3: Curvature Analysis (COMPLETE - v0.13.0)
+- [x] Sectional curvature K(X,Y) computation via finite differences
+- [x] Ricci curvature tensor (trace of sectional curvatures)
+- [x] Scalar curvature (total curvature at point)
+- [x] Random tangent vector sampling for curvature estimation
+- [x] Gram-Schmidt orthogonalization in Riemannian metric
+- [x] Curvature distribution statistics (mean, std, min, max)
+- [x] Human-readable interpretations (flat, positively/negatively curved)
+- [x] Comprehensive test suite (20+ tests)
 
-### 🔮 Phase 4: Symmetry Quotient (FUTURE)
-- [ ] Rotation symmetry detection: L(R·θ) ≈ L(θ)
-- [ ] Permutation symmetry (neuron reordering)
-- [ ] Scaling symmetry (layer-wise rescaling)
-- [ ] Quotient space construction
-- [ ] Canonical parameter representatives
+**Implementation**: `CurvatureAnalyzer` in [sitv/geometry/curvature.py](sitv/geometry/curvature.py)
+
+### ✅ Phase 4: Symmetry Quotient (COMPLETE - v0.14.0)
+- [x] Rotation symmetry detection: L(R·θ) ≈ L(θ) via orthogonal transformations
+- [x] Permutation symmetry (neuron reordering) with layer tracking
+- [x] Scaling symmetry (layer-wise rescaling) detection
+- [x] Quotient space projection with canonical representatives
+- [x] Permutation quotient: sorting by weight magnitude
+- [x] Scaling quotient: normalization to unit Frobenius norm
+- [x] Tolerance-based symmetry detection (configurable threshold)
+- [x] Comprehensive test suite (25+ tests)
+
+**Implementation**: `SymmetryAnalyzer` in [sitv/geometry/symmetry.py](sitv/geometry/symmetry.py)
 
 ### 🔮 Phase 5: Sequential Composition (FUTURE)
 - [ ] Multi-stage fine-tuning experiments
@@ -458,11 +468,18 @@ python examples/compare_euclidean_vs_riemannian.py
 
 **Implementation**: `GeodesicIntegrator` in [sitv/geometry/geodesic.py](sitv/geometry/geodesic.py)
 
-### 🔄 Critique 3: "Missing symmetry quotient" (Phase 4 - Planned)
+### ✅ Critique 3: "Missing symmetry quotient" (Phase 4 - COMPLETE)
 
-**Preparation**: Configuration structure in place
+**Implementation**: Full symmetry detection and quotient space projection
 
-**Implementation**: `SymmetryAnalysisConfig` in [sitv/geometry/config.py](sitv/geometry/config.py#L86-L116)
+**Classes**:
+- `SymmetryAnalyzer` in [sitv/geometry/symmetry.py](sitv/geometry/symmetry.py)
+- `SymmetryAnalysisConfig` in [sitv/geometry/config.py](sitv/geometry/config.py#L86-L116)
+
+**Features**:
+- Rotation, permutation, and scaling symmetry detection
+- Canonical parameter representatives (sorting, normalization)
+- Quotient space projection to remove parameter redundancy
 
 ### ✅ Critique 4: "Limited theoretical grounding"
 

@@ -6,7 +6,7 @@
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/Version-0.12.0-blue.svg?style=flat-square)](./CHANGELOG.md) [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg?style=flat-square)](https://www.python.org/) [![PyTorch](https://img.shields.io/badge/PyTorch-2.8.0+-EE4C2C.svg?style=flat-square)](https://pytorch.org/) [![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](./LICENSE) [![Status](https://img.shields.io/badge/Status-Research-yellow.svg?style=flat-square)](https://github.com/cyanheads/SITV)
+[![Version](https://img.shields.io/badge/Version-0.14.0-blue.svg?style=flat-square)](./CHANGELOG.md) [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg?style=flat-square)](https://www.python.org/) [![PyTorch](https://img.shields.io/badge/PyTorch-2.8.0+-EE4C2C.svg?style=flat-square)](https://pytorch.org/) [![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](./LICENSE) [![Status](https://img.shields.io/badge/Status-Research-yellow.svg?style=flat-square)](https://github.com/cyanheads/SITV)
 
 </div>
 
@@ -244,12 +244,12 @@ The code automatically detects and optimizes for available hardware:
 
 ## 📂 Project Structure
 
-**v0.3.0+**: The project has been refactored into a modular package architecture with 30+ modules organized in 7 layers.
+**v0.14.0**: The project uses a modular package architecture with 51 modules organized in 8 layers, including comprehensive Riemannian geometry support.
 
 ```
 SITV/
 ├── main.py                      # Thin entry point (44 lines)
-├── sitv/                        # Main package (30+ modules, 7,899 lines)
+├── sitv/                        # Main package (51 modules)
 │   ├── data/                    # Data models and task definitions
 │   │   ├── models.py            # AlphaSweepResult, ExperimentMetrics, etc.
 │   │   ├── tasks.py             # Predefined task definitions
@@ -268,13 +268,23 @@ SITV/
 │   │   ├── config.py            # Configuration classes
 │   │   ├── alpha_sweep.py       # 1D alpha sweep experiment
 │   │   ├── composition_2d.py    # 2D composition experiment
+│   │   ├── composition_3d.py    # 3D composition experiment
 │   │   ├── orchestrator.py      # ExperimentOrchestrator
 │   │   └── sampling/            # Sampling strategies (uniform, adaptive, bayesian)
+│   ├── geometry/                # Riemannian geometry on parameter manifolds
+│   │   ├── config.py            # Geometry configuration
+│   │   ├── metric.py            # Fisher Information Matrix computation
+│   │   ├── geodesic.py          # Geodesic integration (Runge-Kutta)
+│   │   ├── task_vector.py       # Geodesic task vector operations
+│   │   ├── curvature.py         # Curvature analysis (sectional, Ricci, scalar)
+│   │   └── symmetry.py          # Symmetry detection and quotient space
 │   ├── analysis/                # Results analysis
 │   │   ├── analyzer.py          # Zero-crossing detection, min loss finding
+│   │   ├── composition_analyzer.py  # Composition analysis and interaction detection
 │   │   └── gradient/            # Gradient analysis and critical point detection
 │   ├── reporting/               # Report generation
-│   │   └── markdown.py          # Markdown report generator
+│   │   ├── markdown.py          # Markdown report generator
+│   │   └── comparison_report.py # Multi-task comparison reports
 │   ├── visualization/           # Plotting and visualization
 │   │   └── plotter.py           # 1D and 2D plotting utilities
 │   ├── io/                      # File I/O operations
@@ -302,12 +312,23 @@ SITV/
 │       ├── sentiment_negative_eval.txt
 │       ├── instruction_following_eval.txt
 │       └── qa_factual_eval.txt
-├── tests/                       # Test suite
+├── tests/                       # Test suite (14 test modules)
 │   ├── conftest.py              # Pytest fixtures
 │   ├── test_data_models.py      # Data model tests
 │   ├── test_device.py           # Device management tests
 │   ├── test_model_management.py # Model service tests
-│   └── test_task_vector.py      # Task vector tests
+│   ├── test_task_vector.py      # Task vector tests
+│   ├── test_config.py           # Configuration tests
+│   ├── test_data_loader.py      # Data loading tests
+│   ├── test_analyzer.py         # Analysis tests
+│   ├── test_markdown_reporter.py # Report generation tests
+│   ├── test_sampling_strategies.py # Sampling strategy tests
+│   ├── test_file_manager.py     # File I/O tests
+│   └── geometry/                # Geometry module tests
+│       ├── test_fisher_metric.py # Fisher metric tests
+│       ├── test_geodesic.py     # Geodesic integration tests
+│       ├── test_curvature.py    # Curvature analysis tests
+│       └── test_symmetry.py     # Symmetry detection tests
 ├── archive/                     # Archived code
 │   └── main_original.py         # Original 2,232-line monolithic version
 ├── pyproject.toml               # Project configuration and dependencies

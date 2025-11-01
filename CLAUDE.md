@@ -8,6 +8,32 @@ SITV (Self-Inverse Task Vectors) is a research project exploring loss landscape 
 
 **Core concept**: For a task vector `T = M_finetuned - M_base`, sweep α ∈ [-3.0, 3.0] and plot `L(M_base + αT)` to discover zero-crossings, optimal scaling, and landscape shape.
 
+## Recent Features (v0.10.0 → v0.12.0)
+
+### v0.12.0 (2025-11-01) - Composition Analysis
+- **Automatic Composition Analysis**: Detects task interaction patterns after 2D sweeps
+  - Analyzes task independence with R² score and interaction RMS metrics
+  - Predicts optimal 2D composition from 1D task properties
+  - Auto-runs when `composition_2d.enable_analysis: true`
+- **Comparison Report Generator**: Multi-task comparison reports (`sitv/reporting/comparison_report.py`)
+- **Enhanced Markdown Reports**: Comprehensive composition analysis sections with predictions
+
+### v0.11.0 (2025-11-01) - 3D Composition & Multi-Task Comparison
+- **3D Task Vector Composition**: Three-task interaction analysis `L(M_base + αT1 + βT2 + γT3)`
+  - Configurable grid sampling (5³ to 20³ evaluations)
+  - Interactive 3D plots (HTML via plotly) with rotation and zoom
+  - 2D cross-sectional slices showing loss at different γ values
+- **Multi-Task Comparison Plotting**: 5 layout modes (overlaid, side-by-side, grid, publication, heatmap)
+- **Composition Analysis Module**: `CompositionAnalyzer` for 2D/3D composition analysis
+
+### v0.10.0 (2025-10-31) - Riemannian Geometry
+- **Riemannian Geometry Framework**: Proper geometry on parameter manifolds
+  - Fisher Information Matrix computation (diagonal, KFAC, full)
+  - Geodesic integration via Runge-Kutta 4
+  - Replaces Euclidean `M(α) = M_base + αT` with geodesic `exp_M(α·T)`
+- **Enhanced Numerical Stability**: Perplexity overflow protection, finite value validation
+- **Geometry Reporting**: Geodesic vs Euclidean path comparison, curvature analysis
+
 ## Commands
 
 ### Development
@@ -66,9 +92,9 @@ ruff check . && ruff format --check . && mypy main.py sitv/ && pytest
 
 ## Architecture
 
-### Modular Package Structure (v0.3.0+)
+### Modular Package Structure (v0.12.0)
 
-The project uses a **7-layer service-oriented architecture** with 30+ modules:
+The project uses a **8-layer service-oriented architecture** with 51 modules:
 
 ```
 sitv/
@@ -91,12 +117,20 @@ sitv/
 │   ├── orchestrator.py   # ExperimentOrchestrator (main workflow)
 │   ├── alpha_sweep.py    # 1D alpha sweep experiment
 │   ├── composition_2d.py # 2D composition experiment
+│   ├── composition_3d.py # 3D composition experiment (three-task interactions)
 │   └── sampling/         # Sampling strategies (uniform, adaptive, bayesian)
+├── geometry/      # Riemannian geometry on parameter manifolds
+│   ├── config.py        # Geometry configuration
+│   ├── metric.py        # Fisher Information Matrix computation
+│   ├── geodesic.py      # Geodesic integration (Runge-Kutta)
+│   └── task_vector.py   # Geodesic task vector operations
 ├── analysis/      # Results analysis
-│   ├── analyzer.py  # Zero-crossing detection, min loss finding
-│   └── gradient/    # Gradient analysis and critical point detection
+│   ├── analyzer.py              # Zero-crossing detection, min loss finding
+│   ├── composition_analyzer.py  # Composition analysis and interaction detection
+│   └── gradient/                # Gradient analysis and critical point detection
 ├── reporting/     # Report generation
-│   └── markdown.py # Markdown report generator
+│   ├── markdown.py          # Markdown report generator
+│   └── comparison_report.py # Multi-task comparison reports
 ├── visualization/ # Plotting
 │   └── plotter.py  # 1D and 2D plotting utilities
 ├── io/            # File I/O
@@ -121,16 +155,17 @@ sitv/
 2. **Orchestrator** (`sitv/experiments/orchestrator.py`)
    - Coordinates entire workflow
    - Loads/fine-tunes models via `ModelService` and `FineTuner`
-   - Computes task vectors via `TaskVectorService`
-   - Runs experiments (`AlphaSweepExperiment`, `Composition2DExperiment`)
-   - Analyzes results via `ResultAnalyzer`
-   - Generates reports via `MarkdownReportGenerator`
+   - Computes task vectors via `TaskVectorService` (Euclidean or geodesic)
+   - Runs experiments (`AlphaSweepExperiment`, `Composition2DExperiment`, `Composition3DExperiment`)
+   - Analyzes results via `ResultAnalyzer` and `CompositionAnalyzer`
+   - Generates reports via `MarkdownReportGenerator` and `ComparisonReportGenerator`
    - Saves outputs via `FileManager`
 
 3. **Experiments** (inherit from `sitv/experiments/base.py`)
    - **AlphaSweepExperiment**: 1D sweep of `L(M_base + αT)`
-   - **Composition2DExperiment**: 2D sweep of `L(M_base + αT1 + βT2)`
-   - Both use **in-place parameter modification** for 10-100x speedup
+   - **Composition2DExperiment**: 2D sweep of `L(M_base + αT1 + βT2)` with optional composition analysis
+   - **Composition3DExperiment**: 3D sweep of `L(M_base + αT1 + βT2 + γT3)` (three-task interactions)
+   - All use **in-place parameter modification** for 10-100x speedup
 
 4. **Sampling Strategies** (`sitv/experiments/sampling/`)
    - **Uniform**: 100% of samples uniformly distributed
@@ -164,6 +199,12 @@ model:
 task:
   name: "sentiment_positive"  # Options: sentiment_{positive,negative}, instruction_following, qa_factual
 
+evaluation:
+  general_dataset: "combined"  # Options: mixed_domain, wikitext, coding, common_knowledge, combined
+  batch_size: 32               # Number of texts per forward pass (higher = faster but more memory)
+  enable_mixed_precision: true # Use FP16/BF16 for 1.5-2x speedup
+  max_length: 1024             # Maximum sequence length for evaluation
+
 fine_tuning:
   num_epochs: 2
   learning_rate: 5.0e-5
@@ -179,8 +220,32 @@ alpha_sweep:
   sampling_strategy: "uniform"  # Options: uniform, adaptive, bayesian
 
 composition_2d:
-  enable: false  # Set true to run 2D composition experiment
+  enable: false         # Set true to run 2D composition experiment
   num_samples_per_dim: 30  # 30×30 = 900 evaluations
+  enable_analysis: true # Auto-run composition analysis after 2D sweep
+
+composition_3d:
+  enable: false         # Set true to run 3D composition experiment
+  task_1: "sentiment_negative"      # First task vector
+  task_2: "sentiment_positive"      # Second task vector
+  task_3: "instruction_following"   # Third task vector
+  alpha_min: -1.0
+  alpha_max: 1.0
+  beta_min: -1.0
+  beta_max: 1.0
+  gamma_min: -1.0
+  gamma_max: 1.0
+  num_samples_per_dim: 10  # 10×10×10 = 1,000 evaluations (scales cubically!)
+
+geometry:
+  enabled: false        # Enable Riemannian geometry features (experimental)
+  metric_type: "fisher_diagonal"  # Options: euclidean | fisher_diagonal | fisher_kfac | fisher_full
+  cache_metric: true    # Cache Fisher matrix for reuse
+
+  geodesic_integration:
+    enabled: false      # Use geodesic interpolation instead of straight lines
+    num_steps: 100      # Runge-Kutta integration steps
+    tolerance: 1.0e-6   # Integration error tolerance
 ```
 
 ### Analysis-Only Mode
@@ -222,14 +287,41 @@ data/
 
 All outputs go to `outputs/` directory (gitignored):
 
+### 1D Alpha Sweep Outputs
 | File | Description |
 |------|-------------|
-| `loss_landscape_sweep.png` | 2x2 visualization grid |
+| `loss_landscape_sweep.png` | 2x2 visualization grid (general/task loss, both linear and log scale) |
 | `loss_landscape_results.json` | All α values and metrics |
 | `experiment_report.md` | Markdown report for LLM analysis |
 | `experiment_metrics.json` | Timing and performance metrics |
+
+### 2D Composition Outputs
+| File | Description |
+|------|-------------|
+| `loss_landscape_2d_sweep.png` | 2D heatmap of loss landscape |
+| `loss_landscape_2d_results.json` | All (α, β) values and losses |
+| `composition_analysis_*.png` | Composition analysis visualizations (if enable_analysis: true) |
+| `analysis_results.json` | Interaction detection and predictions (if enable_analysis: true) |
+
+### 3D Composition Outputs
+| File | Description |
+|------|-------------|
+| `loss_landscape_3d_*.png` | 3D surface plots and projections |
+| `loss_landscape_3d_*.html` | Interactive 3D plots (Plotly) |
+| `loss_landscape_3d_results.json` | All (α, β, γ) values and losses |
+
+### Multi-Task Comparison
+| File | Description |
+|------|-------------|
+| `comparison_report.md` | Multi-task comparison report |
+| `task_comparison_*.png` | Side-by-side task comparison plots |
+
+### Saved Models
+| File | Description |
+|------|-------------|
 | `saved_base_model/` | Saved base model (for --analysis-only) |
 | `saved_finetuned_model/` | Saved fine-tuned model (for --analysis-only) |
+| `saved_task_{name}_model/` | Additional fine-tuned models (for multi-task experiments) |
 
 ## Code Quality Standards
 
@@ -312,11 +404,38 @@ Device selection is automatic via `sitv/core/device.py`:
 
 ## Testing Philosophy
 
-Tests focus on core components and data models:
-- `test_data_models.py`: AlphaSweepResult, ExperimentMetrics
-- `test_device.py`: Hardware detection
+The project has comprehensive test coverage with **14 test modules** (15 files including `conftest.py`):
+
+### Core Tests
+- `test_data_models.py`: AlphaSweepResult, ExperimentMetrics, data models
+- `test_device.py`: Hardware detection (CUDA/MPS/CPU)
 - `test_model_management.py`: Model loading/saving
 - `test_task_vector.py`: Task vector computation
-- `test_markdown_reporter.py`: Report generation
+- `test_config.py`: Configuration loading and validation
+- `test_data_loader.py`: Dataset loading
+
+### Analysis & Reporting Tests
+- `test_analyzer.py`: Zero-crossing detection, min loss finding
+- `test_markdown_reporter.py`: Markdown report generation
+- `test_sampling_strategies.py`: Uniform/adaptive/Bayesian sampling
+
+### I/O Tests
+- `test_file_manager.py`: JSON and figure saving
+
+### Geometry Tests (Riemannian features)
+- `tests/geometry/test_fisher_metric.py`: Fisher Information Matrix computation
+- `tests/geometry/test_geodesic.py`: Geodesic integration
 
 **Integration tests** run via `main.py` with small configs (few samples, small models).
+
+## Additional Documentation
+
+For detailed technical documentation on specific features:
+
+- **[RIEMANNIAN_GEOMETRY_IMPLEMENTATION.md](RIEMANNIAN_GEOMETRY_IMPLEMENTATION.md)**: Complete technical specification of the Riemannian geometry module, Fisher Information Matrix computation, geodesic integration, and implementation details.
+
+- **[IMPLEMENTATION_COMPLETE.md](IMPLEMENTATION_COMPLETE.md)**: Implementation status tracker for all project features and phases.
+
+- **[CHANGELOG.md](CHANGELOG.md)**: Complete version history with detailed change notes for each release.
+
+- **[README.md](README.md)**: Project overview, quick start guide, and research context.
