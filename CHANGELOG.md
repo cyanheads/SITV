@@ -5,6 +5,51 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.1] - 2025-11-01
+
+### Added
+
+- **Hyperparameter Analysis Reporting** ([sitv/reporting/markdown.py](sitv/reporting/markdown.py)):
+  - Added `_create_hyperparameter_analysis()` method generating comprehensive hyperparameter sensitivity analysis
+  - Implemented training convergence detection with loss stability metrics
+  - Added hyperparameter sensitivity guidance (learning rate, epochs, batch size)
+  - Created recommendations table for different training scenarios (quick test, standard, high quality, etc.)
+  - Included convergence status indicators (✅ Converged / ⚠️ May need more epochs)
+  - Added interpretation sections explaining convergence quality and recommendations
+
+- **Enhanced Geodesic Integration Documentation** ([sitv/reporting/markdown.py](sitv/reporting/markdown.py)):
+  - Expanded geodesic integration section with detailed implementation documentation
+  - Added algorithm description (RK4 integration of geodesic equation)
+  - Included mathematical formulation of geodesic equation and Christoffel symbols
+  - Added convergence criteria and computational cost analysis
+  - Documented varying-metric geodesics for curvature detection
+  - Added configuration reference with all geodesic integration parameters
+  - Included theoretical background explaining geodesics vs Euclidean paths
+
+### Changed
+
+- **Project Documentation** ([CLAUDE.md](CLAUDE.md)):
+  - Enhanced project overview with clearer description of research goals
+  - Reframed SITV as "experimental cartography" of neural network internals
+  - Added explicit "anthill hypothesis" describing branching structure theory
+  - Clarified end goal: discovering shortcuts for LLM training via geometric understanding
+  - Improved core methodology description with explicit 2D/3D composition mention
+
+### Removed
+
+- **Documentation Consolidation**:
+  - Removed [RIEMANNIAN_GEOMETRY_IMPLEMENTATION.md](RIEMANNIAN_GEOMETRY_IMPLEMENTATION.md) (541 lines)
+  - Content was comprehensive technical specification of Riemannian geometry module
+  - Information now covered in CLAUDE.md and inline code documentation
+  - Reduces documentation duplication and maintenance burden
+
+### Technical Details
+
+- **Reporting Enhancement**: Hyperparameter analysis helps users understand training convergence and optimize experiment parameters
+- **Documentation Quality**: Enhanced geodesic integration documentation provides implementation-level details for researchers
+- **Project Clarity**: Updated CLAUDE.md better communicates the branching structure hypothesis and research vision
+- **Maintenance**: Consolidating Riemannian geometry documentation reduces duplicate information across files
+
 ## [0.14.0] - 2025-11-01
 
 ### Added
