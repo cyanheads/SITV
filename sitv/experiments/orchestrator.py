@@ -21,6 +21,7 @@ from sitv.experiments.config import ExperimentConfig
 from sitv.io import FileManager, PathManager
 from sitv.models import FineTuner, ModelService
 from sitv.reporting import MarkdownReportGenerator
+from sitv.utils import print_banner, print_separator
 from sitv.visualization import ResultPlotter
 
 
@@ -110,9 +111,7 @@ class ExperimentOrchestrator:
 
         This is the main entry point that executes all experiment phases.
         """
-        print(f"\n{'='*70}")
-        print("SITV EXPERIMENT START")
-        print(f"{'='*70}")
+        print_banner("SITV EXPERIMENT START")
         print(f"Model: {self.config.model_name}")
         print(f"Task: {self.config.task_name}")
         print(f"General Eval Dataset: {self.config.evaluation.general_dataset}")
@@ -164,7 +163,8 @@ class ExperimentOrchestrator:
         else:
             print("\nRiemannian Geometry: Disabled (using Euclidean)")
 
-        print(f"{'='*70}\n")
+        print_separator()
+        print()
 
         # Phase 1: Load or fine-tune models
         if self.config.analysis_only:
@@ -192,12 +192,11 @@ class ExperimentOrchestrator:
         # Phase 5: Generate outputs
         self._generate_outputs(results, analysis)
 
-        print(f"\n{'='*70}")
-        print("SITV EXPERIMENT COMPLETE")
-        print(f"{'='*70}")
+        print_banner("SITV EXPERIMENT COMPLETE")
         print(f"Duration: {self.metrics.duration_seconds / 60:.1f} minutes")
         print(f"Output directory: {self.config.output_dir}")
-        print(f"{'='*70}\n")
+        print_separator()
+        print()
 
     def _load_saved_models(self):
         """Load previously saved models for analysis.
@@ -205,9 +204,7 @@ class ExperimentOrchestrator:
         Returns:
             Tuple of (base_model, finetuned_model, tokenizer)
         """
-        print("\n" + "="*70)
-        print("LOADING SAVED MODELS")
-        print("="*70)
+        print_banner("LOADING SAVED MODELS")
 
         # Check if models exist
         if not self.model_service.check_saved_models_exist(self.config.output_dir):
@@ -236,9 +233,7 @@ class ExperimentOrchestrator:
         Returns:
             Tuple of (base_model, finetuned_model, tokenizer)
         """
-        print("\n" + "="*70)
-        print("MODEL FINE-TUNING")
-        print("="*70)
+        print_banner("MODEL FINE-TUNING")
 
         # Load base model and tokenizer
         base_model, tokenizer = self.model_service.load_model_and_tokenizer(
@@ -311,9 +306,7 @@ class ExperimentOrchestrator:
         Returns:
             Task vector dictionary
         """
-        print("\n" + "="*70)
-        print("COMPUTING TASK VECTOR")
-        print("="*70)
+        print_banner("COMPUTING TASK VECTOR")
 
         start_time = time.time()
 
@@ -453,9 +446,7 @@ class ExperimentOrchestrator:
             3. Run Composition2DExperiment to explore L(M_base + α·T1 + β·T2)
             4. Generate 2D heatmap visualization
         """
-        print("\n" + "="*70)
-        print("2D COMPOSITION EXPERIMENT")
-        print("="*70)
+        print_banner("2D COMPOSITION EXPERIMENT")
 
         # Get available tasks
         tasks = get_predefined_tasks(self.config.fine_tuning.data_repetition_factor)
@@ -485,9 +476,7 @@ class ExperimentOrchestrator:
         print(f"Grid: {self.config.composition_2d.num_samples_per_dim}×{self.config.composition_2d.num_samples_per_dim} = {self.config.composition_2d.num_samples_per_dim**2} evaluations")
 
         # Fine-tune on second task to create second task vector
-        print("\n" + "="*70)
-        print(f"FINE-TUNING ON SECOND TASK: {second_task_name}")
-        print("="*70)
+        print_banner(f"FINE-TUNING ON SECOND TASK: {second_task_name}")
 
         fine_tuner = FineTuner(
             output_dir=f"{self.config.output_dir}/finetuned_model_2",
@@ -514,9 +503,7 @@ class ExperimentOrchestrator:
         )
 
         # Compute second task vector
-        print("\n" + "="*70)
-        print("COMPUTING SECOND TASK VECTOR")
-        print("="*70)
+        print_banner("COMPUTING SECOND TASK VECTOR")
 
         start_time = time.time()
         task_vector_2 = self.task_vector_service.compute(base_model_for_task2, finetuned_model_2)
@@ -526,8 +513,9 @@ class ExperimentOrchestrator:
         print(f"Task vector 2 computed: ||T2|| = {magnitude_2:.2f}")
         print(f"Computation time: {elapsed:.2f}s\n")
 
-        # Store second task vector magnitude in metrics
+        # Store second task vector magnitude and name in metrics
         self.metrics.enable_2d_composition = True
+        self.metrics.task_name_2 = second_task_name
         self.metrics.task_vector_2_magnitude = magnitude_2
 
         # Load general evaluation dataset (same as 1D alpha sweep)
@@ -557,9 +545,7 @@ class ExperimentOrchestrator:
         self.results_2d = results_2d
 
         # Generate and save 2D plot
-        print("\n" + "="*70)
-        print("GENERATING 2D VISUALIZATION")
-        print("="*70)
+        print_banner("GENERATING 2D VISUALIZATION")
 
         plotter = ResultPlotter()
         plot_path_2d = f"{self.config.output_dir}/loss_landscape_2d.png"
@@ -583,9 +569,9 @@ class ExperimentOrchestrator:
 
         print(f"2D results saved: {results_2d_path}")
 
-        print(f"\n{'='*70}")
-        print("2D COMPOSITION EXPERIMENT COMPLETE")
-        print(f"{'='*70}\n")
+        print_banner("2D COMPOSITION EXPERIMENT COMPLETE")
+        print_separator()
+        print()
 
     def _generate_outputs(self, results, analysis):
         """Generate all output files.
@@ -594,9 +580,7 @@ class ExperimentOrchestrator:
             results: Experiment results
             analysis: Analysis dictionary
         """
-        print("\n" + "="*70)
-        print("GENERATING OUTPUTS")
-        print("="*70)
+        print_banner("GENERATING OUTPUTS")
 
         # Save results
         self.file_manager.save_results(results)
@@ -627,8 +611,6 @@ class ExperimentOrchestrator:
 
         # Save metrics
         self.file_manager.save_metrics(self.metrics)
-
-        print(f"\n{'='*70}")
 
     def _compute_riemannian_metrics(self, base_model, task_vector):
         """Compute Riemannian geometry metrics if enabled.
