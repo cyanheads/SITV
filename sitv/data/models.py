@@ -7,6 +7,7 @@ This module contains all dataclasses and callbacks used throughout the SITV proj
 import time
 from dataclasses import dataclass, field
 from datetime import datetime
+
 from transformers import TrainerCallback
 
 
@@ -144,6 +145,7 @@ class ExperimentMetrics:
         task_name: Name of task run
         multi_task_mode: Whether multi-task comparison was run
         enable_2d_composition: Whether 2D composition was enabled
+        task_name_2: Name of second task for 2D composition
         task_vector_2_magnitude: L2 norm of second task vector (for 2D)
 
         # Riemannian geometry
@@ -211,6 +213,7 @@ class ExperimentMetrics:
 
     # 2D composition metrics
     enable_2d_composition: bool = False
+    task_name_2: str = ""  # Name of second task for 2D composition
     task_vector_2_magnitude: float = 0.0
 
     # Riemannian geometry metrics (NEW)
