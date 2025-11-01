@@ -5,6 +5,50 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.4] - 2025-11-01
+
+### Fixed
+
+- **Numerical Stability in Alpha Sweep** ([sitv/experiments/alpha_sweep.py](sitv/experiments/alpha_sweep.py)):
+  - Enhanced loss validation with `math.isfinite()` checks for `loss_alpha` and `task_eval_loss`
+  - Changed fallback values from `0.0` to `float("inf")` for unavailable metrics (loss_2alpha, functional_return_2alpha, perplexities)
+  - Improved perplexity overflow protection with combined `math.isfinite()` and threshold checks
+  - Added explicit variable initialization to prevent UnboundLocalError on early failures
+  - Enhanced error messages for conservative "unavailable" markers vs misleading zeros
+
+- **Dtype Preservation in Symmetry Analysis** ([sitv/geometry/symmetry.py](sitv/geometry/symmetry.py)):
+  - Fixed orthogonal rotation matrix dtype mismatch
+  - Changed `Q.to(param.device)` to `Q.to(device=param.device, dtype=param.dtype)` to preserve parameter dtype during rotation
+
+### Changed
+
+- **Geodesic Configuration Alignment** ([sitv/experiments/alpha_sweep.py](sitv/experiments/alpha_sweep.py)):
+  - Unified geodesic gating logic with orchestrator pattern
+  - Changed to require both `geometry.enabled` AND `geodesic_integration.enabled` for geodesic interpolation
+  - Replaced upfront Christoffel computation with deferred on-demand approach
+  - Improved configuration consistency across experiment modules
+
+- **Progress Reporting Control** ([sitv/geometry/metric.py](sitv/geometry/metric.py)):
+  - Added `show_progress: bool = True` parameter to all Fisher computation methods
+  - Allows suppressing progress bars during nested Fisher computations (e.g., Christoffel symbol computation)
+  - Applied to `compute_fisher_information_matrix()`, `_compute_diagonal_fisher()`, `_compute_kfac_fisher()`, `_compute_full_fisher()`
+  - Christoffel computation now uses `show_progress=False` for cleaner nested output
+  - Prevents cluttered console output during complex geometric computations
+
+- **Code Quality Improvements** ([sitv/experiments/alpha_sweep.py](sitv/experiments/alpha_sweep.py)):
+  - Added `from __future__ import annotations` for improved type hint support
+  - Added `import math` for explicit finite value checking
+  - Enhanced code formatting with trailing commas for better diffs
+  - Improved readability with consistent parameter formatting
+
+### Technical Details
+
+- **Error Handling**: Robust handling of non-finite loss values with appropriate fallback markers
+- **Numerical Stability**: Enhanced overflow protection and validation throughout evaluation pipeline
+- **Type Safety**: Improved dtype preservation in tensor operations
+- **Configuration**: Unified geodesic configuration logic for consistency
+- **User Experience**: Cleaner progress reporting for complex multi-level computations
+
 ## [0.14.3] - 2025-11-01
 
 ### Fixed
