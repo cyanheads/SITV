@@ -5,9 +5,12 @@ This module provides the ExperimentOrchestrator that coordinates the entire
 experimental workflow from model loading to result generation.
 """
 
+import json
 import random
 import time
 from datetime import datetime
+from pathlib import Path
+from typing import Any
 
 import numpy as np
 import torch
@@ -107,6 +110,7 @@ class ExperimentOrchestrator:
         # Initialize optional experiment results
         self.results_2d: list[TwoDSweepResult] | None = None  # Populated if 2D composition is run
         self.results_3d: list[ThreeDSweepResult] | None = None  # Populated if 3D composition is run
+        self.composition_analysis: dict[str, Any] | None = None  # Populated if composition analysis is run
 
     def run(self) -> None:
         """Run the complete experiment workflow.
@@ -587,6 +591,9 @@ class ExperimentOrchestrator:
 
         print(f"2D results saved: {results_2d_path}")
 
+        # Run composition analysis if enabled
+        self._run_composition_analysis()
+
         print_banner("2D COMPOSITION EXPERIMENT COMPLETE")
         print_separator()
         print()
@@ -778,6 +785,47 @@ class ExperimentOrchestrator:
 
         return task_vec, magnitude
 
+    def _run_composition_analysis(self):
+        """Run composition analysis on 2D results.
+
+        This analyzes task vector composition to detect interaction types
+        (additive vs non-additive) and generate predictions.
+
+        Note:
+            Only runs if composition_2d.enable_analysis is True and 2D data exists.
+        """
+        if not self.config.composition_2d.enable_analysis:
+            return
+
+        if self.results_2d is None or len(self.results_2d) == 0:
+            print("⚠️  Skipping composition analysis: No 2D results available")
+            return
+
+        print_banner("ANALYZING 2D COMPOSITION")
+        print("Running composition analyzer to detect interaction patterns...")
+
+        try:
+            from sitv.analysis import CompositionAnalyzer
+
+            analyzer = CompositionAnalyzer(Path(self.config.output_dir))
+            self.composition_analysis = analyzer.run_full_analysis(
+                save_results=True,
+                save_visualization=True
+            )
+
+            print("✓ Composition analysis complete")
+            print(f"  - Interaction type: {self.composition_analysis.get('interaction_type', 'unknown')}")
+            print(f"  - R² score: {self.composition_analysis.get('r2_score', 0.0):.4f}")
+
+        except Exception as e:
+            print(f"⚠️  Composition analysis failed: {e}")
+            import traceback
+            traceback.print_exc()
+            self.composition_analysis = None
+
+        print_separator()
+        print()
+
     def _generate_outputs(self, results, analysis):
         """Generate all output files.
 
@@ -812,7 +860,8 @@ class ExperimentOrchestrator:
             self.metrics,
             report_path,
             results_2d=self.results_2d,  # Optional: included if 2D composition was run
-            results_3d=self.results_3d   # Optional: included if 3D composition was run
+            results_3d=self.results_3d,  # Optional: included if 3D composition was run
+            composition_analysis=self.composition_analysis  # Optional: composition analysis results
         )
 
         # Save metrics
