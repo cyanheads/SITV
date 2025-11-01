@@ -91,6 +91,11 @@ class MarkdownReportGenerator:
         sections.append(self._create_header(metrics))
         sections.append(self._create_executive_summary(analysis, metrics))
         sections.append(self._create_configuration_section(metrics))
+
+        # Add Riemannian geometry section if enabled
+        if metrics.geometry_enabled:
+            sections.append(self._create_riemannian_geometry_section(metrics))
+
         sections.append(self._create_timing_breakdown(metrics))
         sections.append(self._create_training_history(metrics))
         sections.append(self._create_results_summary(analysis))
@@ -104,6 +109,10 @@ class MarkdownReportGenerator:
         # Add squaring test analysis if available
         if analysis.get("has_squaring_data", False):
             sections.append(self._create_squaring_test_analysis(analysis))
+
+        # Add geodesic comparison if Riemannian geometry was used
+        if metrics.geometry_enabled and metrics.geodesic_integration_enabled:
+            sections.append(self._create_geodesic_comparison_table(results))
 
         # Add 2D composition analysis if available
         if results_2d is not None and len(results_2d) > 0:
@@ -165,8 +174,7 @@ class MarkdownReportGenerator:
 - **Training Steps**: {metrics.training_steps}
 - **Final Training Loss**: {metrics.final_training_loss:.4f}
 
-### Task Vector
-- **Magnitude (||T||)**: {metrics.task_vector_magnitude:.4f}
+### Task Vector{self._format_task_vector_magnitudes(metrics)}
 - **Computation Time**: {metrics.task_vector_computation_time:.2f}s
 
 ### Alpha Sweep
@@ -694,6 +702,147 @@ loss landscapes may exhibit similar functional symmetries.
 This connection opens interesting questions about the geometry of neural network parameter spaces
 and whether principles from group theory and differential geometry can inform model merging and
 task composition strategies."""
+
+    def _format_task_vector_magnitudes(self, metrics: ExperimentMetrics) -> str:
+        """Format task vector magnitude section with optional Riemannian norm.
+
+        Args:
+            metrics: Experiment metrics
+
+        Returns:
+            Formatted magnitude lines
+        """
+        lines = []
+
+        if metrics.geometry_enabled:
+            lines.append(f"\n- **Euclidean Magnitude (||T||)**: {metrics.task_vector_magnitude:.4f}")
+            if metrics.task_vector_magnitude_riemannian > 0:
+                lines.append(f"- **Riemannian Magnitude (||T||_g)**: {metrics.task_vector_magnitude_riemannian:.4f}")
+                if metrics.task_vector_magnitude > 0:
+                    ratio = metrics.task_vector_magnitude_riemannian / metrics.task_vector_magnitude
+                    lines.append(f"- **Norm Ratio (||T||_g / ||T||)**: {ratio:.4f}")
+        else:
+            lines.append(f"\n- **Magnitude (||T||)**: {metrics.task_vector_magnitude:.4f}")
+
+        return "\n".join(lines)
+
+    def _create_riemannian_geometry_section(self, metrics: ExperimentMetrics) -> str:
+        """Create Riemannian geometry analysis section.
+
+        Args:
+            metrics: Experiment metrics
+
+        Returns:
+            Riemannian geometry section as string
+        """
+        # Calculate Fisher computation overhead
+        fisher_overhead_pct = 0.0
+        if metrics.sweep_duration_seconds > 0:
+            fisher_overhead_pct = (metrics.fisher_computation_time / metrics.sweep_duration_seconds) * 100
+
+        section = f"""## Riemannian Geometry Analysis
+
+### Metric Configuration
+- **Metric Type**: {metrics.metric_type}
+- **Fisher Computation Time**: {metrics.fisher_computation_time:.2f}s ({fisher_overhead_pct:.1f}% of sweep time)
+- **Fisher Samples**: {metrics.fisher_num_samples:,}"""
+
+        if metrics.fisher_condition_number > 0:
+            section += f"\n- **Fisher Condition Number**: {metrics.fisher_condition_number:.2e}"
+
+        section += f"""
+
+### Task Vector Norms
+- **Euclidean Norm ||T||**: {metrics.task_vector_magnitude_euclidean:.4f}"""
+
+        if metrics.task_vector_magnitude_riemannian > 0:
+            ratio = metrics.task_vector_magnitude_riemannian / metrics.task_vector_magnitude_euclidean if metrics.task_vector_magnitude_euclidean > 0 else 0
+            section += f"""
+- **Riemannian Norm ||T||_g**: {metrics.task_vector_magnitude_riemannian:.4f}
+- **Ratio ||T||_g / ||T||**: {ratio:.4f}"""
+
+            if ratio > 1.05:
+                interp = "The Fisher metric amplifies the task vector (information-rich directions)."
+            elif ratio < 0.95:
+                interp = "The Fisher metric shrinks the task vector (information-poor directions)."
+            else:
+                interp = "The Fisher metric is approximately Euclidean in task vector direction."
+
+            section += f"\n  - *{interp}*"
+
+        if metrics.geodesic_integration_enabled:
+            section += f"""
+
+### Geodesic Integration
+- **Enabled**: Yes
+- **RK4 Steps per Evaluation**: {metrics.geodesic_num_steps}
+- **Overhead**: ~{metrics.geodesic_num_steps}x integration cost vs straight-line
+
+**Note**: Geodesic interpolation uses Runge-Kutta 4 to integrate the geodesic equation
+along the Riemannian manifold defined by the Fisher metric. This replaces Euclidean
+straight-line interpolation M(α) = M_base + α·T with proper geodesic exp_M(α·T)."""
+
+        section += """
+
+### Interpretation
+The Riemannian norm accounts for the Fisher Information Matrix (local curvature of
+parameter space). This reflects the "information geometry" of the parameter manifold,
+where distances are measured according to the KL divergence between model distributions."""
+
+        return section
+
+    def _create_geodesic_comparison_table(self, results: List[AlphaSweepResult]) -> str:
+        """Create geodesic vs Euclidean path comparison table.
+
+        Args:
+            results: List of alpha sweep results
+
+        Returns:
+            Comparison table section as string
+        """
+        # Filter to results with geodesic data
+        geo_results = [r for r in results if r.geodesic_distance > 0]
+
+        if not geo_results:
+            return ""
+
+        # Sample every 5th result for table
+        sampled = geo_results[::5]
+        if results[-1] not in sampled:
+            sampled.append(results[-1])
+
+        section = """## Geodesic vs Euclidean Path Comparison
+
+This table compares geodesic paths (following Fisher metric) vs Euclidean straight lines.
+
+| α | Euclidean Dist | Geodesic Dist | Ratio | Interpretation |
+|---|----------------|---------------|-------|----------------|
+"""
+
+        for result in sampled:
+            if result.euclidean_distance > 0:
+                ratio = result.geodesic_distance / result.euclidean_distance
+
+                if ratio > 1.1:
+                    interp = "Positive curvature"
+                elif ratio < 0.9:
+                    interp = "Negative curvature"
+                else:
+                    interp = "Nearly flat"
+
+                section += f"| {result.alpha:+.3f} | {result.euclidean_distance:.4f} | "
+                section += f"{result.geodesic_distance:.4f} | {ratio:.4f} | {interp} |\n"
+
+        section += """
+**Interpretation**:
+- **Ratio > 1**: Geodesic is longer than Euclidean (positive curvature region)
+- **Ratio < 1**: Geodesic is shorter than Euclidean (negative curvature region)
+- **Ratio ≈ 1**: Space is approximately flat (Euclidean geometry applies)
+
+The ratio reveals whether the parameter manifold curves positively (like a sphere)
+or negatively (like a saddle) in the task vector direction."""
+
+        return section
 
     def _create_recommendations(self, analysis: Dict[str, Any]) -> str:
         """Create practical recommendations section."""
