@@ -415,15 +415,18 @@ class ExperimentOrchestrator:
         analyzer = ResultAnalyzer(threshold=self.config.alpha_sweep.threshold)
         analysis = analyzer.analyze(results)
 
-        # Update metrics with analysis
-        self.metrics.min_general_loss_alpha = analysis["min_general_loss"].alpha
-        self.metrics.min_general_loss = analysis["min_general_loss"].loss
-        self.metrics.min_task_loss_alpha = analysis["min_task_loss"].alpha
-        self.metrics.min_task_loss = analysis["min_task_loss"].task_eval_loss
+        # Update metrics with analysis (only if results available)
+        if analysis["min_general_loss"] is not None:
+            self.metrics.min_general_loss_alpha = analysis["min_general_loss"].alpha
+            self.metrics.min_general_loss = analysis["min_general_loss"].loss
+        if analysis["min_task_loss"] is not None:
+            self.metrics.min_task_loss_alpha = analysis["min_task_loss"].alpha
+            self.metrics.min_task_loss = analysis["min_task_loss"].task_eval_loss
+
         self.metrics.num_zero_crossings = len(analysis["zero_crossings"])
         self.metrics.zero_crossing_alphas = [zc.alpha for zc in analysis["zero_crossings"]]
 
-        if analysis["has_squaring_data"]:
+        if analysis.get("has_squaring_data", False):
             self.metrics.num_squaring_return_points = len(analysis["squaring_return_points"])
             self.metrics.squaring_return_alphas = [
                 sp.alpha for sp in analysis["squaring_return_points"]
@@ -657,12 +660,18 @@ class ExperimentOrchestrator:
         # Store geometry service for later use
         self.geometry_service = geo_service
 
+        # Clear model gradients from Fisher computation to free GPU memory
+        base_model.zero_grad(set_to_none=True)
+
         # Move Fisher metric to CPU to free GPU memory for alpha sweep
         # It will be moved back to GPU when needed during geodesic operations
         import torch
         self.fisher_metric = {
             name: tensor.cpu() for name, tensor in fisher.items()
         }
+
+        # Delete any remaining GPU references
+        del fisher
 
         # Clear GPU cache to free memory
         if self.device == "cuda":
