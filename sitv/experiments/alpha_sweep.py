@@ -5,7 +5,10 @@ This module implements the 1D alpha sweep experiment that explores
 the loss landscape along a task vector direction.
 """
 
+from __future__ import annotations
+
 import logging
+import math
 import time
 from datetime import datetime
 from typing import Any
@@ -126,33 +129,29 @@ class AlphaSweepExperiment(Experiment):
             device,
             batch_size=eval_batch_size,
             enable_mixed_precision=eval_enable_mixed_precision,
-            max_length=eval_max_length
+            max_length=eval_max_length,
         )
         self.failure_tracker = FailureTracker(
             max_consecutive_failures=5,
-            max_total_failures_pct=0.3
+            max_total_failures_pct=0.3,
         )
 
         # Riemannian geometry support
         self.geometry_service = geometry_service
         self.fisher_metric = fisher_metric
         self.geometry_config = geometry_config
-        self.use_geodesics = (
-            geometry_service is not None
-            and fisher_metric is not None
-            and geometry_config is not None
-            and geometry_config.enabled
-            and geometry_config.use_geodesics
+
+        # Unify geodesic gating with orchestrator: require geometry.enabled AND geodesic_integration.enabled
+        self.use_geodesics = bool(
+            geometry_service
+            and fisher_metric
+            and geometry_config
+            and getattr(geometry_config, "enabled", False)
+            and getattr(getattr(geometry_config, "geodesic_integration", None), "enabled", False)
         )
 
-        # Compute Christoffel symbols if using geodesic interpolation
+        # Defer Christoffel computation; allow apply_geodesic_task_vector to handle on-demand work.
         self.christoffel = None
-        if self.use_geodesics and geometry_service is not None:
-            print("  Computing Christoffel symbols for geodesic integration...")
-            self.christoffel = geometry_service.compute_christoffel(
-                base_model, fisher_metric
-            )
-            print("  Christoffel symbols computed ✓")
 
         # Create sampler based on strategy
         self.sampler = self._create_sampler()
@@ -169,7 +168,7 @@ class AlphaSweepExperiment(Experiment):
         if self.sampling_strategy == "uniform":
             return UniformSampler(
                 alpha_range=self.alpha_range,
-                num_samples=self.num_samples
+                num_samples=self.num_samples,
             )
         elif self.sampling_strategy == "adaptive":
             return AdaptiveSampler(
@@ -222,11 +221,16 @@ class AlphaSweepExperiment(Experiment):
         # Prepare model
         self.prepare_model()
 
-        # Clone original parameters
+        # Clone original parameters (restrict to keys in T for memory efficiency if Experiment supports it)
         original_params = self.clone_parameters(self.task_vector)
 
         # Pre-load task vector to device for performance
         device_task_vector = self.preload_task_vector_to_device(self.task_vector)
+
+        # Ensure these exist even if early failure occurs
+        alpha_values: list[float] = []
+        results: list[AlphaSweepResult] = []
+        alpha_times: list[float] = []
 
         try:
             # Compute base model loss
@@ -240,8 +244,6 @@ class AlphaSweepExperiment(Experiment):
             print(f"Generated {len(alpha_values)} alpha values\n")
 
             # Run sweep
-            results = []
-            alpha_times: list[float] = []
             total_alphas = len(alpha_values)
 
             for i, alpha in enumerate(alpha_values):
@@ -255,7 +257,7 @@ class AlphaSweepExperiment(Experiment):
                     f"[{i+1:3d}/{total_alphas}] ({progress_pct:5.1f}%) "
                     f"α = {alpha:+.3f} | ",
                     end="",
-                    flush=True
+                    flush=True,
                 )
 
                 # Evaluate at alpha with error handling
@@ -315,7 +317,7 @@ class AlphaSweepExperiment(Experiment):
         alpha: float,
         original_params: dict[str, torch.Tensor],
         device_task_vector: dict[str, torch.Tensor],
-        base_loss: float
+        base_loss: float,
     ) -> AlphaSweepResult | None:
         """Safely evaluate at alpha with error handling.
 
@@ -342,17 +344,17 @@ class AlphaSweepExperiment(Experiment):
                 # Critical error, return None to signal failure
                 return None
 
-            # Return a fallback result with inf loss
+            # Return a fallback result with conservative "unavailable" markers
             return AlphaSweepResult(
                 alpha=alpha,
                 loss=fallback_loss,
                 base_loss=base_loss,
                 functional_return=abs(fallback_loss - base_loss),
                 task_eval_loss=fallback_loss,
-                loss_2alpha=0.0,
-                functional_return_2alpha=0.0,
-                perplexity=float('inf'),
-                perplexity_2alpha=0.0,
+                loss_2alpha=float("inf"),
+                functional_return_2alpha=float("inf"),
+                perplexity=float("inf"),
+                perplexity_2alpha=float("inf"),
                 category_losses={},
             )
 
@@ -361,7 +363,7 @@ class AlphaSweepExperiment(Experiment):
         alpha: float,
         original_params: dict[str, torch.Tensor],
         device_task_vector: dict[str, torch.Tensor],
-        base_loss: float
+        base_loss: float,
     ) -> AlphaSweepResult:
         """Evaluate model at a specific alpha value.
 
@@ -376,11 +378,7 @@ class AlphaSweepExperiment(Experiment):
         """
         # Apply task vector: M_alpha = M_base + α·T (Euclidean) or exp_M_base(α·T) (Riemannian)
         if self.use_geodesics:
-            # Get fisher service from geometry service if available
-            fisher_service = (
-                self.geometry_service.fisher_service
-                if self.geometry_service else None
-            )
+            fisher_service = self.geometry_service.fisher_service if self.geometry_service else None
             self.apply_geodesic_task_vector(
                 original_params,
                 device_task_vector,
@@ -388,25 +386,23 @@ class AlphaSweepExperiment(Experiment):
                 fisher_metric=self.fisher_metric,
                 christoffel=self.christoffel,
                 fisher_service=fisher_service,
-                data_texts=self.general_eval_texts
+                data_texts=self.general_eval_texts,
             )
         else:
             self.apply_task_vector(original_params, device_task_vector, alpha)
 
         # Evaluate L(M_alpha)
-        loss_alpha = self.evaluator.evaluate(
-            self.base_model,
-            self.general_eval_texts
-        )
+        loss_alpha = float(self.evaluator.evaluate(self.base_model, self.general_eval_texts))
+        if not math.isfinite(loss_alpha):
+            loss_alpha = float("inf")
 
         # Compute functional return
         functional_return = abs(loss_alpha - base_loss)
 
         # Task evaluation loss
-        task_eval_loss = self.evaluator.evaluate_task_performance(
-            self.base_model,
-            self.task_eval_texts
-        )
+        task_eval_loss = float(self.evaluator.evaluate_task_performance(self.base_model, self.task_eval_texts))
+        if not math.isfinite(task_eval_loss):
+            task_eval_loss = float("inf")
 
         # Squaring test (if enabled)
         loss_2alpha = 0.0
@@ -414,10 +410,7 @@ class AlphaSweepExperiment(Experiment):
 
         if self.enable_squaring_test:
             loss_2alpha, functional_return_2alpha = self._evaluate_squaring_test(
-                alpha,
-                original_params,
-                device_task_vector,
-                base_loss
+                alpha, original_params, device_task_vector, base_loss
             )
 
         # Per-category losses (if categories provided)
@@ -426,26 +419,26 @@ class AlphaSweepExperiment(Experiment):
             category_losses = self.evaluator.evaluate_by_category(
                 self.base_model,
                 self.general_eval_texts,
-                self.general_eval_categories
+                self.general_eval_categories,
             )
 
-        # Compute perplexities with overflow protection
-        # exp(88.0) is near float32 max; return inf for larger values
-        perplexity = float('inf') if loss_alpha > 88.0 else np.exp(loss_alpha)
-        perplexity_2alpha = (
-            float('inf') if loss_2alpha > 88.0 else np.exp(loss_2alpha)
-        ) if self.enable_squaring_test else 0.0
+        # Compute perplexities with overflow/NaN protection
+        perplexity = float("inf") if (not math.isfinite(loss_alpha) or loss_alpha > 88.0) else float(np.exp(loss_alpha))
+        perplexity_2alpha = 0.0
+        if self.enable_squaring_test:
+            perplexity_2alpha = (
+                float("inf") if (not math.isfinite(loss_2alpha) or loss_2alpha > 88.0) else float(np.exp(loss_2alpha))
+            )
 
         # Sentiment preference (if opposite sentiment texts provided)
         sentiment_preference = 0.0
         task_eval_loss_negative = 0.0
         if self.opposite_sentiment_eval_texts:
-            _, task_eval_loss_negative, sentiment_preference = \
-                self.evaluator.evaluate_sentiment_preference(
-                    self.base_model,
-                    self.task_eval_texts,
-                    self.opposite_sentiment_eval_texts
-                )
+            _, task_eval_loss_negative, sentiment_preference = self.evaluator.evaluate_sentiment_preference(
+                self.base_model,
+                self.task_eval_texts,
+                self.opposite_sentiment_eval_texts,
+            )
 
         return AlphaSweepResult(
             alpha=alpha,
@@ -467,7 +460,7 @@ class AlphaSweepExperiment(Experiment):
         alpha: float,
         original_params: dict[str, torch.Tensor],
         device_task_vector: dict[str, torch.Tensor],
-        base_loss: float
+        base_loss: float,
     ) -> tuple[float, float]:
         """Evaluate squaring test: M(2α) = M_base + 2α·T
 
@@ -482,10 +475,7 @@ class AlphaSweepExperiment(Experiment):
         """
         # Modify model to M_base + 2α·T (Euclidean) or exp_M_base(2α·T) (Riemannian)
         if self.use_geodesics:
-            fisher_service = (
-                self.geometry_service.fisher_service
-                if self.geometry_service else None
-            )
+            fisher_service = self.geometry_service.fisher_service if self.geometry_service else None
             self.apply_geodesic_task_vector(
                 original_params,
                 device_task_vector,
@@ -493,24 +483,20 @@ class AlphaSweepExperiment(Experiment):
                 fisher_metric=self.fisher_metric,
                 christoffel=self.christoffel,
                 fisher_service=fisher_service,
-                data_texts=self.general_eval_texts
+                data_texts=self.general_eval_texts,
             )
         else:
             self.apply_task_vector(original_params, device_task_vector, 2.0 * alpha)
 
         # Evaluate L(M_2alpha)
-        loss_2alpha = self.evaluator.evaluate(
-            self.base_model,
-            self.general_eval_texts
-        )
+        loss_2alpha = float(self.evaluator.evaluate(self.base_model, self.general_eval_texts))
+        if not math.isfinite(loss_2alpha):
+            loss_2alpha = float("inf")
         functional_return_2alpha = abs(loss_2alpha - base_loss)
 
-        # Restore to M_alpha for consistency
+        # Restore to M_alpha for consistency (absolute reapply)
         if self.use_geodesics:
-            fisher_service = (
-                self.geometry_service.fisher_service
-                if self.geometry_service else None
-            )
+            fisher_service = self.geometry_service.fisher_service if self.geometry_service else None
             self.apply_geodesic_task_vector(
                 original_params,
                 device_task_vector,
@@ -518,7 +504,7 @@ class AlphaSweepExperiment(Experiment):
                 fisher_metric=self.fisher_metric,
                 christoffel=self.christoffel,
                 fisher_service=fisher_service,
-                data_texts=self.general_eval_texts
+                data_texts=self.general_eval_texts,
             )
         else:
             self.apply_task_vector(original_params, device_task_vector, alpha)
@@ -547,7 +533,7 @@ class AlphaSweepExperiment(Experiment):
         self,
         result: AlphaSweepResult,
         elapsed: float,
-        eta_str: str
+        eta_str: str,
     ) -> None:
         """Print result for current alpha.
 
