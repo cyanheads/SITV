@@ -5,6 +5,135 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0] - 2025-10-31
+
+### Added
+
+- **Riemannian Geometry Module** ([sitv/geometry/](sitv/geometry/)):
+  - Implemented complete Riemannian geometry framework for task vectors
+  - Added `FisherMetricService` for computing Fisher Information Matrix (diagonal, KFAC, full)
+  - Added `GeodesicIntegrator` using Runge-Kutta 4 for exponential map integration
+  - Added `GeodesicTaskVectorService` for geodesic-based task vector operations
+  - Added `GeometryConfig` with comprehensive configuration for metrics and integration
+  - Supports multiple metric types: euclidean, fisher_diagonal, fisher_kfac, fisher_full
+  - Includes Christoffel symbol computation for parallel transport
+
+- **Geodesic Interpolation** ([sitv/experiments/alpha_sweep.py](sitv/experiments/alpha_sweep.py), [sitv/experiments/base.py](sitv/experiments/base.py)):
+  - Implemented geodesic task vector application via exponential map
+  - Added `apply_geodesic_task_vector()` method using Riemannian geometry
+  - Replaces Euclidean straight-line interpolation M(α) = M_base + α·T with proper geodesic exp_M(α·T)
+  - Integrated geodesic support into alpha sweep experiment workflow
+  - Added geometry service and Fisher metric support to experiment initialization
+
+- **Enhanced Numerical Stability** (11 files):
+  - Added perplexity overflow protection in `EvaluationService.compute_perplexity()` (prevents exp(88+) overflow)
+  - Added finite value validation for alpha in task vector operations
+  - Improved task vector magnitude computation using float64 accumulation
+  - Enhanced zero-crossing detection with automatic deduplication
+  - Improved curvature computation with proper finite difference for non-uniform grids
+  - Added numerical stability to Bayesian sampler Expected Improvement calculation
+  - Enhanced 2D composition with better floating-point accumulation order
+
+- **Riemannian Metrics Tracking** ([sitv/data/models.py](sitv/data/models.py)):
+  - Added `euclidean_distance`, `geodesic_distance`, `geometry_overhead_seconds` to `AlphaSweepResult`
+  - Added geometry configuration fields to `ExperimentMetrics`:
+    - `geometry_enabled`, `metric_type`, `fisher_computation_time`
+    - `fisher_num_samples`, `fisher_condition_number`
+    - `task_vector_magnitude_euclidean`, `task_vector_magnitude_riemannian`
+    - `geodesic_integration_enabled`, `geodesic_num_steps`
+
+- **Geometry Reporting** ([sitv/reporting/markdown.py](sitv/reporting/markdown.py)):
+  - Added Riemannian geometry analysis section to markdown reports
+  - Added geodesic vs Euclidean path comparison tables
+  - Added Fisher metric configuration and computation time tracking
+  - Added task vector norm ratio analysis (||T||_g / ||T||)
+  - Included interpretation guidance for positive/negative curvature regions
+
+### Changed
+
+- **Configuration System** ([sitv/experiments/config.py](sitv/experiments/config.py), [config.yaml](config.yaml)):
+  - Added `geometry` property to `ExperimentConfig` (lazy-loaded to avoid circular imports)
+  - Added comprehensive geometry configuration section to config.yaml:
+    - Metric type selection (euclidean, fisher_diagonal, fisher_kfac, fisher_full)
+    - Fisher approximation parameters (sampling strategy, num_samples, eigenvalue floor)
+    - Geodesic integration settings (RK4 steps, tolerance, step size control)
+    - Placeholder sections for symmetry and curvature analysis (Phase 3/4)
+  - Changed default task from sentiment_positive to sentiment_negative
+  - Increased evaluation batch size from 8 to 32
+  - Changed sampling strategy from adaptive back to uniform
+  - Adjusted zero-crossing threshold from 0.15 to 0.20
+  - Removed model options (Qwen) to focus on Gemma
+
+- **Orchestrator Enhancement** ([sitv/experiments/orchestrator.py](sitv/experiments/orchestrator.py)):
+  - Added Riemannian geometry computation in task vector phase
+  - Integrated Fisher metric computation and Riemannian norm calculation
+  - Added geometry configuration display in experiment header
+  - Enhanced task vector output to show both Euclidean and Riemannian magnitudes
+  - Passes geometry service and Fisher metric to alpha sweep experiments
+  - Added geometry metrics to experiment finalization
+
+- **Gradient Analysis** ([sitv/analysis/gradient/critical_points.py](sitv/analysis/gradient/critical_points.py)):
+  - Improved `_find_zero_crossing_indices()` with automatic deduplication
+  - Uses set-based approach to efficiently handle overlapping sign changes and near-zero points
+  - Enhanced documentation explaining detection criteria
+
+- **Evaluation Service** ([sitv/core/evaluation.py](sitv/core/evaluation.py)):
+  - Added overflow protection in `compute_perplexity()` method
+  - Returns `float('inf')` for losses > 88.0 to prevent float32 overflow
+  - Added input validation for non-finite loss values
+  - Enhanced documentation with safety margin explanation
+
+- **Task Vector Service** ([sitv/core/task_vector.py](sitv/core/task_vector.py)):
+  - Enhanced `compute_magnitude()` with float64 precision for numerical stability
+  - Added finite value validation in `apply()` method
+  - Improved docstrings with validation and error handling details
+
+- **Base Experiment** ([sitv/experiments/base.py](sitv/experiments/base.py)):
+  - Enhanced `apply_2d_composition()` with better numerical stability
+  - Added finite value validation for alpha and beta
+  - Improved floating-point accumulation order for precision
+  - Added comprehensive error messages for invalid scaling factors
+
+- **Adaptive Sampler** ([sitv/experiments/sampling/adaptive_sampler.py](sitv/experiments/sampling/adaptive_sampler.py)):
+  - Fixed `_find_high_curvature_regions()` with proper finite difference formula
+  - Uses correct discrete derivative for non-uniform grids
+  - Added epsilon protection against division by very small intervals
+  - Enhanced numerical stability in second derivative computation
+
+- **Bayesian Sampler** ([sitv/experiments/sampling/bayesian_sampler.py](sitv/experiments/sampling/bayesian_sampler.py)):
+  - Improved `_expected_improvement()` numerical stability
+  - Added epsilon to sigma to prevent division by zero
+  - Enhanced robustness of Gaussian Process acquisition function
+
+### Removed
+
+- **Reorganized Findings** (5 files deleted):
+  - Removed `findings/2025-10-31/ANALYSIS.md` (355 lines)
+  - Removed `findings/2025-10-31/IF.md` (284 lines)
+  - Removed `findings/2025-10-31/QA.md` (289 lines)
+  - Removed `findings/2025-10-31/SN.md` (289 lines)
+  - Removed `findings/2025-10-31/SP.md` (344 lines)
+  - New organized structure: `findings/2025-10-31/QA/`, `findings/2025-10-31/SN/`, `findings/2025-10-31/SP/`
+
+### Fixed
+
+- Perplexity computation overflow for large loss values (> 88.0)
+- Zero-crossing detection duplicate indices from overlapping criteria
+- Curvature computation errors on non-uniform alpha grids
+- Bayesian sampler division by zero in Expected Improvement
+- Numerical precision loss in task vector magnitude computation
+- Invalid alpha/beta handling in task vector operations
+
+### Technical Details
+
+- **Riemannian Geometry**: Full implementation using Fisher Information Matrix as metric tensor
+- **Geodesic Integration**: RK4 solver with configurable step count (default: 100 steps)
+- **Numerical Stability**: Float64 accumulation, overflow protection, epsilon guards throughout
+- **Fisher Metric**: Diagonal, KFAC, and full matrix approximations supported
+- **Performance**: Fisher computation cached for reuse, optional parallel transport
+- **Experimental**: Symmetry and curvature analysis placeholder (Phase 3/4 not yet implemented)
+- **Breaking Changes**: None - Riemannian features are opt-in via geometry.enabled configuration
+
 ## [0.9.0] - 2025-10-31
 
 ### Added
