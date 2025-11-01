@@ -5,13 +5,42 @@ This module provides the MarkdownReportGenerator for creating comprehensive
 experiment reports in Markdown format for LLM analysis.
 """
 
-import json
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import numpy as np
 
 from sitv.data.models import AlphaSweepResult, ExperimentMetrics, TwoDSweepResult
+
+# ============================================================================
+# CONFIGURATION CONSTANTS
+# ============================================================================
+# These constants control report formatting and thresholds for analysis
+
+# Training history display
+TRAINING_STEP_INTERVAL = 5  # Show every Nth training step
+MAX_TRAINING_MILESTONES = 25  # Max milestones before trimming
+
+# Result sampling for tables
+MAX_ZERO_CROSSINGS_DISPLAY = 3  # Max zero-crossings to show
+MAX_SAMPLE_DATA_POINTS = 20  # Max alpha sweep samples in table
+MAX_SQUARING_RETURNS_DISPLAY = 10  # Max squaring returns to show
+GEODESIC_TABLE_SAMPLE_INTERVAL = 5  # Sample every Nth geodesic result
+
+# Numeric thresholds for analysis
+AXIS_PROXIMITY_THRESHOLD = 0.01  # Threshold for identifying α≈0 or β≈0
+NORM_RATIO_SIGNIFICANT_HIGH = 1.05  # Ratio threshold for "amplifies" interpretation
+NORM_RATIO_SIGNIFICANT_LOW = 0.95  # Ratio threshold for "shrinks" interpretation
+CURVATURE_POSITIVE_THRESHOLD = 1.1  # Geodesic/Euclidean ratio for positive curvature
+CURVATURE_NEGATIVE_THRESHOLD = 0.9  # Geodesic/Euclidean ratio for negative curvature
+
+# Category descriptions (extensible dictionary)
+CATEGORY_INTERPRETATIONS = {
+    "coding": "How well does the model handle programming/technical content?",
+    "wikitext": "How well does the model handle factual/encyclopedic content?",
+    "mixed_domain": "How well does the model handle diverse multi-domain content?",
+    "common_knowledge": "How well does the model handle everyday general knowledge?",
+}
 
 
 class MarkdownReportGenerator:
@@ -37,11 +66,11 @@ class MarkdownReportGenerator:
 
     def generate(
         self,
-        results: List[AlphaSweepResult],
-        analysis: Dict[str, Any],
+        results: list[AlphaSweepResult],
+        analysis: dict[str, Any],
         metrics: ExperimentMetrics,
         output_path: str = "experiment_report.md",
-        results_2d: Optional[List[TwoDSweepResult]] = None
+        results_2d: list[TwoDSweepResult] | None = None
     ) -> str:
         """Generate comprehensive Markdown report.
 
@@ -70,10 +99,10 @@ class MarkdownReportGenerator:
 
     def _build_report(
         self,
-        results: List[AlphaSweepResult],
-        analysis: Dict[str, Any],
+        results: list[AlphaSweepResult],
+        analysis: dict[str, Any],
         metrics: ExperimentMetrics,
-        results_2d: Optional[List[TwoDSweepResult]] = None
+        results_2d: list[TwoDSweepResult] | None = None
     ) -> str:
         """Build the complete report content.
 
@@ -135,7 +164,7 @@ class MarkdownReportGenerator:
 
     def _create_executive_summary(
         self,
-        analysis: Dict[str, Any],
+        analysis: dict[str, Any],
         metrics: ExperimentMetrics
     ) -> str:
         """Create executive summary section."""
@@ -216,16 +245,16 @@ class MarkdownReportGenerator:
 
 **No training history available.**"""
 
-        # Get key training milestones (every 5 steps or at epoch boundaries)
+        # Get key training milestones (every N steps or at epoch boundaries)
         milestones = []
         for i, entry in enumerate(metrics.training_history):
             step = entry.get('step', i + 1)
-            # Include every 5th step or steps near epoch boundaries
-            if step % 5 == 0 or i == 0 or i == len(metrics.training_history) - 1:
+            # Include every Nth step or steps near epoch boundaries
+            if step % TRAINING_STEP_INTERVAL == 0 or i == 0 or i == len(metrics.training_history) - 1:
                 milestones.append(entry)
 
         # Limit to reasonable number for report (first 10, middle 5, last 10)
-        if len(milestones) > 25:
+        if len(milestones) > MAX_TRAINING_MILESTONES:
             selected = milestones[:10] + milestones[len(milestones)//2-2:len(milestones)//2+3] + milestones[-10:]
         else:
             selected = milestones
@@ -266,7 +295,7 @@ class MarkdownReportGenerator:
 
         return section
 
-    def _create_results_summary(self, analysis: Dict[str, Any]) -> str:
+    def _create_results_summary(self, analysis: dict[str, Any]) -> str:
         """Create results summary section."""
         min_general = analysis["min_general_loss"]
         zero_crossings = analysis["zero_crossings"]
@@ -274,7 +303,7 @@ class MarkdownReportGenerator:
         zc_section = ""
         if zero_crossings:
             zc_section = "\n### Zero-Crossings Found ★\n\n"
-            for i, result in enumerate(zero_crossings[:3], 1):
+            for i, result in enumerate(zero_crossings[:MAX_ZERO_CROSSINGS_DISPLAY], 1):
                 zc_section += f"{i}. α = {result.alpha:+.4f}, |ΔL| = {result.functional_return:.6f}\n"
 
         return f"""## Results Summary
@@ -287,7 +316,7 @@ class MarkdownReportGenerator:
 
     def _create_alpha_sweep_details(
         self,
-        results: List[AlphaSweepResult],
+        results: list[AlphaSweepResult],
         metrics: ExperimentMetrics
     ) -> str:
         """Create alpha sweep details section with sample data points.
@@ -305,7 +334,7 @@ class MarkdownReportGenerator:
 **No alpha sweep results available.**"""
 
         # Select representative samples (evenly spaced)
-        num_samples = min(20, len(results))
+        num_samples = min(MAX_SAMPLE_DATA_POINTS, len(results))
         step = max(1, len(results) // num_samples)  # Guard against division issues
         selected = [results[i * step] for i in range(num_samples) if i * step < len(results)]
         if results[-1] not in selected:
@@ -348,8 +377,8 @@ class MarkdownReportGenerator:
 
     def _create_statistical_summary(
         self,
-        results: List[AlphaSweepResult],
-        analysis: Dict[str, Any]
+        results: list[AlphaSweepResult],
+        analysis: dict[str, Any]
     ) -> str:
         """Create statistical summary section.
 
@@ -406,7 +435,7 @@ class MarkdownReportGenerator:
 
     def _create_category_breakdown(
         self,
-        results: List[AlphaSweepResult],
+        results: list[AlphaSweepResult],
         metrics: ExperimentMetrics
     ) -> str:
         """Create per-category loss breakdown section.
@@ -447,16 +476,9 @@ This breakdown shows how the task vector ({metrics.task_name}) affects each eval
 |----------|--------|----------------|----------------|
 """
 
-        interpretations = {
-            "coding": "How well does the model handle programming/technical content?",
-            "wikitext": "How well does the model handle factual/encyclopedic content?",
-            "mixed_domain": "How well does the model handle diverse multi-domain content?",
-            "common_knowledge": "How well does the model handle everyday general knowledge?"
-        }
-
         for category in categories:
             best_alpha, best_loss = best_alphas[category]
-            interp = interpretations.get(category, "Domain-specific performance")
+            interp = CATEGORY_INTERPRETATIONS.get(category, "Domain-specific performance")
             section += f"| {category} | {best_alpha:+.4f} | {best_loss:.4f} | {interp} |\n"
 
         # Add category-wise comparison at α=0 (base model)
@@ -474,7 +496,7 @@ This breakdown shows how the task vector ({metrics.task_name}) affects each eval
 
         return section
 
-    def _create_squaring_test_analysis(self, analysis: Dict[str, Any]) -> str:
+    def _create_squaring_test_analysis(self, analysis: dict[str, Any]) -> str:
         """Create squaring test analysis section.
 
         Args:
@@ -503,7 +525,7 @@ Found {len(squaring_returns)} α value(s) where L(2α) ≈ L(M_base):
 | # | α | L(2α) | |L(2α) - L_base| |
 |---|---|-------|----------------|
 """
-            for i, sr in enumerate(squaring_returns[:10], 1):
+            for i, sr in enumerate(squaring_returns[:MAX_SQUARING_RETURNS_DISPLAY], 1):
                 section += f"| {i} | {sr.alpha:+.4f} | {sr.loss_2alpha:.4f} | {sr.functional_return_2alpha:.6f} |\n"
 
             section += """
@@ -528,7 +550,7 @@ neural loss landscape does not show similar self-inverse properties under task v
 
     def _create_2d_composition_section(
         self,
-        results_2d: List[TwoDSweepResult],
+        results_2d: list[TwoDSweepResult],
         metrics: ExperimentMetrics
     ) -> str:
         """Create 2D composition analysis section.
@@ -541,8 +563,8 @@ neural loss landscape does not show similar self-inverse properties under task v
             2D composition analysis section as string
         """
         # Extract alpha and beta ranges from results
-        alphas = sorted(set(r.alpha for r in results_2d))
-        betas = sorted(set(r.beta for r in results_2d))
+        alphas = sorted({r.alpha for r in results_2d})
+        betas = sorted({r.beta for r in results_2d})
         alpha_min, alpha_max = min(alphas), max(alphas)
         beta_min, beta_max = min(betas), max(betas)
         grid_size = f"{len(alphas)}×{len(betas)}"
@@ -557,8 +579,11 @@ neural loss landscape does not show similar self-inverse properties under task v
         closest_to_base = min(results_2d, key=lambda r: r.functional_return)
 
         # Find points along axes (α=0 and β=0)
-        alpha_axis_results = [r for r in results_2d if abs(r.beta) < 0.01]
-        beta_axis_results = [r for r in results_2d if abs(r.alpha) < 0.01]
+        alpha_axis_results = [r for r in results_2d if abs(r.beta) < AXIS_PROXIMITY_THRESHOLD]
+        beta_axis_results = [r for r in results_2d if abs(r.alpha) < AXIS_PROXIMITY_THRESHOLD]
+
+        # Get second task name with fallback
+        task_name_2 = metrics.task_name_2 if metrics.task_name_2 else "unknown_task"
 
         section = f"""## 2D Task Vector Composition Analysis
 
@@ -569,7 +594,7 @@ This experiment explores the loss landscape under composition of two task vector
 
 - **First Task Vector (T1)**: {metrics.task_name}
   - Magnitude: ||T1|| = {metrics.task_vector_magnitude:.4f}
-- **Second Task Vector (T2)**: sentiment_negative
+- **Second Task Vector (T2)**: {task_name_2}
   - Magnitude: ||T2|| = {metrics.task_vector_2_magnitude:.4f}
 - **Grid Configuration**: {grid_size} = {total_evaluations} evaluations
 - **α range**: [{alpha_min:.1f}, {alpha_max:.1f}]
@@ -644,7 +669,7 @@ marked at the origin (α=0, β=0).
 
         return section
 
-    def _create_theoretical_connection(self, analysis: Dict[str, Any]) -> str:
+    def _create_theoretical_connection(self, analysis: dict[str, Any]) -> str:
         """Create theoretical connection section.
 
         Args:
@@ -761,9 +786,9 @@ task composition strategies."""
 - **Riemannian Norm ||T||_g**: {metrics.task_vector_magnitude_riemannian:.4f}
 - **Ratio ||T||_g / ||T||**: {ratio:.4f}"""
 
-            if ratio > 1.05:
+            if ratio > NORM_RATIO_SIGNIFICANT_HIGH:
                 interp = "The Fisher metric amplifies the task vector (information-rich directions)."
-            elif ratio < 0.95:
+            elif ratio < NORM_RATIO_SIGNIFICANT_LOW:
                 interp = "The Fisher metric shrinks the task vector (information-poor directions)."
             else:
                 interp = "The Fisher metric is approximately Euclidean in task vector direction."
@@ -791,7 +816,7 @@ where distances are measured according to the KL divergence between model distri
 
         return section
 
-    def _create_geodesic_comparison_table(self, results: List[AlphaSweepResult]) -> str:
+    def _create_geodesic_comparison_table(self, results: list[AlphaSweepResult]) -> str:
         """Create geodesic vs Euclidean path comparison table.
 
         Args:
@@ -806,8 +831,8 @@ where distances are measured according to the KL divergence between model distri
         if not geo_results:
             return ""
 
-        # Sample every 5th result for table
-        sampled = geo_results[::5]
+        # Sample every Nth result for table
+        sampled = geo_results[::GEODESIC_TABLE_SAMPLE_INTERVAL]
         if results[-1] not in sampled:
             sampled.append(results[-1])
 
@@ -823,9 +848,9 @@ This table compares geodesic paths (following Fisher metric) vs Euclidean straig
             if result.euclidean_distance > 0:
                 ratio = result.geodesic_distance / result.euclidean_distance
 
-                if ratio > 1.1:
+                if ratio > CURVATURE_POSITIVE_THRESHOLD:
                     interp = "Positive curvature"
-                elif ratio < 0.9:
+                elif ratio < CURVATURE_NEGATIVE_THRESHOLD:
                     interp = "Negative curvature"
                 else:
                     interp = "Nearly flat"
@@ -844,7 +869,7 @@ or negatively (like a saddle) in the task vector direction."""
 
         return section
 
-    def _create_recommendations(self, analysis: Dict[str, Any]) -> str:
+    def _create_recommendations(self, analysis: dict[str, Any]) -> str:
         """Create practical recommendations section."""
         min_general = analysis["min_general_loss"]
         min_task = analysis["min_task_loss"]
