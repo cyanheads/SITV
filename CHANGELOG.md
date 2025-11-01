@@ -5,6 +5,48 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.1] - 2025-10-31
+
+### Added
+
+- **2D Composition Task Tracking** ([sitv/data/models.py](sitv/data/models.py)):
+  - Added `task_name_2` field to `ExperimentMetrics` dataclass
+  - Tracks the name of the second task in 2D composition experiments
+  - Previously hardcoded as "sentiment_negative", now dynamically captured from config
+
+### Changed
+
+- **Markdown Reporter Refactoring** ([sitv/reporting/markdown.py](sitv/reporting/markdown.py)):
+  - Extracted all magic numbers to named constants at module level
+  - Added comprehensive configuration constants section with documentation
+  - Created `TRAINING_STEP_INTERVAL`, `MAX_ZERO_CROSSINGS_DISPLAY`, `MAX_SAMPLE_DATA_POINTS`, and 10+ other constants
+  - Added `CATEGORY_INTERPRETATIONS` dictionary for extensible category descriptions
+  - Improved threshold constants for analysis: `AXIS_PROXIMITY_THRESHOLD`, `NORM_RATIO_SIGNIFICANT_HIGH/LOW`, `CURVATURE_POSITIVE/NEGATIVE_THRESHOLD`
+  - Modernized type hints to Python 3.10+ syntax (`list[T]` instead of `List[T]`, `dict` instead of `Dict`, `| None` instead of `Optional`)
+  - Fixed 2D composition report to use `task_name_2` from metrics instead of hardcoded string
+
+- **Console Utilities Enhancement** ([sitv/utils/console.py](sitv/utils/console.py), [sitv/utils/__init__.py](sitv/utils/__init__.py)):
+  - Added configuration constants: `BANNER_WIDTH`, `BANNER_CHAR`, `SECTION_CHAR`, `SUBSECTION_CHAR`, `PROGRESS_BAR_WIDTH`
+  - Added `print_separator()` function for simple separator lines
+  - Updated `print_banner()`, `print_section()`, and `print_progress()` to use default constants
+  - Made width and character parameters optional with sensible defaults
+  - Modernized type hints to Python 3.10+ syntax
+  - Exported new constants and functions through `sitv.utils` module
+
+- **Orchestrator Cleanup** ([sitv/experiments/orchestrator.py](sitv/experiments/orchestrator.py)):
+  - Replaced hardcoded banner/separator printing with centralized utility functions
+  - Updated to use `print_banner()` and `print_separator()` from `sitv.utils`
+  - Added `task_name_2` to metrics when running 2D composition experiments
+  - Improved code consistency and reduced duplication across experiment phases
+
+### Technical Details
+
+- **Code Quality**: Eliminated magic numbers throughout reporting system, improved maintainability
+- **Type Safety**: Modernized type hints to leverage Python 3.10+ features for cleaner code
+- **Consistency**: Centralized console formatting ensures uniform output styling across all experiment phases
+- **Extensibility**: Configuration constants make thresholds and display limits easily adjustable
+- **2D Composition**: Task names now properly tracked in both metrics and reports for full experiment reproducibility
+
 ## [0.10.0] - 2025-10-31
 
 ### Added
