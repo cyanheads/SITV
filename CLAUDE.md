@@ -4,9 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-SITV (Self-Inverse Task Vectors) is a research project exploring loss landscape geometry of neural network task vectors. It maps `L(M_base + αT)` to find optimal scaling factors and investigate whether self-inverse properties from rotation groups emerge in parameter space.
+**SITV (Self-Inverse Task Vectors) explores the hidden geometry inside neural networks.** We hypothesize that neural networks organize knowledge as branching structures—like tunnels in an anthill—and we're trying to prove it. When you fine-tune a model, where does the change "live"? How do multiple skills interact? What structure emerges in high-dimensional parameter space?
 
-**Core concept**: For a task vector `T = M_finetuned - M_base`, sweep α ∈ [-3.0, 3.0] and plot `L(M_base + αT)` to discover zero-crossings, optimal scaling, and landscape shape.
+This is **experimental cartography** of neural network internals. We combine rigorous measurement (loss landscape mapping, Riemannian geometry) with exploratory analysis (composition patterns, symmetry detection) to visualize and validate this branching structure hypothesis. **The end goal**: discover shortcuts for LLM training by understanding the underlying geometry—if we can map the structure, we can navigate it more efficiently.
+
+**Core methodology**: For a task vector `T = M_finetuned - M_base`, sweep α ∈ [-3.0, 3.0] and plot `L(M_base + αT)` to discover optimal scaling, zero-crossings, and landscape shape. Extend to 2D and 3D to study how tasks compose.
 
 ## Recent Features (v0.10.0 → v0.12.0)
 
