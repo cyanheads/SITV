@@ -5,6 +5,50 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.2] - 2025-10-31
+
+### Fixed
+
+- **Riemannian Geometry Device Management** ([sitv/geometry/metric.py](sitv/geometry/metric.py)):
+  - Fixed device mismatch error when computing Riemannian norm with task vectors on CPU and Fisher metrics on CUDA
+  - Added automatic device detection and tensor movement to ensure same-device operations
+  - Handles all approximation types (diagonal, KFAC, full)
+
+- **GPU Memory Management** ([sitv/experiments/orchestrator.py](sitv/experiments/orchestrator.py)):
+  - Fixed CUDA out of memory errors during alpha sweep experiments
+  - Move Fisher metric to CPU after computing Riemannian norm to free ~77GB GPU memory
+  - Clear CUDA cache after Fisher computation to release fragmented memory
+  - Fisher automatically moved back to GPU during geodesic operations
+
+- **Geodesic Integration Device Consistency** ([sitv/geometry/geodesic.py](sitv/geometry/geodesic.py)):
+  - Fixed device mismatch errors in exponential_map when inputs are on different devices
+  - Automatically move base_point, tangent_vector, and christoffel to integrator's device
+  - Enables proper operation with CPU-stored Fisher/Christoffel symbols
+  - Maintains performance by running integration on GPU when available
+
+- **Empty Results Handling** ([sitv/analysis/analyzer.py](sitv/analysis/analyzer.py)):
+  - Fixed IndexError when experiment aborts before completing any evaluations
+  - Added check for empty results list with graceful degradation
+  - Returns None values for all metrics when no results available
+  - Displays clear warning message instead of crashing
+
+- **Device Type Check** ([sitv/experiments/orchestrator.py](sitv/experiments/orchestrator.py)):
+  - Fixed AttributeError when checking device type for CUDA cache clearing
+  - Changed `self.device.type` to `self.device` (stored as string, not torch.device object)
+
+- **Type Safety** ([sitv/geometry/metric.py](sitv/geometry/metric.py), [sitv/analysis/gradient/critical_points.py](sitv/analysis/gradient/critical_points.py)):
+  - Fixed mypy type checking errors
+  - Changed `_compute_full_fisher` return type to allow metadata dict
+  - Added explicit type annotation for `indices_set: set[int]` in zero-crossing detection
+
+### Technical Details
+
+- **Device Management**: Complete fix for multi-device scenarios (CPU task vectors, CUDA Fisher metrics)
+- **Memory Efficiency**: Fisher metric moved to CPU when not in use, freeing majority of GPU memory
+- **Robustness**: Graceful handling of experiment failures and aborts
+- **Type Safety**: All mypy errors resolved without changing functionality
+- **GPU Memory**: Prevents OOM on 80GB GPUs when model + Fisher consume entire memory
+
 ## [0.10.1] - 2025-10-31
 
 ### Added
