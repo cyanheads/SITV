@@ -140,22 +140,22 @@ geometry:
     # If geodesic deviates from straight line → GEOMETRIC STRUCTURE EXISTS!
 
   # Symmetry Analysis (detect rotation/permutation/scaling symmetries)
-  # NOTE: Phase 4 - Not yet implemented
+  # v0.14.0 - Fully implemented with quotient space projection
   symmetry_analysis:
-    enabled: false # Perform symmetry group detection (NOT IMPLEMENTED YET)
+    enabled: true # Perform symmetry group detection
     detect_rotations: true # Test for rotation invariance
     detect_permutations: true # Test for neuron permutation symmetries
     detect_scaling: true # Test for layer-wise scaling symmetries
-    quotient_space: false # Work in canonical parameter space
+    quotient_space: true # Work in canonical parameter space (removes redundancy)
     symmetry_tolerance: 0.01 # Tolerance for L(R·θ) ≈ L(θ)
 
   # Curvature Analysis (compute sectional/Ricci/scalar curvature)
-  # NOTE: Phase 3 - Not yet implemented
+  # v0.13.0 - Fully implemented with statistical estimation
   curvature_analysis:
-    enabled: false # Compute Riemannian curvature tensors (NOT IMPLEMENTED YET)
-    compute_sectional: true # Sectional curvature K(X,Y)
-    compute_ricci: false # Ricci curvature (expensive)
-    compute_scalar: false # Scalar curvature (expensive)
+    enabled: true # Compute Riemannian curvature tensors
+    compute_sectional: true # Sectional curvature K(X,Y) (fast, recommended)
+    compute_ricci: false # Ricci curvature (expensive, optional)
+    compute_scalar: false # Scalar curvature (expensive, optional)
     num_tangent_samples: 10 # Random tangent vectors for curvature estimation
 
 # Hardware Optimization & Use Case Settings
