@@ -966,7 +966,6 @@ class ExperimentOrchestrator:
 
         # Move Fisher metric to CPU to free GPU memory for alpha sweep
         # It will be moved back to GPU when needed during geodesic operations
-        import torch
         self.fisher_metric = {
             name: (tensor.cpu() if isinstance(tensor, torch.Tensor) else tensor)
             for name, tensor in fisher.items()
