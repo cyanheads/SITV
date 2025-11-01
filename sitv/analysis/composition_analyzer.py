@@ -20,6 +20,7 @@ from scipy.interpolate import RegularGridInterpolator  # type: ignore[import-unt
 
 # --------------------------- helpers ---------------------------
 
+
 def _closest_index_to_zero(arr: np.ndarray) -> int:
     """Index of the element in arr closest to 0."""
     return int(np.nanargmin(np.abs(arr)))
@@ -65,6 +66,7 @@ def _polyfit_curvature(x: np.ndarray, y: np.ndarray, k: int = 1) -> float | None
 
 
 # --------------------------- analyzer ---------------------------
+
 
 class CompositionAnalyzer:
     """Analyzes 2D task vector composition landscapes.
@@ -330,14 +332,14 @@ class CompositionAnalyzer:
 
         # Additive model via broadcasting
         L_alpha_0 = loss_grid[:, [jb0]]  # (A,1)  # noqa: N806 - Mathematical notation
-        L_0_beta = loss_grid[[ia0], :]   # (1,B)  # noqa: N806 - Mathematical notation
+        L_0_beta = loss_grid[[ia0], :]  # (1,B)  # noqa: N806 - Mathematical notation
         loss_additive = L_alpha_0 + L_0_beta - L_00  # (A,B)
 
         # Interaction term
         interaction = loss_grid - loss_additive
 
         # Strength (RMS) and R² (NaN-aware)
-        interaction_rms = float(np.sqrt(np.nanmean(interaction ** 2)))
+        interaction_rms = float(np.sqrt(np.nanmean(interaction**2)))
         total_var = float(np.nanvar(loss_grid))
         residual_var = float(np.nanvar(interaction))
         r_squared = float(1.0 - residual_var / total_var) if total_var > 0 else float("nan")
@@ -429,10 +431,16 @@ class CompositionAnalyzer:
 
         # 1. 2D heatmap with optimal point (actual)
         ax1 = plt.subplot(2, 3, 1)
-        im1 = ax1.imshow(A, origin="lower", extent=extent, aspect="auto",
-                         cmap="viridis", vmin=vmin, vmax=vmax)
-        ax1.plot(props_2d["beta_opt"], props_2d["alpha_opt"], "r*", markersize=15,
-                 label=f'Optimal ({props_2d["alpha_opt"]:.2f}, {props_2d["beta_opt"]:.2f})')
+        im1 = ax1.imshow(
+            A, origin="lower", extent=extent, aspect="auto", cmap="viridis", vmin=vmin, vmax=vmax
+        )
+        ax1.plot(
+            props_2d["beta_opt"],
+            props_2d["alpha_opt"],
+            "r*",
+            markersize=15,
+            label=f"Optimal ({props_2d['alpha_opt']:.2f}, {props_2d['beta_opt']:.2f})",
+        )
         ax1.axhline(0, color="white", linestyle="--", alpha=0.5, linewidth=1)
         ax1.axvline(0, color="white", linestyle="--", alpha=0.5, linewidth=1)
         ax1.set_xlabel("β (T2 scaling)")
@@ -443,14 +451,27 @@ class CompositionAnalyzer:
 
         # 2. Cross-section at optimal β
         ax2 = plt.subplot(2, 3, 2)
-        ax2.plot(cross_sections["alpha_range"], cross_sections["loss_at_beta_opt"],
-                 "b-", label=f'L(α, β={props_2d["beta_opt"]:.2f})')
-        ax2.plot(props_1d["alphas"], props_1d["losses"], "g--",
-                 label="L(α, 0) [1D T1 only]", alpha=0.7)
-        ax2.axvline(props_2d["alpha_opt"], color="red", linestyle="--",
-                    label=f'2D optimal α={props_2d["alpha_opt"]:.2f}')
-        ax2.axvline(props_1d["alpha_opt"], color="green", linestyle=":",
-                    label=f'1D optimal α={props_1d["alpha_opt"]:.2f}')
+        ax2.plot(
+            cross_sections["alpha_range"],
+            cross_sections["loss_at_beta_opt"],
+            "b-",
+            label=f"L(α, β={props_2d['beta_opt']:.2f})",
+        )
+        ax2.plot(
+            props_1d["alphas"], props_1d["losses"], "g--", label="L(α, 0) [1D T1 only]", alpha=0.7
+        )
+        ax2.axvline(
+            props_2d["alpha_opt"],
+            color="red",
+            linestyle="--",
+            label=f"2D optimal α={props_2d['alpha_opt']:.2f}",
+        )
+        ax2.axvline(
+            props_1d["alpha_opt"],
+            color="green",
+            linestyle=":",
+            label=f"1D optimal α={props_1d['alpha_opt']:.2f}",
+        )
         if np.isfinite(props_2d["base_loss"]):
             ax2.axhline(props_2d["base_loss"], color="gray", linestyle=":", alpha=0.5)
         ax2.set_xlabel("α")
@@ -461,10 +482,18 @@ class CompositionAnalyzer:
 
         # 3. Cross-section at optimal α
         ax3 = plt.subplot(2, 3, 3)
-        ax3.plot(cross_sections["beta_range"], cross_sections["loss_at_alpha_opt"],
-                 "r-", label=f'L(α={props_2d["alpha_opt"]:.2f}, β)')
-        ax3.axvline(props_2d["beta_opt"], color="red", linestyle="--",
-                    label=f'2D optimal β={props_2d["beta_opt"]:.2f}')
+        ax3.plot(
+            cross_sections["beta_range"],
+            cross_sections["loss_at_alpha_opt"],
+            "r-",
+            label=f"L(α={props_2d['alpha_opt']:.2f}, β)",
+        )
+        ax3.axvline(
+            props_2d["beta_opt"],
+            color="red",
+            linestyle="--",
+            label=f"2D optimal β={props_2d['beta_opt']:.2f}",
+        )
         if np.isfinite(props_2d["base_loss"]):
             ax3.axhline(props_2d["base_loss"], color="gray", linestyle=":", alpha=0.5)
         ax3.set_xlabel("β")
@@ -475,20 +504,36 @@ class CompositionAnalyzer:
 
         # 4. Interaction heatmap
         ax4 = plt.subplot(2, 3, 4)
-        im4 = ax4.imshow(A_int, origin="lower", extent=extent, aspect="auto",
-                         cmap="RdBu_r", vmin=vmin_inter, vmax=vmax_inter)
+        im4 = ax4.imshow(
+            A_int,
+            origin="lower",
+            extent=extent,
+            aspect="auto",
+            cmap="RdBu_r",
+            vmin=vmin_inter,
+            vmax=vmax_inter,
+        )
         ax4.plot(props_2d["beta_opt"], props_2d["alpha_opt"], "k*", markersize=15)
         ax4.axhline(0, color="black", linestyle="--", alpha=0.5, linewidth=1)
         ax4.axvline(0, color="black", linestyle="--", alpha=0.5, linewidth=1)
         ax4.set_xlabel("β (T2 scaling)")
         ax4.set_ylabel("α (T1 scaling)")
-        ax4.set_title(f'Interaction: L_actual - L_additive\nR²={interaction_analysis["r_squared"]:.3f}')
+        ax4.set_title(
+            f"Interaction: L_actual - L_additive\nR²={interaction_analysis['r_squared']:.3f}"
+        )
         plt.colorbar(im4, ax=ax4, label="Interaction")
 
         # 5. Additive model prediction (same scale as actual)
         ax5 = plt.subplot(2, 3, 5)
-        im5 = ax5.imshow(A_add, origin="lower", extent=extent, aspect="auto",
-                         cmap="viridis", vmin=vmin, vmax=vmax)
+        im5 = ax5.imshow(
+            A_add,
+            origin="lower",
+            extent=extent,
+            aspect="auto",
+            cmap="viridis",
+            vmin=vmin,
+            vmax=vmax,
+        )
         ax5.plot(props_2d["beta_opt"], props_2d["alpha_opt"], "r*", markersize=15)
         ax5.axhline(0, color="white", linestyle="--", alpha=0.5, linewidth=1)
         ax5.axvline(0, color="white", linestyle="--", alpha=0.5, linewidth=1)
@@ -499,8 +544,12 @@ class CompositionAnalyzer:
 
         # 6. Comparison: axes cross-sections
         ax6 = plt.subplot(2, 3, 6)
-        ax6.plot(alphas, cross_sections["loss_at_beta_0"], "g-", label="L(α, 0) [no T2]", linewidth=2)
-        ax6.plot(betas, cross_sections["loss_at_alpha_0"], "b-", label="L(0, β) [no T1]", linewidth=2)
+        ax6.plot(
+            alphas, cross_sections["loss_at_beta_0"], "g-", label="L(α, 0) [no T2]", linewidth=2
+        )
+        ax6.plot(
+            betas, cross_sections["loss_at_alpha_0"], "b-", label="L(0, β) [no T1]", linewidth=2
+        )
         ax6.axvline(props_2d["alpha_opt"], color="green", linestyle="--", alpha=0.5)
         ax6.axvline(props_2d["beta_opt"], color="blue", linestyle="--", alpha=0.5)
         if np.isfinite(props_2d["base_loss"]):
@@ -532,7 +581,9 @@ class CompositionAnalyzer:
         # Extract properties
         print("Extracting properties...")
         props_1d = self.extract_1d_properties()
-        props_1d_t2 = self.extract_1d_properties(self.data_1d_t2) if self.data_1d_t2 is not None else None
+        props_1d_t2 = (
+            self.extract_1d_properties(self.data_1d_t2) if self.data_1d_t2 is not None else None
+        )
         props_2d = self.extract_2d_properties()
 
         print("\n" + "=" * 80)
@@ -578,9 +629,15 @@ class CompositionAnalyzer:
         print(f"Interaction RMS: {interaction_analysis['interaction_rms']:.4f}")
         print(f"Additive model R²: {interaction_analysis['r_squared']:.4f}")
         print()
-        if np.isfinite(interaction_analysis["r_squared"]) and interaction_analysis["r_squared"] > 0.8:
+        if (
+            np.isfinite(interaction_analysis["r_squared"])
+            and interaction_analysis["r_squared"] > 0.8
+        ):
             print("✓ Tasks are mostly independent (additive model fits well)")
-        elif np.isfinite(interaction_analysis["r_squared"]) and interaction_analysis["r_squared"] > 0.5:
+        elif (
+            np.isfinite(interaction_analysis["r_squared"])
+            and interaction_analysis["r_squared"] > 0.5
+        ):
             print("⚠ Moderate interaction between tasks")
         else:
             print("✗ Strong interaction between tasks (non-additive)")
@@ -613,16 +670,22 @@ class CompositionAnalyzer:
             "1d_properties": {
                 "alpha_opt": float(props_1d["alpha_opt"]),
                 "loss_opt": float(props_1d["loss_opt"]),
-                "curvature": float(props_1d["curvature"]) if props_1d["curvature"] is not None else None,
+                "curvature": float(props_1d["curvature"])
+                if props_1d["curvature"] is not None
+                else None,
                 "zero_crossings": [float(z) for z in props_1d["zero_crossings"]],
             },
             "1d_properties_t2": (
                 {
                     "alpha_opt": float(props_1d_t2["alpha_opt"]),
                     "loss_opt": float(props_1d_t2["loss_opt"]),
-                    "curvature": float(props_1d_t2["curvature"]) if props_1d_t2["curvature"] is not None else None,
+                    "curvature": float(props_1d_t2["curvature"])
+                    if props_1d_t2["curvature"] is not None
+                    else None,
                     "zero_crossings": [float(z) for z in props_1d_t2["zero_crossings"]],
-                } if props_1d_t2 is not None else None
+                }
+                if props_1d_t2 is not None
+                else None
             ),
             "2d_properties": {
                 "alpha_opt": float(props_2d["alpha_opt"]),
@@ -667,7 +730,7 @@ def main():
         "--t2-1d",
         type=str,
         help="Path to T2 alpha sweep JSON (loss_landscape_results.json for T2). "
-             "If not provided, will auto-detect 'loss_landscape_results_t2.json' in data_dir",
+        "If not provided, will auto-detect 'loss_landscape_results_t2.json' in data_dir",
     )
     parser.add_argument(
         "--no-save-results",
