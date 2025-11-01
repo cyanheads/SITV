@@ -861,7 +861,9 @@ class ExperimentOrchestrator:
             report_path,
             results_2d=self.results_2d,  # Optional: included if 2D composition was run
             results_3d=self.results_3d,  # Optional: included if 3D composition was run
-            composition_analysis=self.composition_analysis  # Optional: composition analysis results
+            composition_analysis=self.composition_analysis,  # Optional: composition analysis results
+            curvature_results=getattr(self, 'curvature_results', None),  # Optional: curvature analysis
+            symmetry_results=getattr(self, 'symmetry_results', None)  # Optional: symmetry analysis
         )
 
         # Save metrics
@@ -900,6 +902,38 @@ class ExperimentOrchestrator:
         # Compute Riemannian norm
         riem_magnitude = geo_service.compute_magnitude(task_vector, fisher)
 
+        # Compute Christoffel symbols and detect curvature (v0.13.0)
+        christoffel_rms = 0.0
+        curvature_detected = False
+        if self.config.geometry.geodesic_integration.recompute_metric_every > 0:
+            print("\n  Computing Christoffel symbols to detect curvature...")
+            christoffel_start = time.time()
+
+            # Compute Christoffel symbols via finite differences
+            christoffel = geo_service.fisher_service.compute_christoffel_symbols_finite_diff(
+                model=base_model,
+                base_params={name: param.data for name, param in base_model.named_parameters()},
+                data_texts=training_texts[:100],  # Use subset for speed
+                epsilon=self.config.geometry.geodesic_integration.metric_epsilon
+            )
+
+            # Compute RMS of Christoffel symbols
+            import torch
+            christoffel_squared_sum = sum(
+                torch.sum(gamma ** 2).item()
+                for gamma in christoffel.values()
+            )
+            total_params = sum(gamma.numel() for gamma in christoffel.values())
+            christoffel_rms = (christoffel_squared_sum / total_params) ** 0.5 if total_params > 0 else 0.0
+
+            # Detect curvature (threshold: RMS > 1e-4 indicates non-trivial curvature)
+            curvature_detected = christoffel_rms > 1e-4
+
+            christoffel_time = time.time() - christoffel_start
+            print(f"  Christoffel symbols computed in {christoffel_time:.2f}s")
+            print(f"  RMS(Γ) = {christoffel_rms:.6f}")
+            print(f"  Curvature detected: {'✅ YES' if curvature_detected else '❌ NO'}")
+
         # Store in metrics
         self.metrics.geometry_enabled = True
         self.metrics.metric_type = self.config.geometry.metric_type.value
@@ -908,6 +942,14 @@ class ExperimentOrchestrator:
         self.metrics.task_vector_magnitude_riemannian = riem_magnitude
         self.metrics.geodesic_integration_enabled = self.config.geometry.use_geodesics
         self.metrics.geodesic_num_steps = self.config.geometry.geodesic_integration.num_steps
+        self.metrics.christoffel_rms = christoffel_rms
+        self.metrics.curvature_detected = curvature_detected
+        self.metrics.recompute_metric_every = self.config.geometry.geodesic_integration.recompute_metric_every
+        # Metric recompute count will be computed during alpha sweep
+        self.metrics.metric_recompute_count = (
+            (self.metrics.geodesic_num_steps // self.metrics.recompute_metric_every)
+            if self.metrics.recompute_metric_every > 0 else 0
+        )
 
         # Store geometry service for later use
         self.geometry_service = geo_service
@@ -933,6 +975,119 @@ class ExperimentOrchestrator:
         print(f"  Fisher metric computed in {fisher_time:.2f}s")
         print(f"  Riemannian magnitude: ||T||_g = {riem_magnitude:.4f}")
         print(f"  Ratio ||T||_g / ||T|| = {ratio:.4f}")
+
+        # Compute curvature analysis if enabled
+        if self.config.geometry.curvature_analysis.enabled:
+            print("\n  Computing curvature analysis...")
+            self._compute_curvature_analysis(base_model, fisher)
+
+        # Compute symmetry analysis if enabled
+        if self.config.geometry.symmetry_analysis.enabled:
+            print("\n  Computing symmetry analysis...")
+            self._compute_symmetry_analysis(base_model)
+
+    def _compute_curvature_analysis(self, base_model, fisher):
+        """Compute curvature analysis on parameter manifold.
+
+        Args:
+            base_model: Base model
+            fisher: Fisher metric dictionary
+        """
+        from sitv.geometry import CurvatureAnalyzer
+
+        # Get base parameters
+        base_params = {
+            name: param.data.clone()
+            for name, param in base_model.named_parameters()
+        }
+
+        # Initialize curvature analyzer
+        curvature_analyzer = CurvatureAnalyzer(
+            config=self.config.geometry.curvature_analysis,
+            device=self.device
+        )
+
+        # Compute curvature distribution
+        start_time = time.time()
+        curvature_results = curvature_analyzer.estimate_curvature_distribution(
+            base_point=base_params,
+            fisher=fisher,
+            num_samples=self.config.geometry.curvature_analysis.num_tangent_samples
+        )
+        curvature_time = time.time() - start_time
+
+        # Store results for later use in reporting
+        self.curvature_results = curvature_results
+
+        # Print summary
+        print(f"    Mean curvature: {curvature_results['mean_curvature']:.6f}")
+        print(f"    Curvature range: [{curvature_results['min_curvature']:.6f}, "
+              f"{curvature_results['max_curvature']:.6f}]")
+        print(f"    Interpretation: {curvature_results['interpretation']}")
+        print(f"    Computed in {curvature_time:.2f}s ({curvature_results['num_samples']} samples)")
+
+    def _compute_symmetry_analysis(self, base_model):
+        """Compute symmetry analysis on parameter space.
+
+        Args:
+            base_model: Base model
+        """
+        from sitv.core.evaluation import EvaluationService
+        from sitv.geometry import SymmetryAnalyzer
+
+        # Get evaluation texts
+        tasks = get_predefined_tasks(self.config.fine_tuning.data_repetition_factor)
+        task = tasks[self.config.task_name]
+        eval_texts = task.eval_texts[:100]  # Use subset for faster symmetry testing
+
+        # Initialize evaluator for symmetry testing
+        tokenizer = self.model_service.load_tokenizer(self.config.model_name)
+        evaluator = EvaluationService(
+            tokenizer=tokenizer,
+            device=self.device,
+            batch_size=self.config.evaluation.batch_size,
+            max_length=self.config.evaluation.max_length,
+            enable_mixed_precision=self.config.evaluation.enable_mixed_precision
+        )
+
+        # Initialize symmetry analyzer
+        symmetry_analyzer = SymmetryAnalyzer(
+            config=self.config.geometry.symmetry_analysis,
+            evaluator=evaluator,
+            device=self.device
+        )
+
+        # Analyze all symmetries
+        start_time = time.time()
+        symmetry_results = symmetry_analyzer.analyze_all_symmetries(
+            model=base_model,
+            eval_texts=eval_texts,
+            num_tests_per_type=10
+        )
+        symmetry_time = time.time() - start_time
+
+        # Store results for later use in reporting
+        self.symmetry_results = symmetry_results
+
+        # Print summary
+        print(f"    Symmetries detected: {symmetry_results['summary']['num_symmetries_detected']}")
+        if 'rotation' in symmetry_results:
+            print(f"    Rotation symmetry: {symmetry_results['rotation']['symmetry_score']:.2f}")
+        if 'permutation' in symmetry_results:
+            print(f"    Permutation symmetry: {symmetry_results['permutation']['symmetry_score']:.2f}")
+        if 'scaling' in symmetry_results:
+            print(f"    Scaling symmetry: {symmetry_results['scaling']['symmetry_score']:.2f}")
+        print(f"    Computed in {symmetry_time:.2f}s")
+
+        # Project to quotient space if enabled
+        if self.config.geometry.symmetry_analysis.quotient_space:
+            detected_symmetries = [
+                sym_type for sym_type in ['rotation', 'permutation', 'scaling']
+                if symmetry_results.get(sym_type, {}).get('is_symmetric', False)
+            ]
+            if detected_symmetries:
+                print(f"    Projecting to quotient space (modulo {', '.join(detected_symmetries)})")
+                symmetry_analyzer.project_to_quotient_space(base_model, detected_symmetries)
 
     def _finalize_metrics(self):
         """Finalize experiment metrics."""

@@ -376,12 +376,19 @@ class AlphaSweepExperiment(Experiment):
         """
         # Apply task vector: M_alpha = M_base + α·T (Euclidean) or exp_M_base(α·T) (Riemannian)
         if self.use_geodesics:
+            # Get fisher service from geometry service if available
+            fisher_service = (
+                self.geometry_service.fisher_service
+                if self.geometry_service else None
+            )
             self.apply_geodesic_task_vector(
                 original_params,
                 device_task_vector,
                 alpha,
                 fisher_metric=self.fisher_metric,
-                christoffel=self.christoffel
+                christoffel=self.christoffel,
+                fisher_service=fisher_service,
+                data_texts=self.general_eval_texts
             )
         else:
             self.apply_task_vector(original_params, device_task_vector, alpha)
@@ -475,12 +482,18 @@ class AlphaSweepExperiment(Experiment):
         """
         # Modify model to M_base + 2α·T (Euclidean) or exp_M_base(2α·T) (Riemannian)
         if self.use_geodesics:
+            fisher_service = (
+                self.geometry_service.fisher_service
+                if self.geometry_service else None
+            )
             self.apply_geodesic_task_vector(
                 original_params,
                 device_task_vector,
                 2.0 * alpha,
                 fisher_metric=self.fisher_metric,
-                christoffel=self.christoffel
+                christoffel=self.christoffel,
+                fisher_service=fisher_service,
+                data_texts=self.general_eval_texts
             )
         else:
             self.apply_task_vector(original_params, device_task_vector, 2.0 * alpha)
@@ -494,12 +507,18 @@ class AlphaSweepExperiment(Experiment):
 
         # Restore to M_alpha for consistency
         if self.use_geodesics:
+            fisher_service = (
+                self.geometry_service.fisher_service
+                if self.geometry_service else None
+            )
             self.apply_geodesic_task_vector(
                 original_params,
                 device_task_vector,
                 alpha,
                 fisher_metric=self.fisher_metric,
-                christoffel=self.christoffel
+                christoffel=self.christoffel,
+                fisher_service=fisher_service,
+                data_texts=self.general_eval_texts
             )
         else:
             self.apply_task_vector(original_params, device_task_vector, alpha)

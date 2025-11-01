@@ -264,7 +264,9 @@ class Experiment(ABC):
         task_vector: Dict[str, torch.Tensor],
         alpha: float,
         fisher_metric: Optional[Dict[str, torch.Tensor]] = None,
-        christoffel: Optional[Dict[str, torch.Tensor]] = None
+        christoffel: Optional[Dict[str, torch.Tensor]] = None,
+        fisher_service: Optional[Any] = None,
+        data_texts: Optional[List[str]] = None
     ) -> None:
         """Apply task vector via geodesic exponential map.
 
@@ -278,6 +280,8 @@ class Experiment(ABC):
             alpha: Scaling factor
             fisher_metric: Fisher metric (optional, uses Euclidean if None)
             christoffel: Christoffel symbols (optional, computed from Fisher if None)
+            fisher_service: FisherMetricService for metric recomputation (optional)
+            data_texts: Data samples for metric recomputation along path (optional)
 
         Raises:
             ValueError: If alpha is not finite (NaN or Inf)
@@ -286,16 +290,21 @@ class Experiment(ABC):
             This method requires the geometry module to be imported.
             Falls back to Euclidean interpolation if no Fisher metric provided.
 
+            For true varying-metric geodesics, pass both fisher_service and
+            data_texts. This enables metric recomputation along the path.
+
         Examples:
             >>> # First compute Fisher metric
             >>> from sitv.geometry import FisherMetricService
             >>> fisher_service = FisherMetricService(tokenizer, device)
             >>> fisher = fisher_service.compute_fisher_information_matrix(model, texts)
             >>>
-            >>> # Then apply via geodesic
+            >>> # Then apply via geodesic with metric recomputation
             >>> experiment.apply_geodesic_task_vector(
             ...     original_params, task_vector, alpha=1.5,
-            ...     fisher_metric=fisher
+            ...     fisher_metric=fisher,
+            ...     fisher_service=fisher_service,
+            ...     data_texts=general_texts
             ... )
         """
         # Validate alpha is finite
@@ -309,17 +318,23 @@ class Experiment(ABC):
         from sitv.geometry import GeodesicIntegrator
         from sitv.geometry.config import GeodesicIntegrationConfig
 
-        # Create geodesic integrator
+        # Create geodesic integrator with Fisher service for metric recomputation
         config = GeodesicIntegrationConfig()
-        integrator = GeodesicIntegrator(config, device=self.device)
+        integrator = GeodesicIntegrator(
+            config,
+            device=self.device,
+            fisher_metric=fisher_service
+        )
 
-        # Compute exponential map: exp_p(α·v)
+        # Compute exponential map: exp_p(α·v) with optional metric recomputation
         new_params = integrator.exponential_map(
             base_point=original_params,
             tangent_vector=task_vector,
             t=alpha,
             fisher_metric=fisher_metric,
-            christoffel=christoffel
+            christoffel=christoffel,
+            model=self.base_model,
+            data_texts=data_texts
         )
 
         # Apply new parameters to model
