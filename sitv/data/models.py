@@ -102,6 +102,29 @@ class TwoDSweepResult:
 
 
 @dataclass
+class ThreeDSweepResult:
+    """Store results for 3D composition M(α,β,γ) = M_base + α·T1 + β·T2 + γ·T3.
+
+    Attributes:
+        alpha: Scaling factor for T1
+        beta: Scaling factor for T2
+        gamma: Scaling factor for T3
+        loss: L(M_base + α·T1 + β·T2 + γ·T3)
+        base_loss: L(M_base) - reference point
+        functional_return: |L - L_base|
+        perplexity: exp(loss)
+    """
+
+    alpha: float
+    beta: float
+    gamma: float
+    loss: float
+    base_loss: float
+    functional_return: float
+    perplexity: float = 0.0
+
+
+@dataclass
 class ExperimentMetrics:
     """Comprehensive metrics for the entire experiment.
 
@@ -215,6 +238,15 @@ class ExperimentMetrics:
     enable_2d_composition: bool = False
     task_name_2: str = ""  # Name of second task for 2D composition
     task_vector_2_magnitude: float = 0.0
+
+    # 3D composition metrics
+    enable_3d_composition: bool = False
+    task_name_3d_1: str = ""  # Name of first task for 3D composition
+    task_name_3d_2: str = ""  # Name of second task for 3D composition
+    task_name_3d_3: str = ""  # Name of third task for 3D composition
+    task_vector_3d_1_magnitude: float = 0.0
+    task_vector_3d_2_magnitude: float = 0.0
+    task_vector_3d_3_magnitude: float = 0.0
 
     # Riemannian geometry metrics (NEW)
     geometry_enabled: bool = False

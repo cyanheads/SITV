@@ -198,6 +198,66 @@ class Experiment(ABC):
                         original_params[name] + (scaled_t1 + scaled_t2)
                     )
 
+    def apply_3d_composition(
+        self,
+        original_params: Dict[str, torch.Tensor],
+        task_vector_1: Dict[str, torch.Tensor],
+        task_vector_2: Dict[str, torch.Tensor],
+        task_vector_3: Dict[str, torch.Tensor],
+        alpha: float,
+        beta: float,
+        gamma: float
+    ) -> None:
+        """Apply 3D task vector composition: M(α,β,γ) = M_base + α·T1 + β·T2 + γ·T3
+
+        Args:
+            original_params: Original model parameters
+            task_vector_1: First task vector (should be pre-loaded to device)
+            task_vector_2: Second task vector (should be pre-loaded to device)
+            task_vector_3: Third task vector (should be pre-loaded to device)
+            alpha: Scaling factor for T1
+            beta: Scaling factor for T2
+            gamma: Scaling factor for T3
+
+        Raises:
+            ValueError: If alpha, beta, or gamma is not finite (NaN or Inf)
+
+        Note:
+            For best performance, pre-load all task vectors to device using
+            preload_task_vector_to_device() before calling this in a loop.
+        """
+        # Validate all scaling factors are finite
+        if not torch.isfinite(torch.tensor(alpha)):
+            raise ValueError(
+                f"Alpha must be finite, got {alpha}. "
+                "NaN or Inf values are not allowed."
+            )
+        if not torch.isfinite(torch.tensor(beta)):
+            raise ValueError(
+                f"Beta must be finite, got {beta}. "
+                "NaN or Inf values are not allowed."
+            )
+        if not torch.isfinite(torch.tensor(gamma)):
+            raise ValueError(
+                f"Gamma must be finite, got {gamma}. "
+                "NaN or Inf values are not allowed."
+            )
+
+        with torch.no_grad():
+            for name, param in self.base_model.named_parameters():
+                if name in original_params:
+                    # Task vectors should already be on correct device
+                    # Compute scaled task vectors first, then add to base
+                    # for better numerical stability
+                    scaled_t1 = alpha * task_vector_1[name]
+                    scaled_t2 = beta * task_vector_2[name]
+                    scaled_t3 = gamma * task_vector_3[name]
+                    # Add in order: base + (scaled_t1 + scaled_t2 + scaled_t3)
+                    # This groups smaller perturbations together first
+                    param.copy_(
+                        original_params[name] + (scaled_t1 + scaled_t2 + scaled_t3)
+                    )
+
     def apply_geodesic_task_vector(
         self,
         original_params: Dict[str, torch.Tensor],

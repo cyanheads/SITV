@@ -187,6 +187,52 @@ class Composition2DConfig:
 
 
 @dataclass
+class Composition3DConfig:
+    """Configuration for 3D composition experiments.
+
+    Attributes:
+        task_1: Name of first task
+        task_2: Name of second task
+        task_3: Name of third task
+        alpha_range: Range of alpha values (min, max)
+        beta_range: Range of beta values (min, max)
+        gamma_range: Range of gamma values (min, max)
+        num_samples_per_dim: Samples per dimension (creates n³ grid)
+    """
+
+    task_1: str = field(
+        default_factory=lambda: _get('composition_3d.task_1', 'sentiment_negative')
+    )
+    task_2: str = field(
+        default_factory=lambda: _get('composition_3d.task_2', 'sentiment_positive')
+    )
+    task_3: str = field(
+        default_factory=lambda: _get('composition_3d.task_3', 'instruction_following')
+    )
+    alpha_range: tuple[float, float] = field(
+        default_factory=lambda: (
+            _get('composition_3d.alpha_min', -1.0),
+            _get('composition_3d.alpha_max', 1.0)
+        )
+    )
+    beta_range: tuple[float, float] = field(
+        default_factory=lambda: (
+            _get('composition_3d.beta_min', -1.0),
+            _get('composition_3d.beta_max', 1.0)
+        )
+    )
+    gamma_range: tuple[float, float] = field(
+        default_factory=lambda: (
+            _get('composition_3d.gamma_min', -1.0),
+            _get('composition_3d.gamma_max', 1.0)
+        )
+    )
+    num_samples_per_dim: int = field(
+        default_factory=lambda: _get('composition_3d.num_samples_per_dim', 10)
+    )
+
+
+@dataclass
 class FineTuningConfig:
     """Configuration for fine-tuning.
 
@@ -292,10 +338,14 @@ class ExperimentConfig:
     enable_2d_composition: bool = field(
         default_factory=lambda: _get('composition_2d.enable', False)
     )
+    enable_3d_composition: bool = field(
+        default_factory=lambda: _get('composition_3d.enable', False)
+    )
 
     # Sub-configurations
     alpha_sweep: AlphaSweepConfig = field(default_factory=AlphaSweepConfig)
     composition_2d: Composition2DConfig = field(default_factory=Composition2DConfig)
+    composition_3d: Composition3DConfig = field(default_factory=Composition3DConfig)
     fine_tuning: FineTuningConfig = field(default_factory=FineTuningConfig)
     evaluation: EvaluationConfig = field(default_factory=EvaluationConfig)
 
