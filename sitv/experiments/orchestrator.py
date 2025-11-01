@@ -656,7 +656,17 @@ class ExperimentOrchestrator:
 
         # Store geometry service for later use
         self.geometry_service = geo_service
-        self.fisher_metric = fisher
+
+        # Move Fisher metric to CPU to free GPU memory for alpha sweep
+        # It will be moved back to GPU when needed during geodesic operations
+        import torch
+        self.fisher_metric = {
+            name: tensor.cpu() for name, tensor in fisher.items()
+        }
+
+        # Clear GPU cache to free memory
+        if self.device.type == "cuda":
+            torch.cuda.empty_cache()
 
         ratio = riem_magnitude / self.metrics.task_vector_magnitude_euclidean
         print(f"  Fisher metric computed in {fisher_time:.2f}s")
