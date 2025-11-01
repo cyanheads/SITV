@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sitv"
-version = "0.7.3"
+version = "0.14.0"
 description = "Modular loss landscape explorer for neural network task vectors"
 requires-python = ">=3.12"
 dependencies = [
