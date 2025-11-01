@@ -18,6 +18,7 @@ import torch
 from torch import nn
 
 from sitv.geometry.config import FisherApproximationType
+from sitv.utils.progress import ProgressTracker
 
 
 class FisherMetricService:
@@ -157,8 +158,13 @@ class FisherMetricService:
 
         count = 0
 
+        # Initialize progress tracker
+        total_batches = (len(texts) + batch_size - 1) // batch_size
+        tracker = ProgressTracker(total=total_batches)
+
         # Accumulate gradients over batches
         for i in range(0, len(texts), batch_size):
+            tracker.start_iteration()
             batch_texts = texts[i:i + batch_size]
 
             # Tokenize
@@ -187,6 +193,12 @@ class FisherMetricService:
                     fisher_diag[name] += param.grad.data ** 2
 
             count += len(batch_texts)
+
+            # Update progress
+            tracker.end_iteration()
+            print(f"  {tracker.get_status()}", end='\r')
+
+        print()  # New line after completion
 
         # Average and add floor for numerical stability
         for name in fisher_diag:
@@ -274,8 +286,13 @@ class FisherMetricService:
 
         count = 0
 
+        # Initialize progress tracker
+        total_batches = (len(texts) + batch_size - 1) // batch_size
+        tracker = ProgressTracker(total=total_batches)
+
         # Accumulate gradient outer products
         for i in range(0, len(texts), batch_size):
+            tracker.start_iteration()
             batch_texts = texts[i:i + batch_size]
 
             inputs = self.tokenizer(
@@ -304,6 +321,12 @@ class FisherMetricService:
             fisher_full += torch.outer(grad_flat, grad_flat)
 
             count += len(batch_texts)
+
+            # Update progress
+            tracker.end_iteration()
+            print(f"  {tracker.get_status()}", end='\r')
+
+        print()  # New line after completion
 
         # Average and add regularization
         fisher_full = fisher_full / count
@@ -504,9 +527,18 @@ class FisherMetricService:
         # Simplification: For diagonal metric with slow variation, we approximate
         # using forward differences in random directions to detect metric curvature
 
+        # Count parameters to process for progress tracking
+        num_params = sum(
+            1 for name in base_params.keys()
+            if name in F_base and not name.startswith("_")
+        )
+        tracker = ProgressTracker(total=num_params)
+
         for name, param in base_params.items():
             if name not in F_base or name.startswith("_"):
                 continue
+
+            tracker.start_iteration()
 
             # Initialize Christoffel for this parameter
             christoffel[name] = torch.zeros_like(param.data)
@@ -542,6 +574,16 @@ class FisherMetricService:
                 with torch.no_grad():
                     param.data.copy_(original_param)
 
+                # Update progress
+                tracker.end_iteration()
+                param_shape = "x".join(str(d) for d in param.shape)
+                print(
+                    f"  [{tracker.current}/{tracker.total}] {tracker.get_status()} "
+                    f"| Current: {name} (shape: {param_shape})",
+                    end='\r'
+                )
+
+        print()  # New line after completion
         return christoffel
 
     def cache_fisher(self, fisher: dict[str, torch.Tensor]) -> None:

@@ -9,6 +9,8 @@ import torch
 from transformers import PreTrainedModel
 from typing import Dict
 
+from sitv.utils.progress import ProgressTracker
+
 
 class TaskVectorService:
     """Service for task vector operations.
@@ -50,11 +52,17 @@ class TaskVectorService:
         """
         task_vector = {}
 
-        for (name, base_param), (_, ft_param) in zip(
+        # Get parameter list for progress tracking
+        params_list = list(zip(
             base_model.named_parameters(),
             finetuned_model.named_parameters(),
             strict=True
-        ):
+        ))
+        tracker = ProgressTracker(total=len(params_list))
+
+        for (name, base_param), (_, ft_param) in params_list:
+            tracker.start_iteration()
+
             # Check for meta device - this indicates improper materialization
             if ft_param.device.type == 'meta':
                 raise RuntimeError(
@@ -73,6 +81,12 @@ class TaskVectorService:
             ft_cpu = ft_param.detach().cpu()
             task_vector[name] = (ft_cpu - base_cpu).clone()
 
+            # Update progress (print every 10 params or for large models)
+            tracker.end_iteration()
+            if tracker.current % 10 == 0 or len(params_list) > 100:
+                print(f"  {tracker.get_status()}", end='\r')
+
+        print()  # New line after completion
         return task_vector
 
     @staticmethod
