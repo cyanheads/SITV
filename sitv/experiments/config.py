@@ -167,6 +167,7 @@ class Composition2DConfig:
         alpha_range: Range of alpha values (min, max)
         beta_range: Range of beta values (min, max)
         num_samples_per_dim: Samples per dimension (creates n² grid)
+        enable_analysis: Whether to run composition analysis after 2D sweep
     """
 
     alpha_range: tuple[float, float] = field(
@@ -183,6 +184,9 @@ class Composition2DConfig:
     )
     num_samples_per_dim: int = field(
         default_factory=lambda: _get('composition_2d.num_samples_per_dim', 30)
+    )
+    enable_analysis: bool = field(
+        default_factory=lambda: _get('composition_2d.enable_analysis', True)
     )
 
 

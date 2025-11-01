@@ -67,6 +67,7 @@ composition_2d:
   beta_min: -2.0
   beta_max: 2.0
   num_samples_per_dim: 30 # 60×60 = 3,600 evaluations - publication quality heatmap
+  enable_analysis: true # Auto-run composition analysis after 2D sweep (interaction detection, predictions)
 
 # 3D Composition Configuration (Three-Task Interaction)
 # Explores L(M_base + α·T1 + β·T2 + γ·T3)
