@@ -665,7 +665,7 @@ class ExperimentOrchestrator:
         }
 
         # Clear GPU cache to free memory
-        if self.device.type == "cuda":
+        if self.device == "cuda":
             torch.cuda.empty_cache()
 
         ratio = riem_magnitude / self.metrics.task_vector_magnitude_euclidean
