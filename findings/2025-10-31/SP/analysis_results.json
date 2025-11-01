@@ -1,0 +1,1455 @@
+{
+  "min_general_loss": {
+    "alpha": 0.11016949152542377,
+    "loss": 2.0781114021937053,
+    "base_loss": 3.881797742843628,
+    "functional_return": 1.8036863406499228,
+    "task_eval_loss": 3.0030186335245768,
+    "loss_2alpha": 2.158324694633484,
+    "functional_return_2alpha": 1.7234730482101441,
+    "perplexity": 7.989365958058372,
+    "perplexity_2alpha": 8.656623016633898,
+    "sentiment_preference": 0.809229532877604,
+    "task_eval_loss_negative": 3.812248166402181,
+    "category_losses": {
+      "coding": 2.5375762780507407,
+      "common_knowledge": 1.810425599416097,
+      "mixed_domain": 2.3418547471364337,
+      "wikitext": 1.6531596104303996
+    }
+  },
+  "min_task_loss": {
+    "alpha": 0.17796610169491522,
+    "loss": 2.0952686786651613,
+    "base_loss": 3.881797742843628,
+    "functional_return": 1.7865290641784668,
+    "task_eval_loss": 2.875385061899821,
+    "loss_2alpha": 2.4955458005269366,
+    "functional_return_2alpha": 1.3862519423166915,
+    "perplexity": 8.1276243961532,
+    "perplexity_2alpha": 12.128351372981195,
+    "sentiment_preference": 0.8384866237640383,
+    "task_eval_loss_negative": 3.713871685663859,
+    "category_losses": {
+      "coding": 2.530366961161296,
+      "common_knowledge": 1.8329997618993124,
+      "mixed_domain": 2.358013947804769,
+      "wikitext": 1.6930491209030152
+    }
+  },
+  "best_return": {
+    "alpha": 0.6864406779661016,
+    "loss": 3.951508903503418,
+    "base_loss": 3.881797742843628,
+    "functional_return": 0.06971116065978977,
+    "task_eval_loss": 5.206301244099935,
+    "loss_2alpha": 9.76155236562093,
+    "functional_return_2alpha": 5.879754622777303,
+    "perplexity": 52.01379144450426,
+    "perplexity_2alpha": 17353.549830367014,
+    "sentiment_preference": 0.5150593121846514,
+    "task_eval_loss_negative": 5.721360556284586,
+    "category_losses": {
+      "coding": 4.6763108253479,
+      "common_knowledge": 3.4512229760487876,
+      "mixed_domain": 4.278173542022705,
+      "wikitext": 3.451611105600993
+    }
+  },
+  "zero_crossings": [
+    {
+      "alpha": 0.652542372881356,
+      "loss": 3.7673919518788654,
+      "base_loss": 3.881797742843628,
+      "functional_return": 0.11440579096476267,
+      "task_eval_loss": 4.945862579345703,
+      "loss_2alpha": 8.974062506357829,
+      "functional_return_2alpha": 5.0922647635142,
+      "perplexity": 43.267074944843884,
+      "perplexity_2alpha": 7895.612515238597,
+      "sentiment_preference": 0.5838661511739094,
+      "task_eval_loss_negative": 5.529728730519612,
+      "category_losses": {
+        "coding": 4.464038626352946,
+        "common_knowledge": 3.28250412940979,
+        "mixed_domain": 4.105366134643555,
+        "wikitext": 3.274219004313151
+      }
+    },
+    {
+      "alpha": 0.6864406779661016,
+      "loss": 3.951508903503418,
+      "base_loss": 3.881797742843628,
+      "functional_return": 0.06971116065978977,
+      "task_eval_loss": 5.206301244099935,
+      "loss_2alpha": 9.76155236562093,
+      "functional_return_2alpha": 5.879754622777303,
+      "perplexity": 52.01379144450426,
+      "perplexity_2alpha": 17353.549830367014,
+      "sentiment_preference": 0.5150593121846514,
+      "task_eval_loss_negative": 5.721360556284586,
+      "category_losses": {
+        "coding": 4.6763108253479,
+        "common_knowledge": 3.4512229760487876,
+        "mixed_domain": 4.278173542022705,
+        "wikitext": 3.451611105600993
+      }
+    }
+  ],
+  "sorted_by_return": [
+    {
+      "alpha": 0.6864406779661016,
+      "loss": 3.951508903503418,
+      "base_loss": 3.881797742843628,
+      "functional_return": 0.06971116065978977,
+      "task_eval_loss": 5.206301244099935,
+      "loss_2alpha": 9.76155236562093,
+      "functional_return_2alpha": 5.879754622777303,
+      "perplexity": 52.01379144450426,
+      "perplexity_2alpha": 17353.549830367014,
+      "sentiment_preference": 0.5150593121846514,
+      "task_eval_loss_negative": 5.721360556284586,
+      "category_losses": {
+        "coding": 4.6763108253479,
+        "common_knowledge": 3.4512229760487876,
+        "mixed_domain": 4.278173542022705,
+        "wikitext": 3.451611105600993
+      }
+    },
+    {
+      "alpha": 0.652542372881356,
+      "loss": 3.7673919518788654,
+      "base_loss": 3.881797742843628,
+      "functional_return": 0.11440579096476267,
+      "task_eval_loss": 4.945862579345703,
+      "loss_2alpha": 8.974062506357829,
+      "functional_return_2alpha": 5.0922647635142,
+      "perplexity": 43.267074944843884,
+      "perplexity_2alpha": 7895.612515238597,
+      "sentiment_preference": 0.5838661511739094,
+      "task_eval_loss_negative": 5.529728730519612,
+      "category_losses": {
+        "coding": 4.464038626352946,
+        "common_knowledge": 3.28250412940979,
+        "mixed_domain": 4.105366134643555,
+        "wikitext": 3.274219004313151
+      }
+    },
+    {
+      "alpha": -0.05932203389830509,
+      "loss": 3.7175130049387612,
+      "base_loss": 3.881797742843628,
+      "functional_return": 0.16428473790486686,
+      "task_eval_loss": 7.007994969685872,
+      "loss_2alpha": 5.348110055923462,
+      "functional_return_2alpha": 1.4663123130798335,
+      "perplexity": 41.16189727165113,
+      "perplexity_2alpha": 210.21063585949597,
+      "sentiment_preference": -0.6919260978698727,
+      "task_eval_loss_negative": 6.316068871815999,
+      "category_losses": {
+        "coding": 4.588301022847493,
+        "common_knowledge": 3.1651827176411946,
+        "mixed_domain": 4.232716051737468,
+        "wikitext": 2.8903516133626304
+      }
+    },
+    {
+      "alpha": 0.7203389830508475,
+      "loss": 4.147065464655558,
+      "base_loss": 3.881797742843628,
+      "functional_return": 0.2652677218119299,
+      "task_eval_loss": 5.4952747344970705,
+      "loss_2alpha": 10.595539665222168,
+      "functional_return_2alpha": 6.7137419223785395,
+      "perplexity": 63.24812384610774,
+      "perplexity_2alpha": 39956.22125976463,
+      "sentiment_preference": 0.4242833137512205,
+      "task_eval_loss_negative": 5.919558048248291,
+      "category_losses": {
+        "coding": 4.9075343132019045,
+        "common_knowledge": 3.6316599527994793,
+        "mixed_domain": 4.46346747080485,
+        "wikitext": 3.6395503520965575
+      }
+    },
+    {
+      "alpha": 0.6186440677966101,
+      "loss": 3.5784976482391357,
+      "base_loss": 3.881797742843628,
+      "functional_return": 0.30330009460449237,
+      "task_eval_loss": 4.668094317118327,
+      "loss_2alpha": 8.222303454081217,
+      "functional_return_2alpha": 4.340505711237589,
+      "perplexity": 35.81968663391807,
+      "perplexity_2alpha": 3723.0684301451247,
+      "sentiment_preference": 0.6542463302612305,
+      "task_eval_loss_negative": 5.322340647379558,
+      "category_losses": {
+        "coding": 4.248705291748047,
+        "common_knowledge": 3.1114705244700116,
+        "mixed_domain": 3.9209365208943683,
+        "wikitext": 3.0905209223429364
+      }
+    },
+    {
+      "alpha": 0.5847457627118644,
+      "loss": 3.4158030351003013,
+      "base_loss": 3.881797742843628,
+      "functional_return": 0.46599470774332685,
+      "task_eval_loss": 4.43853391011556,
+      "loss_2alpha": 7.557061735788981,
+      "functional_return_2alpha": 3.6752639929453528,
+      "perplexity": 30.441385115644085,
+      "perplexity_2alpha": 1914.2127792938754,
+      "sentiment_preference": 0.7125625610351562,
+      "task_eval_loss_negative": 5.151096471150717,
+      "category_losses": {
+        "coding": 4.066817251841227,
+        "common_knowledge": 2.9635845184326173,
+        "mixed_domain": 3.7572001457214355,
+        "wikitext": 2.9283717314402264
+      }
+    },
+    {
+      "alpha": 0.7542372881355932,
+      "loss": 4.368198887507121,
+      "base_loss": 3.881797742843628,
+      "functional_return": 0.4864011446634926,
+      "task_eval_loss": 5.858388233184814,
+      "loss_2alpha": 11.569997215270996,
+      "functional_return_2alpha": 7.688199472427368,
+      "perplexity": 78.90139335910564,
+      "perplexity_2alpha": 105873.17719934069,
+      "sentiment_preference": 0.2954508145650232,
+      "task_eval_loss_negative": 6.1538390477498375,
+      "category_losses": {
+        "coding": 5.162885506947835,
+        "common_knowledge": 3.8404356320699056,
+        "mixed_domain": 4.6639630953470865,
+        "wikitext": 3.8570711453755697
+      }
+    },
+    {
+      "alpha": -0.09322033898305082,
+      "loss": 4.3699043909708655,
+      "base_loss": 3.881797742843628,
+      "functional_return": 0.48810664812723736,
+      "task_eval_loss": 9.928033955891927,
+      "loss_2alpha": 7.985991477966309,
+      "functional_return_2alpha": 4.1041937351226805,
+      "perplexity": 79.03607477593921,
+      "perplexity_2alpha": 2939.4903000304994,
+      "sentiment_preference": -2.5666201591491697,
+      "task_eval_loss_negative": 7.361413796742757,
+      "category_losses": {
+        "coding": 5.46243511835734,
+        "common_knowledge": 3.6539827664693196,
+        "mixed_domain": 4.937206204732259,
+        "wikitext": 3.417042287190755
+      }
+    },
+    {
+      "alpha": 0.008474576271186418,
+      "loss": 3.262548287709554,
+      "base_loss": 3.881797742843628,
+      "functional_return": 0.6192494551340739,
+      "task_eval_loss": 4.939810180664063,
+      "loss_2alpha": 3.1689484755198163,
+      "functional_return_2alpha": 0.7128492673238118,
+      "perplexity": 26.11600350960326,
+      "perplexity_2alpha": 23.78246336121627,
+      "sentiment_preference": 0.701069895426432,
+      "task_eval_loss_negative": 5.640880076090495,
+      "category_losses": {
+        "coding": 3.9346604029337566,
+        "common_knowledge": 2.8142186641693114,
+        "mixed_domain": 3.7334008534749348,
+        "wikitext": 2.5474435806274416
+      }
+    },
+    {
+      "alpha": 0.5508474576271187,
+      "loss": 3.252785650889079,
+      "base_loss": 3.881797742843628,
+      "functional_return": 0.6290120919545492,
+      "task_eval_loss": 4.209625752766927,
+      "loss_2alpha": 6.913097858428955,
+      "functional_return_2alpha": 3.031300115585327,
+      "perplexity": 25.862282958088688,
+      "perplexity_2alpha": 1005.3568764740525,
+      "sentiment_preference": 0.7721329371134438,
+      "task_eval_loss_negative": 4.981758689880371,
+      "category_losses": {
+        "coding": 3.885910733540853,
+        "common_knowledge": 2.815851163864136,
+        "mixed_domain": 3.592112906773885,
+        "wikitext": 2.7696918487548827
+      }
+    }
+  ],
+  "squaring_return_points": [
+    {
+      "alpha": 0.34745762711864403,
+      "loss": 2.471632162729899,
+      "base_loss": 3.881797742843628,
+      "functional_return": 1.4101655801137292,
+      "task_eval_loss": 3.186096254984538,
+      "loss_2alpha": 3.9951204458872476,
+      "functional_return_2alpha": 0.11332270304361947,
+      "perplexity": 11.841758764578923,
+      "perplexity_2alpha": 54.332384341961344,
+      "sentiment_preference": 0.9302262306213378,
+      "task_eval_loss_negative": 4.116322485605876,
+      "category_losses": {
+        "coding": 2.978291463851929,
+        "common_knowledge": 2.1411863803863525,
+        "mixed_domain": 2.778825807571411,
+        "wikitext": 2.03260498046875
+      }
+    }
+  ],
+  "has_squaring_data": true,
+  "all_results": [
+    {
+      "alpha": -0.5,
+      "loss": 14.047686831156414,
+      "base_loss": 3.881797742843628,
+      "functional_return": 10.165889088312785,
+      "task_eval_loss": 37.23217748006185,
+      "loss_2alpha": 27.9893061319987,
+      "functional_return_2alpha": 24.107508389155072,
+      "perplexity": 1261342.0500226577,
+      "perplexity_2alpha": 1430873384276.3901,
+      "sentiment_preference": -8.351111221313477,
+      "task_eval_loss_negative": 28.881066258748373,
+      "category_losses": {
+        "coding": 16.733383051554362,
+        "common_knowledge": 10.597712389628093,
+        "mixed_domain": 17.658551915486655,
+        "wikitext": 11.284906895955404
+      }
+    },
+    {
+      "alpha": -0.4661016949152542,
+      "loss": 13.244321823120117,
+      "base_loss": 3.881797742843628,
+      "functional_return": 9.36252408027649,
+      "task_eval_loss": 36.22159423828125,
+      "loss_2alpha": 25.123726399739585,
+      "functional_return_2alpha": 21.241928656895958,
+      "perplexity": 564853.5783163384,
+      "perplexity_2alpha": 81488390544.47446,
+      "sentiment_preference": -8.202876408894856,
+      "task_eval_loss_negative": 28.018717829386393,
+      "category_losses": {
+        "coding": 15.728225708007812,
+        "common_knowledge": 10.006399154663086,
+        "mixed_domain": 16.652491760253906,
+        "wikitext": 10.68120257059733
+      }
+    },
+    {
+      "alpha": -0.4322033898305085,
+      "loss": 12.601636441548665,
+      "base_loss": 3.881797742843628,
+      "functional_return": 8.719838698705036,
+      "task_eval_loss": 35.341775767008464,
+      "loss_2alpha": 22.385897318522137,
+      "functional_return_2alpha": 18.50409957567851,
+      "perplexity": 297044.26335592114,
+      "perplexity_2alpha": 5273168849.580796,
+      "sentiment_preference": -8.233049901326499,
+      "task_eval_loss_negative": 27.108725865681965,
+      "category_losses": {
+        "coding": 14.90913651784261,
+        "common_knowledge": 9.611044057210286,
+        "mixed_domain": 15.731914075215657,
+        "wikitext": 10.206823666890463
+      }
+    },
+    {
+      "alpha": -0.3983050847457627,
+      "loss": 11.957449277242025,
+      "base_loss": 3.881797742843628,
+      "functional_return": 8.075651534398396,
+      "task_eval_loss": 34.32913055419922,
+      "loss_2alpha": 20.674581464131673,
+      "functional_return_2alpha": 16.792783721288046,
+      "perplexity": 155974.72864476344,
+      "perplexity_2alpha": 952481711.3817114,
+      "sentiment_preference": -8.178009923299154,
+      "task_eval_loss_negative": 26.151120630900063,
+      "category_losses": {
+        "coding": 14.2723019917806,
+        "common_knowledge": 9.166606839497884,
+        "mixed_domain": 14.807692782084148,
+        "wikitext": 9.649854278564453
+      }
+    },
+    {
+      "alpha": -0.364406779661017,
+      "loss": 11.176641337076823,
+      "base_loss": 3.881797742843628,
+      "functional_return": 7.294843594233195,
+      "task_eval_loss": 32.4870859781901,
+      "loss_2alpha": 19.218022219340007,
+      "functional_return_2alpha": 15.33622447649638,
+      "perplexity": 71442.00903009743,
+      "perplexity_2alpha": 221963213.0980227,
+      "sentiment_preference": -7.819975535074867,
+      "task_eval_loss_negative": 24.667110443115234,
+      "category_losses": {
+        "coding": 13.48635056813558,
+        "common_knowledge": 8.67052485148112,
+        "mixed_domain": 13.626090240478515,
+        "wikitext": 8.994084231058757
+      }
+    },
+    {
+      "alpha": -0.3305084745762712,
+      "loss": 10.559499168395996,
+      "base_loss": 3.881797742843628,
+      "functional_return": 6.677701425552368,
+      "task_eval_loss": 30.698557790120443,
+      "loss_2alpha": 17.95416768391927,
+      "functional_return_2alpha": 14.072369941075642,
+      "perplexity": 38541.82014950045,
+      "perplexity_2alpha": 62718541.77148556,
+      "sentiment_preference": -7.18603490193685,
+      "task_eval_loss_negative": 23.512522888183593,
+      "category_losses": {
+        "coding": 12.832897313435872,
+        "common_knowledge": 8.292823473612467,
+        "mixed_domain": 12.715598487854004,
+        "wikitext": 8.451023737589518
+      }
+    },
+    {
+      "alpha": -0.2966101694915254,
+      "loss": 10.152046553293864,
+      "base_loss": 3.881797742843628,
+      "functional_return": 6.270248810450236,
+      "task_eval_loss": 29.097876230875652,
+      "loss_2alpha": 16.21497548421224,
+      "functional_return_2alpha": 12.333177741368612,
+      "perplexity": 25643.52939041844,
+      "perplexity_2alpha": 11017279.746004164,
+      "sentiment_preference": -6.960482660929362,
+      "task_eval_loss_negative": 22.13739356994629,
+      "category_losses": {
+        "coding": 12.389564514160156,
+        "common_knowledge": 8.0385591506958,
+        "mixed_domain": 12.058293596903484,
+        "wikitext": 8.146317100524902
+      }
+    },
+    {
+      "alpha": -0.2627118644067796,
+      "loss": 9.489916610717774,
+      "base_loss": 3.881797742843628,
+      "functional_return": 5.608118867874146,
+      "task_eval_loss": 27.238169606526693,
+      "loss_2alpha": 14.727479807535808,
+      "functional_return_2alpha": 10.84568206469218,
+      "perplexity": 13225.692399659383,
+      "perplexity_2alpha": 2489219.6046644486,
+      "sentiment_preference": -6.664484405517577,
+      "task_eval_loss_negative": 20.573685201009116,
+      "category_losses": {
+        "coding": 11.636587460835775,
+        "common_knowledge": 7.558633041381836,
+        "mixed_domain": 11.228741010030111,
+        "wikitext": 7.585945510864258
+      }
+    },
+    {
+      "alpha": -0.2288135593220339,
+      "loss": 8.660119883219402,
+      "base_loss": 3.881797742843628,
+      "functional_return": 4.778322140375773,
+      "task_eval_loss": 24.69017155965169,
+      "loss_2alpha": 13.10550308227539,
+      "functional_return_2alpha": 9.223705339431763,
+      "perplexity": 5768.226134573318,
+      "perplexity_2alpha": 491640.52209564147,
+      "sentiment_preference": -6.8057978947957345,
+      "task_eval_loss_negative": 17.884373664855957,
+      "category_losses": {
+        "coding": 10.708935292561849,
+        "common_knowledge": 6.94656499226888,
+        "mixed_domain": 10.186680094401042,
+        "wikitext": 6.857060845692953
+      }
+    },
+    {
+      "alpha": -0.19491525423728812,
+      "loss": 8.14832592010498,
+      "base_loss": 3.881797742843628,
+      "functional_return": 4.266528177261352,
+      "task_eval_loss": 22.880207061767578,
+      "loss_2alpha": 11.794432640075684,
+      "functional_return_2alpha": 7.9126348972320555,
+      "perplexity": 3457.5859426452926,
+      "perplexity_2alpha": 132512.55042026457,
+      "sentiment_preference": -7.022444979349773,
+      "task_eval_loss_negative": 15.857762082417805,
+      "category_losses": {
+        "coding": 10.147951126098633,
+        "common_knowledge": 6.591558678944906,
+        "mixed_domain": 9.468101437886556,
+        "wikitext": 6.434024620056152
+      }
+    },
+    {
+      "alpha": -0.1610169491525424,
+      "loss": 7.323356437683105,
+      "base_loss": 3.881797742843628,
+      "functional_return": 3.441558694839477,
+      "task_eval_loss": 19.3475705464681,
+      "loss_2alpha": 10.412462457021077,
+      "functional_return_2alpha": 6.5306647141774485,
+      "perplexity": 1515.2813915347206,
+      "perplexity_2alpha": 33271.699741462435,
+      "sentiment_preference": -6.383419672648111,
+      "task_eval_loss_negative": 12.964150873819987,
+      "category_losses": {
+        "coding": 9.164691480000814,
+        "common_knowledge": 6.039870738983154,
+        "mixed_domain": 8.331949488321941,
+        "wikitext": 5.8017171859741214
+      }
+    },
+    {
+      "alpha": -0.1271186440677966,
+      "loss": 6.1647697448730465,
+      "base_loss": 3.881797742843628,
+      "functional_return": 2.2829720020294184,
+      "task_eval_loss": 15.770102183024088,
+      "loss_2alpha": 9.313595008850097,
+      "functional_return_2alpha": 5.431797266006469,
+      "perplexity": 475.6915998947066,
+      "perplexity_2alpha": 11087.737078034825,
+      "sentiment_preference": -5.308440971374511,
+      "task_eval_loss_negative": 10.461661211649577,
+      "category_losses": {
+        "coding": 7.732262484232584,
+        "common_knowledge": 5.127317428588867,
+        "mixed_domain": 6.941214275360108,
+        "wikitext": 4.8619207064310705
+      }
+    },
+    {
+      "alpha": -0.09322033898305082,
+      "loss": 4.3699043909708655,
+      "base_loss": 3.881797742843628,
+      "functional_return": 0.48810664812723736,
+      "task_eval_loss": 9.928033955891927,
+      "loss_2alpha": 7.985991477966309,
+      "functional_return_2alpha": 4.1041937351226805,
+      "perplexity": 79.03607477593921,
+      "perplexity_2alpha": 2939.4903000304994,
+      "sentiment_preference": -2.5666201591491697,
+      "task_eval_loss_negative": 7.361413796742757,
+      "category_losses": {
+        "coding": 5.46243511835734,
+        "common_knowledge": 3.6539827664693196,
+        "mixed_domain": 4.937206204732259,
+        "wikitext": 3.417042287190755
+      }
+    },
+    {
+      "alpha": -0.05932203389830509,
+      "loss": 3.7175130049387612,
+      "base_loss": 3.881797742843628,
+      "functional_return": 0.16428473790486686,
+      "task_eval_loss": 7.007994969685872,
+      "loss_2alpha": 5.348110055923462,
+      "functional_return_2alpha": 1.4663123130798335,
+      "perplexity": 41.16189727165113,
+      "perplexity_2alpha": 210.21063585949597,
+      "sentiment_preference": -0.6919260978698727,
+      "task_eval_loss_negative": 6.316068871815999,
+      "category_losses": {
+        "coding": 4.588301022847493,
+        "common_knowledge": 3.1651827176411946,
+        "mixed_domain": 4.232716051737468,
+        "wikitext": 2.8903516133626304
+      }
+    },
+    {
+      "alpha": -0.02542372881355931,
+      "loss": 5.108006715774536,
+      "base_loss": 3.881797742843628,
+      "functional_return": 1.226208972930908,
+      "task_eval_loss": 8.182350476582846,
+      "loss_2alpha": 3.6370911439259848,
+      "functional_return_2alpha": 0.24470659891764335,
+      "perplexity": 165.340455669402,
+      "perplexity_2alpha": 37.98119405458884,
+      "sentiment_preference": 0.09674212137858085,
+      "task_eval_loss_negative": 8.279092597961426,
+      "category_losses": {
+        "coding": 6.260117944081625,
+        "common_knowledge": 4.355301888783773,
+        "mixed_domain": 5.825393009185791,
+        "wikitext": 4.003156153361003
+      }
+    },
+    {
+      "alpha": 0.008474576271186418,
+      "loss": 3.262548287709554,
+      "base_loss": 3.881797742843628,
+      "functional_return": 0.6192494551340739,
+      "task_eval_loss": 4.939810180664063,
+      "loss_2alpha": 3.1689484755198163,
+      "functional_return_2alpha": 0.7128492673238118,
+      "perplexity": 26.11600350960326,
+      "perplexity_2alpha": 23.78246336121627,
+      "sentiment_preference": 0.701069895426432,
+      "task_eval_loss_negative": 5.640880076090495,
+      "category_losses": {
+        "coding": 3.9346604029337566,
+        "common_knowledge": 2.8142186641693114,
+        "mixed_domain": 3.7334008534749348,
+        "wikitext": 2.5474435806274416
+      }
+    },
+    {
+      "alpha": 0.0423728813559322,
+      "loss": 2.480034097035726,
+      "base_loss": 3.881797742843628,
+      "functional_return": 1.4017636458079021,
+      "task_eval_loss": 3.64941987991333,
+      "loss_2alpha": 2.0705313285191855,
+      "functional_return_2alpha": 1.8112664143244426,
+      "perplexity": 11.941671586510155,
+      "perplexity_2alpha": 7.929034921208037,
+      "sentiment_preference": 0.8481787045796714,
+      "task_eval_loss_negative": 4.4975985844930015,
+      "category_losses": {
+        "coding": 3.0172874609629314,
+        "common_knowledge": 2.155387369791667,
+        "mixed_domain": 2.82123228708903,
+        "wikitext": 1.9355045159657795
+      }
+    },
+    {
+      "alpha": 0.07627118644067798,
+      "loss": 2.100333555539449,
+      "base_loss": 3.881797742843628,
+      "functional_return": 1.781464187304179,
+      "task_eval_loss": 3.025682719548543,
+      "loss_2alpha": 2.1169166405995687,
+      "functional_return_2alpha": 1.7648811022440594,
+      "perplexity": 8.168894238109749,
+      "perplexity_2alpha": 8.30548915842742,
+      "sentiment_preference": 0.9289557933807373,
+      "task_eval_loss_negative": 3.9546385129292805,
+      "category_losses": {
+        "coding": 2.599541489283244,
+        "common_knowledge": 1.8163464307785033,
+        "mixed_domain": 2.408945178985596,
+        "wikitext": 1.6169560273488364
+      }
+    },
+    {
+      "alpha": 0.11016949152542377,
+      "loss": 2.0781114021937053,
+      "base_loss": 3.881797742843628,
+      "functional_return": 1.8036863406499228,
+      "task_eval_loss": 3.0030186335245768,
+      "loss_2alpha": 2.158324694633484,
+      "functional_return_2alpha": 1.7234730482101441,
+      "perplexity": 7.989365958058372,
+      "perplexity_2alpha": 8.656623016633898,
+      "sentiment_preference": 0.809229532877604,
+      "task_eval_loss_negative": 3.812248166402181,
+      "category_losses": {
+        "coding": 2.5375762780507407,
+        "common_knowledge": 1.810425599416097,
+        "mixed_domain": 2.3418547471364337,
+        "wikitext": 1.6531596104303996
+      }
+    },
+    {
+      "alpha": 0.14406779661016944,
+      "loss": 2.1081923882166547,
+      "base_loss": 3.881797742843628,
+      "functional_return": 1.7736053546269734,
+      "task_eval_loss": 2.9519453684488934,
+      "loss_2alpha": 2.3144115924835207,
+      "functional_return_2alpha": 1.5673861503601074,
+      "perplexity": 8.233345133773646,
+      "perplexity_2alpha": 10.118967090393065,
+      "sentiment_preference": 0.8259412288665771,
+      "task_eval_loss_negative": 3.7778865973154705,
+      "category_losses": {
+        "coding": 2.5529566605885825,
+        "common_knowledge": 1.8401109854380289,
+        "mixed_domain": 2.372621218363444,
+        "wikitext": 1.6944758971532186
+      }
+    },
+    {
+      "alpha": 0.17796610169491522,
+      "loss": 2.0952686786651613,
+      "base_loss": 3.881797742843628,
+      "functional_return": 1.7865290641784668,
+      "task_eval_loss": 2.875385061899821,
+      "loss_2alpha": 2.4955458005269366,
+      "functional_return_2alpha": 1.3862519423166915,
+      "perplexity": 8.1276243961532,
+      "perplexity_2alpha": 12.128351372981195,
+      "sentiment_preference": 0.8384866237640383,
+      "task_eval_loss_negative": 3.713871685663859,
+      "category_losses": {
+        "coding": 2.530366961161296,
+        "common_knowledge": 1.8329997618993124,
+        "mixed_domain": 2.358013947804769,
+        "wikitext": 1.6930491209030152
+      }
+    },
+    {
+      "alpha": 0.211864406779661,
+      "loss": 2.142469565073649,
+      "base_loss": 3.881797742843628,
+      "functional_return": 1.7393281777699792,
+      "task_eval_loss": 2.887232287724813,
+      "loss_2alpha": 2.7222413380940753,
+      "functional_return_2alpha": 1.1595564047495528,
+      "perplexity": 8.52045348252828,
+      "perplexity_2alpha": 15.21438463789164,
+      "sentiment_preference": 0.8671111106872558,
+      "task_eval_loss_negative": 3.7543433984120687,
+      "category_losses": {
+        "coding": 2.5804690519968667,
+        "common_knowledge": 1.8711716413497925,
+        "mixed_domain": 2.4118136405944823,
+        "wikitext": 1.7411105235417683
+      }
+    },
+    {
+      "alpha": 0.2457627118644068,
+      "loss": 2.2045780340830485,
+      "base_loss": 3.881797742843628,
+      "functional_return": 1.6772197087605796,
+      "task_eval_loss": 2.9220693111419678,
+      "loss_2alpha": 2.967995055516561,
+      "functional_return_2alpha": 0.9138026873270673,
+      "perplexity": 9.066425038225919,
+      "perplexity_2alpha": 19.45287853002848,
+      "sentiment_preference": 0.8948831717173258,
+      "task_eval_loss_negative": 3.8169524828592936,
+      "category_losses": {
+        "coding": 2.6532351334889728,
+        "common_knowledge": 1.9238523721694947,
+        "mixed_domain": 2.4842846075693767,
+        "wikitext": 1.798290197054545
+      }
+    },
+    {
+      "alpha": 0.2796610169491526,
+      "loss": 2.2949831167856853,
+      "base_loss": 3.881797742843628,
+      "functional_return": 1.5868146260579428,
+      "task_eval_loss": 2.985752518971761,
+      "loss_2alpha": 3.2938525040944415,
+      "functional_return_2alpha": 0.5879452387491866,
+      "perplexity": 9.92426845731964,
+      "perplexity_2alpha": 26.9464753521329,
+      "sentiment_preference": 0.9268551031748458,
+      "task_eval_loss_negative": 3.9126076221466066,
+      "category_losses": {
+        "coding": 2.761148039499919,
+        "common_knowledge": 1.9957016468048097,
+        "mixed_domain": 2.584438753128052,
+        "wikitext": 1.8787779966990152
+      }
+    },
+    {
+      "alpha": 0.31355932203389836,
+      "loss": 2.3800255060195923,
+      "base_loss": 3.881797742843628,
+      "functional_return": 1.5017722368240358,
+      "task_eval_loss": 3.0773624579111734,
+      "loss_2alpha": 3.634507926305135,
+      "functional_return_2alpha": 0.24728981653849313,
+      "perplexity": 10.805178457510031,
+      "perplexity_2alpha": 37.88320698030365,
+      "sentiment_preference": 0.9358090082804362,
+      "task_eval_loss_negative": 4.01317146619161,
+      "category_losses": {
+        "coding": 2.8661562124888103,
+        "common_knowledge": 2.066622829437256,
+        "mixed_domain": 2.6762762387593586,
+        "wikitext": 1.953936719894409
+      }
+    },
+    {
+      "alpha": 0.34745762711864403,
+      "loss": 2.471632162729899,
+      "base_loss": 3.881797742843628,
+      "functional_return": 1.4101655801137292,
+      "task_eval_loss": 3.186096254984538,
+      "loss_2alpha": 3.9951204458872476,
+      "functional_return_2alpha": 0.11332270304361947,
+      "perplexity": 11.841758764578923,
+      "perplexity_2alpha": 54.332384341961344,
+      "sentiment_preference": 0.9302262306213378,
+      "task_eval_loss_negative": 4.116322485605876,
+      "category_losses": {
+        "coding": 2.978291463851929,
+        "common_knowledge": 2.1411863803863525,
+        "mixed_domain": 2.778825807571411,
+        "wikitext": 2.03260498046875
+      }
+    },
+    {
+      "alpha": 0.3813559322033898,
+      "loss": 2.577107032140096,
+      "base_loss": 3.881797742843628,
+      "functional_return": 1.304690710703532,
+      "task_eval_loss": 3.3193855126698812,
+      "loss_2alpha": 4.412849617004395,
+      "functional_return_2alpha": 0.5310518741607666,
+      "perplexity": 13.159014435063684,
+      "perplexity_2alpha": 82.5042343109194,
+      "sentiment_preference": 0.9199368000030521,
+      "task_eval_loss_negative": 4.239322312672933,
+      "category_losses": {
+        "coding": 3.1071151733398437,
+        "common_knowledge": 2.230034319559733,
+        "mixed_domain": 2.8900054613749186,
+        "wikitext": 2.128143246968587
+      }
+    },
+    {
+      "alpha": 0.4152542372881356,
+      "loss": 2.6877192497253417,
+      "base_loss": 3.881797742843628,
+      "functional_return": 1.1940784931182864,
+      "task_eval_loss": 3.4570514520009357,
+      "loss_2alpha": 4.83896640141805,
+      "functional_return_2alpha": 0.9571686585744219,
+      "perplexity": 14.698114933204463,
+      "perplexity_2alpha": 126.33870071948755,
+      "sentiment_preference": 0.9109685738881432,
+      "task_eval_loss_negative": 4.368020025889079,
+      "category_losses": {
+        "coding": 3.2397491296132404,
+        "common_knowledge": 2.325021187464396,
+        "mixed_domain": 3.0107322216033934,
+        "wikitext": 2.226054890950521
+      }
+    },
+    {
+      "alpha": 0.4491525423728814,
+      "loss": 2.812515703837077,
+      "base_loss": 3.881797742843628,
+      "functional_return": 1.0692820390065512,
+      "task_eval_loss": 3.6228360176086425,
+      "loss_2alpha": 5.320173136393229,
+      "functional_return_2alpha": 1.4383753935496006,
+      "perplexity": 16.651756458027368,
+      "perplexity_2alpha": 204.41927134463432,
+      "sentiment_preference": 0.8877832094828286,
+      "task_eval_loss_negative": 4.510619227091471,
+      "category_losses": {
+        "coding": 3.3890501976013185,
+        "common_knowledge": 2.428071403503418,
+        "mixed_domain": 3.140630038579305,
+        "wikitext": 2.3429746627807617
+      }
+    },
+    {
+      "alpha": 0.48305084745762716,
+      "loss": 2.9406023661295575,
+      "base_loss": 3.881797742843628,
+      "functional_return": 0.9411953767140706,
+      "task_eval_loss": 3.7842779477437336,
+      "loss_2alpha": 5.828017171223959,
+      "functional_return_2alpha": 1.9462194283803305,
+      "perplexity": 18.92724400983431,
+      "perplexity_2alpha": 339.6844747254915,
+      "sentiment_preference": 0.8639491081237791,
+      "task_eval_loss_negative": 4.648227055867513,
+      "category_losses": {
+        "coding": 3.5327017148335775,
+        "common_knowledge": 2.5401546001434325,
+        "mixed_domain": 3.275628137588501,
+        "wikitext": 2.4659770170847577
+      }
+    },
+    {
+      "alpha": 0.5169491525423728,
+      "loss": 3.1081656932830812,
+      "base_loss": 3.881797742843628,
+      "functional_return": 0.7736320495605469,
+      "task_eval_loss": 4.01657075881958,
+      "loss_2alpha": 6.32436777750651,
+      "functional_return_2alpha": 2.4425700346628823,
+      "perplexity": 22.37995502518157,
+      "perplexity_2alpha": 558.0049188615415,
+      "sentiment_preference": 0.8109784444173176,
+      "task_eval_loss_negative": 4.827549203236898,
+      "category_losses": {
+        "coding": 3.724471378326416,
+        "common_knowledge": 2.686284097035726,
+        "mixed_domain": 3.4489575227101645,
+        "wikitext": 2.6282153924306235
+      }
+    },
+    {
+      "alpha": 0.5508474576271187,
+      "loss": 3.252785650889079,
+      "base_loss": 3.881797742843628,
+      "functional_return": 0.6290120919545492,
+      "task_eval_loss": 4.209625752766927,
+      "loss_2alpha": 6.913097858428955,
+      "functional_return_2alpha": 3.031300115585327,
+      "perplexity": 25.862282958088688,
+      "perplexity_2alpha": 1005.3568764740525,
+      "sentiment_preference": 0.7721329371134438,
+      "task_eval_loss_negative": 4.981758689880371,
+      "category_losses": {
+        "coding": 3.885910733540853,
+        "common_knowledge": 2.815851163864136,
+        "mixed_domain": 3.592112906773885,
+        "wikitext": 2.7696918487548827
+      }
+    },
+    {
+      "alpha": 0.5847457627118644,
+      "loss": 3.4158030351003013,
+      "base_loss": 3.881797742843628,
+      "functional_return": 0.46599470774332685,
+      "task_eval_loss": 4.43853391011556,
+      "loss_2alpha": 7.557061735788981,
+      "functional_return_2alpha": 3.6752639929453528,
+      "perplexity": 30.441385115644085,
+      "perplexity_2alpha": 1914.2127792938754,
+      "sentiment_preference": 0.7125625610351562,
+      "task_eval_loss_negative": 5.151096471150717,
+      "category_losses": {
+        "coding": 4.066817251841227,
+        "common_knowledge": 2.9635845184326173,
+        "mixed_domain": 3.7572001457214355,
+        "wikitext": 2.9283717314402264
+      }
+    },
+    {
+      "alpha": 0.6186440677966101,
+      "loss": 3.5784976482391357,
+      "base_loss": 3.881797742843628,
+      "functional_return": 0.30330009460449237,
+      "task_eval_loss": 4.668094317118327,
+      "loss_2alpha": 8.222303454081217,
+      "functional_return_2alpha": 4.340505711237589,
+      "perplexity": 35.81968663391807,
+      "perplexity_2alpha": 3723.0684301451247,
+      "sentiment_preference": 0.6542463302612305,
+      "task_eval_loss_negative": 5.322340647379558,
+      "category_losses": {
+        "coding": 4.248705291748047,
+        "common_knowledge": 3.1114705244700116,
+        "mixed_domain": 3.9209365208943683,
+        "wikitext": 3.0905209223429364
+      }
+    },
+    {
+      "alpha": 0.652542372881356,
+      "loss": 3.7673919518788654,
+      "base_loss": 3.881797742843628,
+      "functional_return": 0.11440579096476267,
+      "task_eval_loss": 4.945862579345703,
+      "loss_2alpha": 8.974062506357829,
+      "functional_return_2alpha": 5.0922647635142,
+      "perplexity": 43.267074944843884,
+      "perplexity_2alpha": 7895.612515238597,
+      "sentiment_preference": 0.5838661511739094,
+      "task_eval_loss_negative": 5.529728730519612,
+      "category_losses": {
+        "coding": 4.464038626352946,
+        "common_knowledge": 3.28250412940979,
+        "mixed_domain": 4.105366134643555,
+        "wikitext": 3.274219004313151
+      }
+    },
+    {
+      "alpha": 0.6864406779661016,
+      "loss": 3.951508903503418,
+      "base_loss": 3.881797742843628,
+      "functional_return": 0.06971116065978977,
+      "task_eval_loss": 5.206301244099935,
+      "loss_2alpha": 9.76155236562093,
+      "functional_return_2alpha": 5.879754622777303,
+      "perplexity": 52.01379144450426,
+      "perplexity_2alpha": 17353.549830367014,
+      "sentiment_preference": 0.5150593121846514,
+      "task_eval_loss_negative": 5.721360556284586,
+      "category_losses": {
+        "coding": 4.6763108253479,
+        "common_knowledge": 3.4512229760487876,
+        "mixed_domain": 4.278173542022705,
+        "wikitext": 3.451611105600993
+      }
+    },
+    {
+      "alpha": 0.7203389830508475,
+      "loss": 4.147065464655558,
+      "base_loss": 3.881797742843628,
+      "functional_return": 0.2652677218119299,
+      "task_eval_loss": 5.4952747344970705,
+      "loss_2alpha": 10.595539665222168,
+      "functional_return_2alpha": 6.7137419223785395,
+      "perplexity": 63.24812384610774,
+      "perplexity_2alpha": 39956.22125976463,
+      "sentiment_preference": 0.4242833137512205,
+      "task_eval_loss_negative": 5.919558048248291,
+      "category_losses": {
+        "coding": 4.9075343132019045,
+        "common_knowledge": 3.6316599527994793,
+        "mixed_domain": 4.46346747080485,
+        "wikitext": 3.6395503520965575
+      }
+    },
+    {
+      "alpha": 0.7542372881355932,
+      "loss": 4.368198887507121,
+      "base_loss": 3.881797742843628,
+      "functional_return": 0.4864011446634926,
+      "task_eval_loss": 5.858388233184814,
+      "loss_2alpha": 11.569997215270996,
+      "functional_return_2alpha": 7.688199472427368,
+      "perplexity": 78.90139335910564,
+      "perplexity_2alpha": 105873.17719934069,
+      "sentiment_preference": 0.2954508145650232,
+      "task_eval_loss_negative": 6.1538390477498375,
+      "category_losses": {
+        "coding": 5.162885506947835,
+        "common_knowledge": 3.8404356320699056,
+        "mixed_domain": 4.6639630953470865,
+        "wikitext": 3.8570711453755697
+      }
+    },
+    {
+      "alpha": 0.7881355932203389,
+      "loss": 4.574828592936198,
+      "base_loss": 3.881797742843628,
+      "functional_return": 0.6930308500925699,
+      "task_eval_loss": 6.156108474731445,
+      "loss_2alpha": 12.489879290262857,
+      "functional_return_2alpha": 8.608081547419228,
+      "perplexity": 97.01140927091738,
+      "perplexity_2alpha": 265635.2192158652,
+      "sentiment_preference": 0.21755151748657298,
+      "task_eval_loss_negative": 6.373659992218018,
+      "category_losses": {
+        "coding": 5.407176812489827,
+        "common_knowledge": 4.03201265335083,
+        "mixed_domain": 4.8571566899617515,
+        "wikitext": 4.053309440612793
+      }
+    },
+    {
+      "alpha": 0.8220338983050848,
+      "loss": 4.785341612497965,
+      "base_loss": 3.881797742843628,
+      "functional_return": 0.903543869654337,
+      "task_eval_loss": 6.492824268341065,
+      "loss_2alpha": 13.546711858113607,
+      "functional_return_2alpha": 9.66491411526998,
+      "perplexity": 119.74226155082778,
+      "perplexity_2alpha": 764297.0932829226,
+      "sentiment_preference": 0.11127033233642525,
+      "task_eval_loss_negative": 6.60409460067749,
+      "category_losses": {
+        "coding": 5.6624855677286785,
+        "common_knowledge": 4.225801849365235,
+        "mixed_domain": 5.049717712402344,
+        "wikitext": 4.253831481933593
+      }
+    },
+    {
+      "alpha": 0.8559322033898304,
+      "loss": 5.022031815846761,
+      "base_loss": 3.881797742843628,
+      "functional_return": 1.1402340730031328,
+      "task_eval_loss": 6.852405166625976,
+      "loss_2alpha": 14.618494923909505,
+      "functional_return_2alpha": 10.736697181065878,
+      "perplexity": 151.71925642605635,
+      "perplexity_2alpha": 2232192.677739193,
+      "sentiment_preference": 0.016610113779703894,
+      "task_eval_loss_negative": 6.86901528040568,
+      "category_losses": {
+        "coding": 5.94865624109904,
+        "common_knowledge": 4.447007846832276,
+        "mixed_domain": 5.262598959604899,
+        "wikitext": 4.475815137227376
+      }
+    },
+    {
+      "alpha": 0.8898305084745763,
+      "loss": 5.256510416666667,
+      "base_loss": 3.881797742843628,
+      "functional_return": 1.3747126738230389,
+      "task_eval_loss": 7.225896644592285,
+      "loss_2alpha": 15.793010711669922,
+      "functional_return_2alpha": 11.911212968826295,
+      "perplexity": 191.81098167325428,
+      "perplexity_2alpha": 7224659.852891348,
+      "sentiment_preference": -0.08697722752889003,
+      "task_eval_loss_negative": 7.138919417063395,
+      "category_losses": {
+        "coding": 6.231420103708903,
+        "common_knowledge": 4.667628288269043,
+        "mixed_domain": 5.474923896789551,
+        "wikitext": 4.698590087890625
+      }
+    },
+    {
+      "alpha": 0.923728813559322,
+      "loss": 5.50252685546875,
+      "base_loss": 3.881797742843628,
+      "functional_return": 1.6207291126251215,
+      "task_eval_loss": 7.6139550844828285,
+      "loss_2alpha": 17.054861704508465,
+      "functional_return_2alpha": 13.173063961664838,
+      "perplexity": 245.3110152486299,
+      "perplexity_2alpha": 25517159.47758014,
+      "sentiment_preference": -0.1938126564025877,
+      "task_eval_loss_negative": 7.420142428080241,
+      "category_losses": {
+        "coding": 6.5383621533711755,
+        "common_knowledge": 4.891314888000489,
+        "mixed_domain": 5.696090157826742,
+        "wikitext": 4.932335313161214
+      }
+    },
+    {
+      "alpha": 0.9576271186440677,
+      "loss": 5.763445313771566,
+      "base_loss": 3.881797742843628,
+      "functional_return": 1.8816475709279379,
+      "task_eval_loss": 8.01280574798584,
+      "loss_2alpha": 18.410605494181315,
+      "functional_return_2alpha": 14.528807751337688,
+      "perplexity": 318.4435791427944,
+      "perplexity_2alpha": 98997533.55288719,
+      "sentiment_preference": -0.29776595433553155,
+      "task_eval_loss_negative": 7.715039793650309,
+      "category_losses": {
+        "coding": 6.8611097971598305,
+        "common_knowledge": 5.124825350443522,
+        "mixed_domain": 5.935914929707845,
+        "wikitext": 5.178763071695964
+      }
+    },
+    {
+      "alpha": 0.9915254237288136,
+      "loss": 6.036841901143392,
+      "base_loss": 3.881797742843628,
+      "functional_return": 2.1550441582997637,
+      "task_eval_loss": 8.440984280904134,
+      "loss_2alpha": 19.84839261372884,
+      "functional_return_2alpha": 15.966594870885213,
+      "perplexity": 418.5690628909202,
+      "perplexity_2alpha": 416914871.45419854,
+      "sentiment_preference": -0.41470438639322893,
+      "task_eval_loss_negative": 8.026279894510905,
+      "category_losses": {
+        "coding": 7.193432903289795,
+        "common_knowledge": 5.363293520609537,
+        "mixed_domain": 6.185683790842692,
+        "wikitext": 5.4458234469095865
+      }
+    },
+    {
+      "alpha": 1.0254237288135593,
+      "loss": 6.247574043273926,
+      "base_loss": 3.881797742843628,
+      "functional_return": 2.365776300430298,
+      "task_eval_loss": 8.748943201700847,
+      "loss_2alpha": 21.1863405863444,
+      "functional_return_2alpha": 17.304542843500773,
+      "perplexity": 516.7576710618882,
+      "perplexity_2alpha": 1588952111.1908224,
+      "sentiment_preference": -0.49104185104370224,
+      "task_eval_loss_negative": 8.257901350657145,
+      "category_losses": {
+        "coding": 7.461156876881917,
+        "common_knowledge": 5.549763456980387,
+        "mixed_domain": 6.3732604344685875,
+        "wikitext": 5.651036357879638
+      }
+    },
+    {
+      "alpha": 1.0593220338983051,
+      "loss": 6.546153195699056,
+      "base_loss": 3.881797742843628,
+      "functional_return": 2.6643554528554283,
+      "task_eval_loss": 9.209003512064616,
+      "loss_2alpha": 22.755315907796223,
+      "functional_return_2alpha": 18.873518164952596,
+      "perplexity": 696.5594853668227,
+      "perplexity_2alpha": 7629711786.416387,
+      "sentiment_preference": -0.5888076782226559,
+      "task_eval_loss_negative": 8.62019583384196,
+      "category_losses": {
+        "coding": 7.836425018310547,
+        "common_knowledge": 5.801388104756673,
+        "mixed_domain": 6.646096674601237,
+        "wikitext": 5.941325219472249
+      }
+    },
+    {
+      "alpha": 1.0932203389830508,
+      "loss": 6.838883463541666,
+      "base_loss": 3.881797742843628,
+      "functional_return": 2.9570857206980383,
+      "task_eval_loss": 9.655088106791178,
+      "loss_2alpha": 24.24543342590332,
+      "functional_return_2alpha": 20.363635683059695,
+      "perplexity": 933.446325815789,
+      "perplexity_2alpha": 33857738642.36639,
+      "sentiment_preference": -0.6892319361368813,
+      "task_eval_loss_negative": 8.965856170654297,
+      "category_losses": {
+        "coding": 8.201604461669922,
+        "common_knowledge": 6.0508042971293134,
+        "mixed_domain": 6.9109784126281735,
+        "wikitext": 6.233158810933431
+      }
+    },
+    {
+      "alpha": 1.1271186440677967,
+      "loss": 7.1402506828308105,
+      "base_loss": 3.881797742843628,
+      "functional_return": 3.2584529399871824,
+      "task_eval_loss": 10.110353978474935,
+      "loss_2alpha": 25.713136672973633,
+      "functional_return_2alpha": 21.831338930130006,
+      "perplexity": 1261.7446471763255,
+      "perplexity_2alpha": 146917445829.13205,
+      "sentiment_preference": -0.7831929524739589,
+      "task_eval_loss_negative": 9.327161026000976,
+      "category_losses": {
+        "coding": 8.581854629516602,
+        "common_knowledge": 6.300318113962809,
+        "mixed_domain": 7.184065437316894,
+        "wikitext": 6.534936364491781
+      }
+    },
+    {
+      "alpha": 1.1610169491525424,
+      "loss": 7.457012367248535,
+      "base_loss": 3.881797742843628,
+      "functional_return": 3.5752146244049072,
+      "task_eval_loss": 10.56270751953125,
+      "loss_2alpha": 27.253176752726237,
+      "functional_return_2alpha": 23.37137900988261,
+      "perplexity": 1731.9658420513308,
+      "perplexity_2alpha": 685337156046.2081,
+      "sentiment_preference": -0.863186073303222,
+      "task_eval_loss_negative": 9.699521446228028,
+      "category_losses": {
+        "coding": 8.982308451334635,
+        "common_knowledge": 6.563228702545166,
+        "mixed_domain": 7.467933813730876,
+        "wikitext": 6.851028919219971
+      }
+    },
+    {
+      "alpha": 1.194915254237288,
+      "loss": 7.807596810658773,
+      "base_loss": 3.881797742843628,
+      "functional_return": 3.925799067815145,
+      "task_eval_loss": 11.06091791788737,
+      "loss_2alpha": 28.830459340413412,
+      "functional_return_2alpha": 24.948661597569785,
+      "perplexity": 2459.213372857187,
+      "perplexity_2alpha": 3318252286144.5957,
+      "sentiment_preference": -0.9393649419148762,
+      "task_eval_loss_negative": 10.121552975972493,
+      "category_losses": {
+        "coding": 9.428849983215333,
+        "common_knowledge": 6.8526231447855634,
+        "mixed_domain": 7.791841983795166,
+        "wikitext": 7.193882687886556
+      }
+    },
+    {
+      "alpha": 1.228813559322034,
+      "loss": 8.1385711034139,
+      "base_loss": 3.881797742843628,
+      "functional_return": 4.256773360570272,
+      "task_eval_loss": 11.516772588094076,
+      "loss_2alpha": 30.686440912882485,
+      "functional_return_2alpha": 26.804643170038858,
+      "perplexity": 3424.021797774748,
+      "perplexity_2alpha": 21230095986116.125,
+      "sentiment_preference": -1.0005022684733085,
+      "task_eval_loss_negative": 10.516270319620768,
+      "category_losses": {
+        "coding": 9.856849797566731,
+        "common_knowledge": 7.111285273234049,
+        "mixed_domain": 8.097284412384033,
+        "wikitext": 7.5241447448730465
+      }
+    },
+    {
+      "alpha": 1.2627118644067796,
+      "loss": 8.511390431722004,
+      "base_loss": 3.881797742843628,
+      "functional_return": 4.629592688878376,
+      "task_eval_loss": 12.042633692423502,
+      "loss_2alpha": 32.81789309183757,
+      "functional_return_2alpha": 28.93609534899394,
+      "perplexity": 4971.070218989409,
+      "perplexity_2alpha": 178908048068070.03,
+      "sentiment_preference": -1.0940266291300453,
+      "task_eval_loss_negative": 10.948607063293457,
+      "category_losses": {
+        "coding": 10.332429631551106,
+        "common_knowledge": 7.399785804748535,
+        "mixed_domain": 8.452439562479656,
+        "wikitext": 7.89340082804362
+      }
+    },
+    {
+      "alpha": 1.2966101694915255,
+      "loss": 8.865977350870768,
+      "base_loss": 3.881797742843628,
+      "functional_return": 4.98417960802714,
+      "task_eval_loss": 12.516785748799641,
+      "loss_2alpha": 34.86663691202799,
+      "functional_return_2alpha": 30.984839169184365,
+      "perplexity": 7086.71618593597,
+      "perplexity_2alpha": 1387995357193144.8,
+      "sentiment_preference": -1.1488614400227863,
+      "task_eval_loss_negative": 11.367924308776855,
+      "category_losses": {
+        "coding": 10.781675783793132,
+        "common_knowledge": 7.675449434916178,
+        "mixed_domain": 8.778751564025878,
+        "wikitext": 8.253885332743327
+      }
+    },
+    {
+      "alpha": 1.3305084745762712,
+      "loss": 9.256310367584229,
+      "base_loss": 3.881797742843628,
+      "functional_return": 5.374512624740601,
+      "task_eval_loss": 13.011716334025065,
+      "loss_2alpha": 37.18056971232097,
+      "functional_return_2alpha": 33.298771969477336,
+      "perplexity": 10470.429945972228,
+      "perplexity_2alpha": 1.4038356276355572e+16,
+      "sentiment_preference": -1.1978279113769528,
+      "task_eval_loss_negative": 11.813888422648112,
+      "category_losses": {
+        "coding": 11.277527046203613,
+        "common_knowledge": 7.971091906229655,
+        "mixed_domain": 9.158614985148112,
+        "wikitext": 8.644098599751791
+      }
+    },
+    {
+      "alpha": 1.3644067796610169,
+      "loss": 9.64849116007487,
+      "base_loss": 3.881797742843628,
+      "functional_return": 5.7666934172312425,
+      "task_eval_loss": 13.50185095469157,
+      "loss_2alpha": 39.63519490559896,
+      "functional_return_2alpha": 35.75339716275533,
+      "perplexity": 15498.385870148242,
+      "perplexity_2alpha": 1.634355152971704e+17,
+      "sentiment_preference": -1.2406323750813808,
+      "task_eval_loss_negative": 12.261218579610189,
+      "category_losses": {
+        "coding": 11.777302424112955,
+        "common_knowledge": 8.281034723917644,
+        "mixed_domain": 9.538537851969402,
+        "wikitext": 9.029904619852703
+      }
+    },
+    {
+      "alpha": 1.3983050847457628,
+      "loss": 10.069934399922689,
+      "base_loss": 3.881797742843628,
+      "functional_return": 6.188136657079061,
+      "task_eval_loss": 14.003372955322266,
+      "loss_2alpha": 42.221126047770184,
+      "functional_return_2alpha": 38.33932830492655,
+      "perplexity": 23622.015112200505,
+      "perplexity_2alpha": 2.169711856857453e+18,
+      "sentiment_preference": -1.2825777689615894,
+      "task_eval_loss_negative": 12.720795186360677,
+      "category_losses": {
+        "coding": 12.3088809967041,
+        "common_knowledge": 8.6092986424764,
+        "mixed_domain": 9.951636505126952,
+        "wikitext": 9.44528439839681
+      }
+    },
+    {
+      "alpha": 1.4322033898305084,
+      "loss": 10.484827550252279,
+      "base_loss": 3.881797742843628,
+      "functional_return": 6.60302980740865,
+      "task_eval_loss": 14.504195594787598,
+      "loss_2alpha": 44.80498072306315,
+      "functional_return_2alpha": 40.92318298021952,
+      "perplexity": 35768.666447690826,
+      "perplexity_2alpha": 2.8744574867326816e+19,
+      "sentiment_preference": -1.3208937327067058,
+      "task_eval_loss_negative": 13.183301862080892,
+      "category_losses": {
+        "coding": 12.835640017191569,
+        "common_knowledge": 8.927778498331707,
+        "mixed_domain": 10.356078592936198,
+        "wikitext": 9.852160517374674
+      }
+    },
+    {
+      "alpha": 1.4661016949152543,
+      "loss": 10.926604207356771,
+      "base_loss": 3.881797742843628,
+      "functional_return": 7.044806464513143,
+      "task_eval_loss": 15.01068369547526,
+      "loss_2alpha": 47.99064559936524,
+      "functional_return_2alpha": 44.108847856521606,
+      "perplexity": 55637.02675125492,
+      "perplexity_2alpha": 6.951404597273642e+20,
+      "sentiment_preference": -1.3429180145263668,
+      "task_eval_loss_negative": 13.667765680948893,
+      "category_losses": {
+        "coding": 13.391510327657064,
+        "common_knowledge": 9.278473917643229,
+        "mixed_domain": 10.789895884195964,
+        "wikitext": 10.279575157165528
+      }
+    },
+    {
+      "alpha": 1.5,
+      "loss": 11.395211283365885,
+      "base_loss": 3.881797742843628,
+      "functional_return": 7.513413540522257,
+      "task_eval_loss": 15.566204706827799,
+      "loss_2alpha": 51.00062942504883,
+      "functional_return_2alpha": 47.1188316822052,
+      "perplexity": 88895.00945978088,
+      "perplexity_2alpha": 1.4102364412756086e+22,
+      "sentiment_preference": -1.3801511128743478,
+      "task_eval_loss_negative": 14.186053593953451,
+      "category_losses": {
+        "coding": 13.96007251739502,
+        "common_knowledge": 9.652340253194174,
+        "mixed_domain": 11.253098106384277,
+        "wikitext": 10.741975212097168
+      }
+    }
+  ]
+}

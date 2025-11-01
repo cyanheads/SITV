@@ -1,0 +1,2234 @@
+{
+  "min_general_loss": {
+    "alpha": 0.08585858585858586,
+    "loss": 2.188246742884318,
+    "base_loss": 3.986223061879476,
+    "functional_return": 1.797976318995158,
+    "task_eval_loss": 2.6110551357269287,
+    "loss_2alpha": 2.410282595952352,
+    "functional_return_2alpha": 1.5759404659271241,
+    "perplexity": 8.919561113725711,
+    "perplexity_2alpha": 11.137108002042124,
+    "sentiment_preference": 0.0,
+    "task_eval_loss_negative": 0.0,
+    "category_losses": {
+      "coding": 2.6947104930877686,
+      "common_knowledge": 1.8952584266662598,
+      "mixed_domain": 2.5276639461517334,
+      "wikitext": 1.7157044410705566
+    }
+  },
+  "min_task_loss": {
+    "alpha": 0.26767676767676774,
+    "loss": 2.8136508464813232,
+    "base_loss": 3.986223061879476,
+    "functional_return": 1.1725722153981528,
+    "task_eval_loss": 1.4109734296798706,
+    "loss_2alpha": 4.999937693277995,
+    "functional_return_2alpha": 1.013714631398519,
+    "perplexity": 16.670669309245604,
+    "perplexity_2alpha": 148.40391225320394,
+    "sentiment_preference": 0.0,
+    "task_eval_loss_negative": 0.0,
+    "category_losses": {
+      "coding": 3.440425395965576,
+      "common_knowledge": 2.480480194091797,
+      "mixed_domain": 3.1215808391571045,
+      "wikitext": 2.3043317794799805
+    }
+  },
+  "best_return": {
+    "alpha": 0.4292929292929294,
+    "loss": 3.997007735570272,
+    "base_loss": 3.986223061879476,
+    "functional_return": 0.01078467369079572,
+    "task_eval_loss": 1.55545973777771,
+    "loss_2alpha": 8.209722169240315,
+    "functional_return_2alpha": 4.223499107360839,
+    "perplexity": 54.43502211352258,
+    "perplexity_2alpha": 3676.5208737705034,
+    "sentiment_preference": 0.0,
+    "task_eval_loss_negative": 0.0,
+    "category_losses": {
+      "coding": 4.7981719970703125,
+      "common_knowledge": 3.5470387935638428,
+      "mixed_domain": 4.393427848815918,
+      "wikitext": 3.361623764038086
+    }
+  },
+  "zero_crossings": [
+    {
+      "alpha": 0.40909090909090917,
+      "loss": 3.8415133794148764,
+      "base_loss": 3.986223061879476,
+      "functional_return": 0.1447096824645997,
+      "task_eval_loss": 1.528659462928772,
+      "loss_2alpha": 7.820863056182861,
+      "functional_return_2alpha": 3.834639994303385,
+      "perplexity": 46.595938441009466,
+      "perplexity_2alpha": 2492.0552638913605,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 4.626051425933838,
+        "common_knowledge": 3.4053564071655273,
+        "mixed_domain": 4.225909233093262,
+        "wikitext": 3.218656301498413
+      }
+    },
+    {
+      "alpha": 0.4292929292929294,
+      "loss": 3.997007735570272,
+      "base_loss": 3.986223061879476,
+      "functional_return": 0.01078467369079572,
+      "task_eval_loss": 1.55545973777771,
+      "loss_2alpha": 8.209722169240315,
+      "functional_return_2alpha": 4.223499107360839,
+      "perplexity": 54.43502211352258,
+      "perplexity_2alpha": 3676.5208737705034,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 4.7981719970703125,
+        "common_knowledge": 3.5470387935638428,
+        "mixed_domain": 4.393427848815918,
+        "wikitext": 3.361623764038086
+      }
+    },
+    {
+      "alpha": 0.4494949494949496,
+      "loss": 4.183123811086019,
+      "base_loss": 3.986223061879476,
+      "functional_return": 0.19690074920654288,
+      "task_eval_loss": 1.5864235162734985,
+      "loss_2alpha": 8.612504005432129,
+      "functional_return_2alpha": 4.626280943552652,
+      "perplexity": 65.57036304966896,
+      "perplexity_2alpha": 5500.0034881647225,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 5.000262260437012,
+        "common_knowledge": 3.722470283508301,
+        "mixed_domain": 4.591960906982422,
+        "wikitext": 3.5359318256378174
+      }
+    }
+  ],
+  "sorted_by_return": [
+    {
+      "alpha": 0.4292929292929294,
+      "loss": 3.997007735570272,
+      "base_loss": 3.986223061879476,
+      "functional_return": 0.01078467369079572,
+      "task_eval_loss": 1.55545973777771,
+      "loss_2alpha": 8.209722169240315,
+      "functional_return_2alpha": 4.223499107360839,
+      "perplexity": 54.43502211352258,
+      "perplexity_2alpha": 3676.5208737705034,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 4.7981719970703125,
+        "common_knowledge": 3.5470387935638428,
+        "mixed_domain": 4.393427848815918,
+        "wikitext": 3.361623764038086
+      }
+    },
+    {
+      "alpha": -0.055555555555555525,
+      "loss": 4.030123790105184,
+      "base_loss": 3.986223061879476,
+      "functional_return": 0.043900728225707564,
+      "task_eval_loss": 30.069835662841797,
+      "loss_2alpha": 5.936931578318278,
+      "functional_return_2alpha": 1.950708516438802,
+      "perplexity": 56.267876222337456,
+      "perplexity_2alpha": 378.77091571861064,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 4.98780632019043,
+        "common_knowledge": 3.535087823867798,
+        "mixed_domain": 4.484638214111328,
+        "wikitext": 3.225210189819336
+      }
+    },
+    {
+      "alpha": -0.015151515151515138,
+      "loss": 4.058683617909749,
+      "base_loss": 3.986223061879476,
+      "functional_return": 0.07246055603027335,
+      "task_eval_loss": 15.824651718139648,
+      "loss_2alpha": 5.437516276041666,
+      "functional_return_2alpha": 1.4512932141621904,
+      "perplexity": 57.89804494286138,
+      "perplexity_2alpha": 229.87053888610035,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 4.975767612457275,
+        "common_knowledge": 3.5391292572021484,
+        "mixed_domain": 4.706673622131348,
+        "wikitext": 3.143002986907959
+      }
+    },
+    {
+      "alpha": 0.40909090909090917,
+      "loss": 3.8415133794148764,
+      "base_loss": 3.986223061879476,
+      "functional_return": 0.1447096824645997,
+      "task_eval_loss": 1.528659462928772,
+      "loss_2alpha": 7.820863056182861,
+      "functional_return_2alpha": 3.834639994303385,
+      "perplexity": 46.595938441009466,
+      "perplexity_2alpha": 2492.0552638913605,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 4.626051425933838,
+        "common_knowledge": 3.4053564071655273,
+        "mixed_domain": 4.225909233093262,
+        "wikitext": 3.218656301498413
+      }
+    },
+    {
+      "alpha": 0.4494949494949496,
+      "loss": 4.183123811086019,
+      "base_loss": 3.986223061879476,
+      "functional_return": 0.19690074920654288,
+      "task_eval_loss": 1.5864235162734985,
+      "loss_2alpha": 8.612504005432129,
+      "functional_return_2alpha": 4.626280943552652,
+      "perplexity": 65.57036304966896,
+      "perplexity_2alpha": 5500.0034881647225,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 5.000262260437012,
+        "common_knowledge": 3.722470283508301,
+        "mixed_domain": 4.591960906982422,
+        "wikitext": 3.5359318256378174
+      }
+    },
+    {
+      "alpha": 0.38888888888888895,
+      "loss": 3.686252164840698,
+      "base_loss": 3.986223061879476,
+      "functional_return": 0.299970897038778,
+      "task_eval_loss": 1.5021790266036987,
+      "loss_2alpha": 7.438560994466146,
+      "functional_return_2alpha": 3.4523379325866697,
+      "perplexity": 39.89504636122664,
+      "perplexity_2alpha": 1700.3017162882866,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 4.455504894256592,
+        "common_knowledge": 3.2603845596313477,
+        "mixed_domain": 4.060647487640381,
+        "wikitext": 3.077036142349243
+      }
+    },
+    {
+      "alpha": 0.4696969696969697,
+      "loss": 4.346014340718587,
+      "base_loss": 3.986223061879476,
+      "functional_return": 0.3597912788391109,
+      "task_eval_loss": 1.6119617223739624,
+      "loss_2alpha": 8.984200604756673,
+      "functional_return_2alpha": 4.997977542877196,
+      "perplexity": 77.17027474491022,
+      "perplexity_2alpha": 7976.066146159506,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 5.170810222625732,
+        "common_knowledge": 3.875492572784424,
+        "mixed_domain": 4.766150951385498,
+        "wikitext": 3.6894760131835938
+      }
+    },
+    {
+      "alpha": -0.07575757575757575,
+      "loss": 4.404063129425049,
+      "base_loss": 3.986223061879476,
+      "functional_return": 0.4178400675455731,
+      "task_eval_loss": 37.431671142578125,
+      "loss_2alpha": 6.607400671641032,
+      "functional_return_2alpha": 2.621177609761556,
+      "perplexity": 81.78248733469917,
+      "perplexity_2alpha": 740.5555676743343,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 5.566030979156494,
+        "common_knowledge": 3.828216314315796,
+        "mixed_domain": 4.862063407897949,
+        "wikitext": 3.504505157470703
+      }
+    },
+    {
+      "alpha": 0.36868686868686873,
+      "loss": 3.508780765533447,
+      "base_loss": 3.986223061879476,
+      "functional_return": 0.47744229634602897,
+      "task_eval_loss": 1.477433204650879,
+      "loss_2alpha": 7.016915321350098,
+      "functional_return_2alpha": 3.0306922594706216,
+      "perplexity": 33.40751135388718,
+      "perplexity_2alpha": 1115.3408378470574,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 4.256170749664307,
+        "common_knowledge": 3.1004791259765625,
+        "mixed_domain": 3.870353937149048,
+        "wikitext": 2.9163248538970947
+      }
+    },
+    {
+      "alpha": 0.48989898989898994,
+      "loss": 4.500065533320109,
+      "base_loss": 3.986223061879476,
+      "functional_return": 0.5138424714406331,
+      "task_eval_loss": 1.64058518409729,
+      "loss_2alpha": 9.40070203145345,
+      "functional_return_2alpha": 5.414478969573974,
+      "perplexity": 90.02303061530137,
+      "perplexity_2alpha": 12096.8701332762,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 5.334071159362793,
+        "common_knowledge": 4.020688056945801,
+        "mixed_domain": 4.929877281188965,
+        "wikitext": 3.8351457118988037
+      }
+    }
+  ],
+  "squaring_return_points": [
+    {
+      "alpha": 0.20707070707070718,
+      "loss": 2.492025597890218,
+      "base_loss": 3.986223061879476,
+      "functional_return": 1.494197463989258,
+      "task_eval_loss": 1.5424784421920776,
+      "loss_2alpha": 3.8799010435740153,
+      "functional_return_2alpha": 0.10632201830546073,
+      "perplexity": 12.08573217661349,
+      "perplexity_2alpha": 48.4194234211768,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 3.0451037883758545,
+        "common_knowledge": 2.1936380863189697,
+        "mixed_domain": 2.784116268157959,
+        "wikitext": 2.0323705673217773
+      }
+    }
+  ],
+  "has_squaring_data": true,
+  "all_results": [
+    {
+      "alpha": -0.5,
+      "loss": 9.813866647084554,
+      "base_loss": 3.986223061879476,
+      "functional_return": 5.827643585205077,
+      "task_eval_loss": 50.65668487548828,
+      "loss_2alpha": 23.971858088175455,
+      "functional_return_2alpha": 19.98563502629598,
+      "perplexity": 18285.554345624976,
+      "perplexity_2alpha": 25754059140.97281,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 14.089028358459473,
+        "common_knowledge": 7.348162651062012,
+        "mixed_domain": 10.475031852722168,
+        "wikitext": 7.710052490234375
+      }
+    },
+    {
+      "alpha": -0.4797979797979798,
+      "loss": 9.445136706034342,
+      "base_loss": 3.986223061879476,
+      "functional_return": 5.458913644154865,
+      "task_eval_loss": 51.089229583740234,
+      "loss_2alpha": 22.29785703023275,
+      "functional_return_2alpha": 18.311633968353274,
+      "perplexity": 12646.511761294754,
+      "perplexity_2alpha": 4828767182.113668,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 13.379393577575684,
+        "common_knowledge": 7.223241329193115,
+        "mixed_domain": 10.128138542175293,
+        "wikitext": 7.395530700683594
+      }
+    },
+    {
+      "alpha": -0.4595959595959596,
+      "loss": 9.27259734471639,
+      "base_loss": 3.986223061879476,
+      "functional_return": 5.286374282836913,
+      "task_eval_loss": 50.607139587402344,
+      "loss_2alpha": 20.869265619913737,
+      "functional_return_2alpha": 16.883042558034262,
+      "perplexity": 10642.357891796159,
+      "perplexity_2alpha": 1157195936.90144,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 12.99589729309082,
+        "common_knowledge": 7.195127010345459,
+        "mixed_domain": 9.96084976196289,
+        "wikitext": 7.267942905426025
+      }
+    },
+    {
+      "alpha": -0.4393939393939394,
+      "loss": 9.100718021392822,
+      "base_loss": 3.986223061879476,
+      "functional_return": 5.114494959513346,
+      "task_eval_loss": 50.67875289916992,
+      "loss_2alpha": 19.620176188151042,
+      "functional_return_2alpha": 15.633953126271566,
+      "perplexity": 8961.725104246922,
+      "perplexity_2alpha": 331844216.10230076,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 12.566880226135254,
+        "common_knowledge": 7.198934555053711,
+        "mixed_domain": 9.857317924499512,
+        "wikitext": 7.211630821228027
+      }
+    },
+    {
+      "alpha": -0.41919191919191917,
+      "loss": 8.83456859588623,
+      "base_loss": 3.986223061879476,
+      "functional_return": 4.848345534006754,
+      "task_eval_loss": 50.134727478027344,
+      "loss_2alpha": 18.136568959554037,
+      "functional_return_2alpha": 14.15034589767456,
+      "perplexity": 6867.590499939931,
+      "perplexity_2alpha": 75268250.18427531,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 12.047383308410645,
+        "common_knowledge": 7.070459842681885,
+        "mixed_domain": 9.545964241027832,
+        "wikitext": 6.973097324371338
+      }
+    },
+    {
+      "alpha": -0.398989898989899,
+      "loss": 8.45378173192342,
+      "base_loss": 3.986223061879476,
+      "functional_return": 4.467558670043944,
+      "task_eval_loss": 50.131778717041016,
+      "loss_2alpha": 16.638971773783364,
+      "functional_return_2alpha": 12.652748711903888,
+      "perplexity": 4692.786079769105,
+      "perplexity_2alpha": 16835019.58258528,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 11.457865715026855,
+        "common_knowledge": 6.87587833404541,
+        "mixed_domain": 9.203958511352539,
+        "wikitext": 6.640170574188232
+      }
+    },
+    {
+      "alpha": -0.3787878787878788,
+      "loss": 8.098468367258707,
+      "base_loss": 3.986223061879476,
+      "functional_return": 4.112245305379231,
+      "task_eval_loss": 50.21717834472656,
+      "loss_2alpha": 15.378590520222982,
+      "functional_return_2alpha": 11.392367458343506,
+      "perplexity": 3289.4260223869223,
+      "perplexity_2alpha": 4773500.829647533,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 10.974800109863281,
+        "common_knowledge": 6.5726318359375,
+        "mixed_domain": 8.852090835571289,
+        "wikitext": 6.3186211585998535
+      }
+    },
+    {
+      "alpha": -0.35858585858585856,
+      "loss": 7.698399766286214,
+      "base_loss": 3.986223061879476,
+      "functional_return": 3.712176704406738,
+      "task_eval_loss": 50.73007583618164,
+      "loss_2alpha": 13.879889170328775,
+      "functional_return_2alpha": 9.893666108449299,
+      "perplexity": 2204.8169449824804,
+      "perplexity_2alpha": 1066496.110945767,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 10.447929382324219,
+        "common_knowledge": 6.235918998718262,
+        "mixed_domain": 8.471729278564453,
+        "wikitext": 5.94075345993042
+      }
+    },
+    {
+      "alpha": -0.33838383838383834,
+      "loss": 7.387400182088216,
+      "base_loss": 3.986223061879476,
+      "functional_return": 3.40117712020874,
+      "task_eval_loss": 50.94517517089844,
+      "loss_2alpha": 12.927762858072917,
+      "functional_return_2alpha": 8.94153979619344,
+      "perplexity": 1615.500641068755,
+      "perplexity_2alpha": 411581.715130027,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 10.047831535339355,
+        "common_knowledge": 5.986716270446777,
+        "mixed_domain": 8.163657188415527,
+        "wikitext": 5.6760711669921875
+      }
+    },
+    {
+      "alpha": -0.3181818181818182,
+      "loss": 7.17752103805542,
+      "base_loss": 3.986223061879476,
+      "functional_return": 3.1912979761759437,
+      "task_eval_loss": 50.71958923339844,
+      "loss_2alpha": 12.13359317779541,
+      "functional_return_2alpha": 8.147370115915933,
+      "perplexity": 1309.6576393816315,
+      "perplexity_2alpha": 186016.9686425846,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 9.785036087036133,
+        "common_knowledge": 5.813335418701172,
+        "mixed_domain": 7.916223526000977,
+        "wikitext": 5.499320030212402
+      }
+    },
+    {
+      "alpha": -0.29797979797979796,
+      "loss": 7.088010152180989,
+      "base_loss": 3.986223061879476,
+      "functional_return": 3.1017870903015132,
+      "task_eval_loss": 50.19391632080078,
+      "loss_2alpha": 11.36424249013265,
+      "functional_return_2alpha": 7.3780194282531735,
+      "perplexity": 1197.5225406300024,
+      "perplexity_2alpha": 86184.22972881042,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 9.628838539123535,
+        "common_knowledge": 5.7825422286987305,
+        "mixed_domain": 7.793704986572266,
+        "wikitext": 5.431895732879639
+      }
+    },
+    {
+      "alpha": -0.2777777777777778,
+      "loss": 6.959767818450928,
+      "base_loss": 3.986223061879476,
+      "functional_return": 2.9735447565714517,
+      "task_eval_loss": 50.0393180847168,
+      "loss_2alpha": 10.744516118367512,
+      "functional_return_2alpha": 6.758293056488036,
+      "perplexity": 1053.3889513684287,
+      "perplexity_2alpha": 46375.01476848171,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 9.449019432067871,
+        "common_knowledge": 5.709282398223877,
+        "mixed_domain": 7.632887840270996,
+        "wikitext": 5.327181339263916
+      }
+    },
+    {
+      "alpha": -0.25757575757575757,
+      "loss": 6.960777791341146,
+      "base_loss": 3.986223061879476,
+      "functional_return": 2.9745547294616697,
+      "task_eval_loss": 49.432861328125,
+      "loss_2alpha": 10.105259068806966,
+      "functional_return_2alpha": 6.119036006927489,
+      "perplexity": 1054.453383085274,
+      "perplexity_2alpha": 24471.368213949663,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 9.384885787963867,
+        "common_knowledge": 5.771536350250244,
+        "mixed_domain": 7.627902030944824,
+        "wikitext": 5.334895133972168
+      }
+    },
+    {
+      "alpha": -0.23737373737373735,
+      "loss": 6.709403355916341,
+      "base_loss": 3.986223061879476,
+      "functional_return": 2.723180294036865,
+      "task_eval_loss": 49.049827575683594,
+      "loss_2alpha": 9.381332270304362,
+      "functional_return_2alpha": 5.395109208424886,
+      "perplexity": 820.0811968594084,
+      "perplexity_2alpha": 11864.811365019841,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 8.984658241271973,
+        "common_knowledge": 5.623350143432617,
+        "mixed_domain": 7.3380537033081055,
+        "wikitext": 5.1743879318237305
+      }
+    },
+    {
+      "alpha": -0.21717171717171713,
+      "loss": 6.632646814982096,
+      "base_loss": 3.986223061879476,
+      "functional_return": 2.6464237531026202,
+      "task_eval_loss": 48.764137268066406,
+      "loss_2alpha": 8.986592102050782,
+      "functional_return_2alpha": 5.0003690401713055,
+      "perplexity": 759.4897414619726,
+      "perplexity_2alpha": 7995.163713554063,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 8.791460037231445,
+        "common_knowledge": 5.597020626068115,
+        "mixed_domain": 7.259031295776367,
+        "wikitext": 5.126399993896484
+      }
+    },
+    {
+      "alpha": -0.19696969696969696,
+      "loss": 6.553549226125082,
+      "base_loss": 3.986223061879476,
+      "functional_return": 2.5673261642456056,
+      "task_eval_loss": 49.29509353637695,
+      "loss_2alpha": 8.424462477366129,
+      "functional_return_2alpha": 4.4382394154866525,
+      "perplexity": 701.7303589120778,
+      "perplexity_2alpha": 4557.194524719658,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 8.580084800720215,
+        "common_knowledge": 5.572775363922119,
+        "mixed_domain": 7.174722194671631,
+        "wikitext": 5.122861862182617
+      }
+    },
+    {
+      "alpha": -0.17676767676767674,
+      "loss": 6.5342562357584635,
+      "base_loss": 3.986223061879476,
+      "functional_return": 2.5480331738789874,
+      "task_eval_loss": 49.24934005737305,
+      "loss_2alpha": 7.638070901234944,
+      "functional_return_2alpha": 3.6518478393554683,
+      "perplexity": 688.3216448658823,
+      "perplexity_2alpha": 2075.7356526582225,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 8.449518203735352,
+        "common_knowledge": 5.604153156280518,
+        "mixed_domain": 7.159675598144531,
+        "wikitext": 5.149047374725342
+      }
+    },
+    {
+      "alpha": -0.15656565656565652,
+      "loss": 6.607477887471517,
+      "base_loss": 3.986223061879476,
+      "functional_return": 2.621254825592041,
+      "task_eval_loss": 49.405391693115234,
+      "loss_2alpha": 7.139609495798747,
+      "functional_return_2alpha": 3.153386433919271,
+      "perplexity": 740.6127524952709,
+      "perplexity_2alpha": 1260.9358921800963,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 8.46682357788086,
+        "common_knowledge": 5.703455448150635,
+        "mixed_domain": 7.185614109039307,
+        "wikitext": 5.293708324432373
+      }
+    },
+    {
+      "alpha": -0.13636363636363635,
+      "loss": 6.558089733123779,
+      "base_loss": 3.986223061879476,
+      "functional_return": 2.5718666712443032,
+      "task_eval_loss": 49.79013442993164,
+      "loss_2alpha": 7.0200777371724445,
+      "functional_return_2alpha": 3.0338546752929685,
+      "perplexity": 704.9238149863345,
+      "perplexity_2alpha": 1118.8735924352588,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 8.389540672302246,
+        "common_knowledge": 5.692625045776367,
+        "mixed_domain": 7.128761291503906,
+        "wikitext": 5.244850158691406
+      }
+    },
+    {
+      "alpha": -0.11616161616161613,
+      "loss": 6.172282536824544,
+      "base_loss": 3.986223061879476,
+      "functional_return": 2.186059474945068,
+      "task_eval_loss": 48.128204345703125,
+      "loss_2alpha": 6.698972511291504,
+      "functional_return_2alpha": 2.7127494494120277,
+      "perplexity": 479.2788301023724,
+      "perplexity_2alpha": 811.5715160504661,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 7.877603054046631,
+        "common_knowledge": 5.365453720092773,
+        "mixed_domain": 6.7398295402526855,
+        "wikitext": 4.932154655456543
+      }
+    },
+    {
+      "alpha": -0.09595959595959591,
+      "loss": 5.185589059193929,
+      "base_loss": 3.986223061879476,
+      "functional_return": 1.199365997314453,
+      "task_eval_loss": 44.0876579284668,
+      "loss_2alpha": 6.529298814137777,
+      "functional_return_2alpha": 2.5430757522583005,
+      "perplexity": 178.67867110996647,
+      "perplexity_2alpha": 684.9177884085385,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 6.607897758483887,
+        "common_knowledge": 4.487695693969727,
+        "mixed_domain": 5.705749034881592,
+        "wikitext": 4.114402770996094
+      }
+    },
+    {
+      "alpha": -0.07575757575757575,
+      "loss": 4.404063129425049,
+      "base_loss": 3.986223061879476,
+      "functional_return": 0.4178400675455731,
+      "task_eval_loss": 37.431671142578125,
+      "loss_2alpha": 6.607400671641032,
+      "functional_return_2alpha": 2.621177609761556,
+      "perplexity": 81.78248733469917,
+      "perplexity_2alpha": 740.5555676743343,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 5.566030979156494,
+        "common_knowledge": 3.828216314315796,
+        "mixed_domain": 4.862063407897949,
+        "wikitext": 3.504505157470703
+      }
+    },
+    {
+      "alpha": -0.055555555555555525,
+      "loss": 4.030123790105184,
+      "base_loss": 3.986223061879476,
+      "functional_return": 0.043900728225707564,
+      "task_eval_loss": 30.069835662841797,
+      "loss_2alpha": 5.936931578318278,
+      "functional_return_2alpha": 1.950708516438802,
+      "perplexity": 56.267876222337456,
+      "perplexity_2alpha": 378.77091571861064,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 4.98780632019043,
+        "common_knowledge": 3.535087823867798,
+        "mixed_domain": 4.484638214111328,
+        "wikitext": 3.225210189819336
+      }
+    },
+    {
+      "alpha": -0.035353535353535304,
+      "loss": 5.008014837900798,
+      "base_loss": 3.986223061879476,
+      "functional_return": 1.0217917760213218,
+      "task_eval_loss": 23.203981399536133,
+      "loss_2alpha": 4.1332709471384685,
+      "functional_return_2alpha": 0.14704788525899248,
+      "perplexity": 149.60744613042317,
+      "perplexity_2alpha": 62.38163662057971,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 6.104691028594971,
+        "common_knowledge": 4.458795547485352,
+        "mixed_domain": 5.48951530456543,
+        "wikitext": 4.142817497253418
+      }
+    },
+    {
+      "alpha": -0.015151515151515138,
+      "loss": 4.058683617909749,
+      "base_loss": 3.986223061879476,
+      "functional_return": 0.07246055603027335,
+      "task_eval_loss": 15.824651718139648,
+      "loss_2alpha": 5.437516276041666,
+      "functional_return_2alpha": 1.4512932141621904,
+      "perplexity": 57.89804494286138,
+      "perplexity_2alpha": 229.87053888610035,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 4.975767612457275,
+        "common_knowledge": 3.5391292572021484,
+        "mixed_domain": 4.706673622131348,
+        "wikitext": 3.143002986907959
+      }
+    },
+    {
+      "alpha": 0.005050505050505083,
+      "loss": 3.125493892033895,
+      "base_loss": 3.986223061879476,
+      "functional_return": 0.8607291698455812,
+      "task_eval_loss": 7.94172477722168,
+      "loss_2alpha": 3.2907000382741294,
+      "functional_return_2alpha": 0.6955230236053467,
+      "perplexity": 22.771138800765865,
+      "perplexity_2alpha": 26.861661266600755,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 3.870183229446411,
+        "common_knowledge": 2.7052249908447266,
+        "mixed_domain": 3.613964319229126,
+        "wikitext": 2.4228036403656006
+      }
+    },
+    {
+      "alpha": 0.025252525252525304,
+      "loss": 3.308716662724813,
+      "base_loss": 3.986223061879476,
+      "functional_return": 0.6775063991546633,
+      "task_eval_loss": 5.741321563720703,
+      "loss_2alpha": 2.2742255369822186,
+      "functional_return_2alpha": 1.7119975248972574,
+      "perplexity": 27.350003660984342,
+      "perplexity_2alpha": 9.720388015660397,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 4.0064520835876465,
+        "common_knowledge": 2.9098963737487793,
+        "mixed_domain": 3.7785677909851074,
+        "wikitext": 2.6328752040863037
+      }
+    },
+    {
+      "alpha": 0.045454545454545525,
+      "loss": 2.3483193635940554,
+      "base_loss": 3.986223061879476,
+      "functional_return": 1.6379036982854207,
+      "task_eval_loss": 3.8472118377685547,
+      "loss_2alpha": 2.18702810605367,
+      "functional_return_2alpha": 1.799194955825806,
+      "perplexity": 10.46796209466763,
+      "perplexity_2alpha": 8.908698028461584,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 2.917922019958496,
+        "common_knowledge": 2.0213730335235596,
+        "mixed_domain": 2.7351834774017334,
+        "wikitext": 1.810867190361023
+      }
+    },
+    {
+      "alpha": 0.06565656565656575,
+      "loss": 2.216512187321981,
+      "base_loss": 3.986223061879476,
+      "functional_return": 1.7697108745574952,
+      "task_eval_loss": 3.1758077144622803,
+      "loss_2alpha": 2.3329455931981404,
+      "functional_return_2alpha": 1.6532774686813356,
+      "perplexity": 9.175273358345972,
+      "perplexity_2alpha": 10.308260799905046,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 2.7490720748901367,
+        "common_knowledge": 1.9092005491256714,
+        "mixed_domain": 2.58609938621521,
+        "wikitext": 1.7113772630691528
+      }
+    },
+    {
+      "alpha": 0.08585858585858586,
+      "loss": 2.188246742884318,
+      "base_loss": 3.986223061879476,
+      "functional_return": 1.797976318995158,
+      "task_eval_loss": 2.6110551357269287,
+      "loss_2alpha": 2.410282595952352,
+      "functional_return_2alpha": 1.5759404659271241,
+      "perplexity": 8.919561113725711,
+      "perplexity_2alpha": 11.137108002042124,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 2.6947104930877686,
+        "common_knowledge": 1.8952584266662598,
+        "mixed_domain": 2.5276639461517334,
+        "wikitext": 1.7157044410705566
+      }
+    },
+    {
+      "alpha": 0.10606060606060608,
+      "loss": 2.2374955574671427,
+      "base_loss": 3.986223061879476,
+      "functional_return": 1.7487275044123334,
+      "task_eval_loss": 2.221207618713379,
+      "loss_2alpha": 2.509223747253418,
+      "functional_return_2alpha": 1.4769993146260583,
+      "perplexity": 9.369835663042666,
+      "perplexity_2alpha": 12.29538203107592,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 2.7376410961151123,
+        "common_knowledge": 1.9532182216644287,
+        "mixed_domain": 2.548952579498291,
+        "wikitext": 1.7934683561325073
+      }
+    },
+    {
+      "alpha": 0.1262626262626263,
+      "loss": 2.3266600290934245,
+      "base_loss": 3.986223061879476,
+      "functional_return": 1.6595630327860516,
+      "task_eval_loss": 2.0237984657287598,
+      "loss_2alpha": 2.7403565724690755,
+      "functional_return_2alpha": 1.2458664894104006,
+      "perplexity": 10.243670770876573,
+      "perplexity_2alpha": 15.492508313509344,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 2.8291406631469727,
+        "common_knowledge": 2.042935848236084,
+        "mixed_domain": 2.624830961227417,
+        "wikitext": 1.8912407159805298
+      }
+    },
+    {
+      "alpha": 0.14646464646464652,
+      "loss": 2.357389052708944,
+      "base_loss": 3.986223061879476,
+      "functional_return": 1.6288340091705322,
+      "task_eval_loss": 1.877604603767395,
+      "loss_2alpha": 2.9879422505696613,
+      "functional_return_2alpha": 0.9982808113098147,
+      "perplexity": 10.563335104532202,
+      "perplexity_2alpha": 19.844804812180687,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 2.868030309677124,
+        "common_knowledge": 2.0727462768554688,
+        "mixed_domain": 2.651277542114258,
+        "wikitext": 1.9168987274169922
+      }
+    },
+    {
+      "alpha": 0.16666666666666674,
+      "loss": 2.3986197153727216,
+      "base_loss": 3.986223061879476,
+      "functional_return": 1.5876033465067545,
+      "task_eval_loss": 1.7547935247421265,
+      "loss_2alpha": 3.2634302775065103,
+      "functional_return_2alpha": 0.7227927843729658,
+      "perplexity": 11.007971755508759,
+      "perplexity_2alpha": 26.139047719120985,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 2.918698310852051,
+        "common_knowledge": 2.110987663269043,
+        "mixed_domain": 2.691152811050415,
+        "wikitext": 1.9538769721984863
+      }
+    },
+    {
+      "alpha": 0.18686868686868696,
+      "loss": 2.437747001647949,
+      "base_loss": 3.986223061879476,
+      "functional_return": 1.5484760602315268,
+      "task_eval_loss": 1.6510199308395386,
+      "loss_2alpha": 3.5413732369740805,
+      "functional_return_2alpha": 0.4448498249053956,
+      "perplexity": 11.44722109763901,
+      "perplexity_2alpha": 34.51428295206384,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 2.973245859146118,
+        "common_knowledge": 2.147357702255249,
+        "mixed_domain": 2.730062246322632,
+        "wikitext": 1.983702301979065
+      }
+    },
+    {
+      "alpha": 0.20707070707070718,
+      "loss": 2.492025597890218,
+      "base_loss": 3.986223061879476,
+      "functional_return": 1.494197463989258,
+      "task_eval_loss": 1.5424784421920776,
+      "loss_2alpha": 3.8799010435740153,
+      "functional_return_2alpha": 0.10632201830546073,
+      "perplexity": 12.08573217661349,
+      "perplexity_2alpha": 48.4194234211768,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 3.0451037883758545,
+        "common_knowledge": 2.1936380863189697,
+        "mixed_domain": 2.784116268157959,
+        "wikitext": 2.0323705673217773
+      }
+    },
+    {
+      "alpha": 0.2272727272727273,
+      "loss": 2.5698417822519937,
+      "base_loss": 3.986223061879476,
+      "functional_return": 1.4163812796274824,
+      "task_eval_loss": 1.4644685983657837,
+      "loss_2alpha": 4.213562281926473,
+      "functional_return_2alpha": 0.2273392200469968,
+      "perplexity": 13.063757359144493,
+      "perplexity_2alpha": 67.59691067471603,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 3.1383790969848633,
+        "common_knowledge": 2.2640464305877686,
+        "mixed_domain": 2.8627285957336426,
+        "wikitext": 2.095628261566162
+      }
+    },
+    {
+      "alpha": 0.24747474747474751,
+      "loss": 2.659127378463745,
+      "base_loss": 3.986223061879476,
+      "functional_return": 1.327095683415731,
+      "task_eval_loss": 1.4299622774124146,
+      "loss_2alpha": 4.532075293858846,
+      "functional_return_2alpha": 0.5458522319793704,
+      "perplexity": 14.283819290424466,
+      "perplexity_2alpha": 92.95126224088543,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 3.251812219619751,
+        "common_knowledge": 2.3449041843414307,
+        "mixed_domain": 2.960096836090088,
+        "wikitext": 2.169527053833008
+      }
+    },
+    {
+      "alpha": 0.26767676767676774,
+      "loss": 2.8136508464813232,
+      "base_loss": 3.986223061879476,
+      "functional_return": 1.1725722153981528,
+      "task_eval_loss": 1.4109734296798706,
+      "loss_2alpha": 4.999937693277995,
+      "functional_return_2alpha": 1.013714631398519,
+      "perplexity": 16.670669309245604,
+      "perplexity_2alpha": 148.40391225320394,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 3.440425395965576,
+        "common_knowledge": 2.480480194091797,
+        "mixed_domain": 3.1215808391571045,
+        "wikitext": 2.3043317794799805
+      }
+    },
+    {
+      "alpha": 0.28787878787878796,
+      "loss": 2.9457762400309244,
+      "base_loss": 3.986223061879476,
+      "functional_return": 1.0404468218485516,
+      "task_eval_loss": 1.4138762950897217,
+      "loss_2alpha": 5.39116907119751,
+      "functional_return_2alpha": 1.4049460093180337,
+      "perplexity": 19.025424952533314,
+      "perplexity_2alpha": 219.45979977243698,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 3.5994114875793457,
+        "common_knowledge": 2.5984110832214355,
+        "mixed_domain": 3.2627077102661133,
+        "wikitext": 2.416097640991211
+      }
+    },
+    {
+      "alpha": 0.3080808080808082,
+      "loss": 3.098797257741292,
+      "base_loss": 3.986223061879476,
+      "functional_return": 0.887425804138184,
+      "task_eval_loss": 1.4224853515625,
+      "loss_2alpha": 5.794071292877197,
+      "functional_return_2alpha": 1.8078482309977209,
+      "perplexity": 22.171268916599118,
+      "perplexity_2alpha": 328.3471040446455,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 3.7792224884033203,
+        "common_knowledge": 2.7336714267730713,
+        "mixed_domain": 3.427619457244873,
+        "wikitext": 2.5495314598083496
+      }
+    },
+    {
+      "alpha": 0.3282828282828284,
+      "loss": 3.237394920984904,
+      "base_loss": 3.986223061879476,
+      "functional_return": 0.7488281408945721,
+      "task_eval_loss": 1.4417091608047485,
+      "loss_2alpha": 6.2228649139404295,
+      "functional_return_2alpha": 2.2366418520609535,
+      "perplexity": 25.46729095095605,
+      "perplexity_2alpha": 504.14549851576925,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 3.94541597366333,
+        "common_knowledge": 2.8562543392181396,
+        "mixed_domain": 3.5750322341918945,
+        "wikitext": 2.672119617462158
+      }
+    },
+    {
+      "alpha": 0.3484848484848485,
+      "loss": 3.362025594711304,
+      "base_loss": 3.986223061879476,
+      "functional_return": 0.6241974671681723,
+      "task_eval_loss": 1.4565248489379883,
+      "loss_2alpha": 6.60730094909668,
+      "functional_return_2alpha": 2.621077887217204,
+      "perplexity": 28.84756521344238,
+      "perplexity_2alpha": 740.4817212710285,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 4.089570045471191,
+        "common_knowledge": 2.967912435531616,
+        "mixed_domain": 3.7112791538238525,
+        "wikitext": 2.784471273422241
+      }
+    },
+    {
+      "alpha": 0.36868686868686873,
+      "loss": 3.508780765533447,
+      "base_loss": 3.986223061879476,
+      "functional_return": 0.47744229634602897,
+      "task_eval_loss": 1.477433204650879,
+      "loss_2alpha": 7.016915321350098,
+      "functional_return_2alpha": 3.0306922594706216,
+      "perplexity": 33.40751135388718,
+      "perplexity_2alpha": 1115.3408378470574,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 4.256170749664307,
+        "common_knowledge": 3.1004791259765625,
+        "mixed_domain": 3.870353937149048,
+        "wikitext": 2.9163248538970947
+      }
+    },
+    {
+      "alpha": 0.38888888888888895,
+      "loss": 3.686252164840698,
+      "base_loss": 3.986223061879476,
+      "functional_return": 0.299970897038778,
+      "task_eval_loss": 1.5021790266036987,
+      "loss_2alpha": 7.438560994466146,
+      "functional_return_2alpha": 3.4523379325866697,
+      "perplexity": 39.89504636122664,
+      "perplexity_2alpha": 1700.3017162882866,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 4.455504894256592,
+        "common_knowledge": 3.2603845596313477,
+        "mixed_domain": 4.060647487640381,
+        "wikitext": 3.077036142349243
+      }
+    },
+    {
+      "alpha": 0.40909090909090917,
+      "loss": 3.8415133794148764,
+      "base_loss": 3.986223061879476,
+      "functional_return": 0.1447096824645997,
+      "task_eval_loss": 1.528659462928772,
+      "loss_2alpha": 7.820863056182861,
+      "functional_return_2alpha": 3.834639994303385,
+      "perplexity": 46.595938441009466,
+      "perplexity_2alpha": 2492.0552638913605,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 4.626051425933838,
+        "common_knowledge": 3.4053564071655273,
+        "mixed_domain": 4.225909233093262,
+        "wikitext": 3.218656301498413
+      }
+    },
+    {
+      "alpha": 0.4292929292929294,
+      "loss": 3.997007735570272,
+      "base_loss": 3.986223061879476,
+      "functional_return": 0.01078467369079572,
+      "task_eval_loss": 1.55545973777771,
+      "loss_2alpha": 8.209722169240315,
+      "functional_return_2alpha": 4.223499107360839,
+      "perplexity": 54.43502211352258,
+      "perplexity_2alpha": 3676.5208737705034,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 4.7981719970703125,
+        "common_knowledge": 3.5470387935638428,
+        "mixed_domain": 4.393427848815918,
+        "wikitext": 3.361623764038086
+      }
+    },
+    {
+      "alpha": 0.4494949494949496,
+      "loss": 4.183123811086019,
+      "base_loss": 3.986223061879476,
+      "functional_return": 0.19690074920654288,
+      "task_eval_loss": 1.5864235162734985,
+      "loss_2alpha": 8.612504005432129,
+      "functional_return_2alpha": 4.626280943552652,
+      "perplexity": 65.57036304966896,
+      "perplexity_2alpha": 5500.0034881647225,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 5.000262260437012,
+        "common_knowledge": 3.722470283508301,
+        "mixed_domain": 4.591960906982422,
+        "wikitext": 3.5359318256378174
+      }
+    },
+    {
+      "alpha": 0.4696969696969697,
+      "loss": 4.346014340718587,
+      "base_loss": 3.986223061879476,
+      "functional_return": 0.3597912788391109,
+      "task_eval_loss": 1.6119617223739624,
+      "loss_2alpha": 8.984200604756673,
+      "functional_return_2alpha": 4.997977542877196,
+      "perplexity": 77.17027474491022,
+      "perplexity_2alpha": 7976.066146159506,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 5.170810222625732,
+        "common_knowledge": 3.875492572784424,
+        "mixed_domain": 4.766150951385498,
+        "wikitext": 3.6894760131835938
+      }
+    },
+    {
+      "alpha": 0.48989898989898994,
+      "loss": 4.500065533320109,
+      "base_loss": 3.986223061879476,
+      "functional_return": 0.5138424714406331,
+      "task_eval_loss": 1.64058518409729,
+      "loss_2alpha": 9.40070203145345,
+      "functional_return_2alpha": 5.414478969573974,
+      "perplexity": 90.02303061530137,
+      "perplexity_2alpha": 12096.8701332762,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 5.334071159362793,
+        "common_knowledge": 4.020688056945801,
+        "mixed_domain": 4.929877281188965,
+        "wikitext": 3.8351457118988037
+      }
+    },
+    {
+      "alpha": 0.5101010101010102,
+      "loss": 4.792612552642822,
+      "base_loss": 3.986223061879476,
+      "functional_return": 0.8063894907633462,
+      "task_eval_loss": 1.6765718460083008,
+      "loss_2alpha": 9.720515886942545,
+      "functional_return_2alpha": 5.7342928250630685,
+      "perplexity": 120.6160732339812,
+      "perplexity_2alpha": 16655.83504125518,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 5.643190383911133,
+        "common_knowledge": 4.296447277069092,
+        "mixed_domain": 5.237987995147705,
+        "wikitext": 4.115725994110107
+      }
+    },
+    {
+      "alpha": 0.5303030303030305,
+      "loss": 4.958191172281901,
+      "base_loss": 3.986223061879476,
+      "functional_return": 0.9719681104024249,
+      "task_eval_loss": 1.7082160711288452,
+      "loss_2alpha": 10.128225517272949,
+      "functional_return_2alpha": 6.142002455393472,
+      "perplexity": 142.33610141926036,
+      "perplexity_2alpha": 25039.89212938755,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 5.812588214874268,
+        "common_knowledge": 4.453873634338379,
+        "mixed_domain": 5.411007881164551,
+        "wikitext": 4.276230812072754
+      }
+    },
+    {
+      "alpha": 0.5505050505050506,
+      "loss": 5.146502939860026,
+      "base_loss": 3.986223061879476,
+      "functional_return": 1.16027987798055,
+      "task_eval_loss": 1.7380268573760986,
+      "loss_2alpha": 10.517057418823242,
+      "functional_return_2alpha": 6.530834356943766,
+      "perplexity": 171.8295401665881,
+      "perplexity_2alpha": 36940.264678634434,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 6.013332366943359,
+        "common_knowledge": 4.635172367095947,
+        "mixed_domain": 5.607988357543945,
+        "wikitext": 4.458113670349121
+      }
+    },
+    {
+      "alpha": 0.5707070707070707,
+      "loss": 5.342818323771159,
+      "base_loss": 3.986223061879476,
+      "functional_return": 1.3565952618916826,
+      "task_eval_loss": 1.7719746828079224,
+      "loss_2alpha": 10.922979354858398,
+      "functional_return_2alpha": 6.936756292978922,
+      "perplexity": 209.10119549849446,
+      "perplexity_2alpha": 55435.71581748219,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 6.2154011726379395,
+        "common_knowledge": 4.823850154876709,
+        "mixed_domain": 5.8080573081970215,
+        "wikitext": 4.64971399307251
+      }
+    },
+    {
+      "alpha": 0.590909090909091,
+      "loss": 5.539647579193115,
+      "base_loss": 3.986223061879476,
+      "functional_return": 1.5534245173136392,
+      "task_eval_loss": 1.8061985969543457,
+      "loss_2alpha": 11.32442111968994,
+      "functional_return_2alpha": 7.338198057810464,
+      "perplexity": 254.58826144618982,
+      "perplexity_2alpha": 82819.6904683139,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 6.4168901443481445,
+        "common_knowledge": 5.0136027336120605,
+        "mixed_domain": 6.013070106506348,
+        "wikitext": 4.8424248695373535
+      }
+    },
+    {
+      "alpha": 0.6111111111111112,
+      "loss": 5.743709723154704,
+      "base_loss": 3.986223061879476,
+      "functional_return": 1.757486661275228,
+      "task_eval_loss": 1.8368861675262451,
+      "loss_2alpha": 11.730891672770182,
+      "functional_return_2alpha": 7.744668610890706,
+      "perplexity": 312.2205169200349,
+      "perplexity_2alpha": 124354.50447861243,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 6.627995014190674,
+        "common_knowledge": 5.209988594055176,
+        "mixed_domain": 6.223803520202637,
+        "wikitext": 5.047552585601807
+      }
+    },
+    {
+      "alpha": 0.6313131313131315,
+      "loss": 5.983578936258952,
+      "base_loss": 3.986223061879476,
+      "functional_return": 1.9973558743794757,
+      "task_eval_loss": 1.8761494159698486,
+      "loss_2alpha": 12.167765871683757,
+      "functional_return_2alpha": 8.18154280980428,
+      "perplexity": 396.8581596064358,
+      "perplexity_2alpha": 192483.53020704916,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 6.8692708015441895,
+        "common_knowledge": 5.4437761306762695,
+        "mixed_domain": 6.467409133911133,
+        "wikitext": 5.281824111938477
+      }
+    },
+    {
+      "alpha": 0.6515151515151516,
+      "loss": 6.1665020942687985,
+      "base_loss": 3.986223061879476,
+      "functional_return": 2.1802790323893224,
+      "task_eval_loss": 1.9044703245162964,
+      "loss_2alpha": 12.593259874979655,
+      "functional_return_2alpha": 8.607036813100178,
+      "perplexity": 476.51637814613554,
+      "perplexity_2alpha": 294566.4446052145,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 7.056351661682129,
+        "common_knowledge": 5.622622966766357,
+        "mixed_domain": 6.654864311218262,
+        "wikitext": 5.470088005065918
+      }
+    },
+    {
+      "alpha": 0.6717171717171717,
+      "loss": 6.3492581685384115,
+      "base_loss": 3.986223061879476,
+      "functional_return": 2.3630351066589355,
+      "task_eval_loss": 1.9363088607788086,
+      "loss_2alpha": 13.018574968973796,
+      "functional_return_2alpha": 9.03235190709432,
+      "perplexity": 572.0681733970022,
+      "perplexity_2alpha": 450708.00463606423,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 7.23915433883667,
+        "common_knowledge": 5.8028388023376465,
+        "mixed_domain": 6.837957382202148,
+        "wikitext": 5.652705192565918
+      }
+    },
+    {
+      "alpha": 0.691919191919192,
+      "loss": 6.564512952168783,
+      "base_loss": 3.986223061879476,
+      "functional_return": 2.5782898902893066,
+      "task_eval_loss": 1.97152841091156,
+      "loss_2alpha": 13.481749343872071,
+      "functional_return_2alpha": 9.495526281992595,
+      "perplexity": 709.4662680278723,
+      "perplexity_2alpha": 716224.7861954854,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 7.452471733093262,
+        "common_knowledge": 6.0147528648376465,
+        "mixed_domain": 7.052767753601074,
+        "wikitext": 5.8702850341796875
+      }
+    },
+    {
+      "alpha": 0.7121212121212122,
+      "loss": 6.7784296353658045,
+      "base_loss": 3.986223061879476,
+      "functional_return": 2.7922065734863284,
+      "task_eval_loss": 2.0108017921447754,
+      "loss_2alpha": 13.934133593241373,
+      "functional_return_2alpha": 9.947910531361897,
+      "perplexity": 878.6877798845765,
+      "perplexity_2alpha": 1125945.3965841022,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 7.662241458892822,
+        "common_knowledge": 6.229185581207275,
+        "mixed_domain": 7.267845630645752,
+        "wikitext": 6.0897440910339355
+      }
+    },
+    {
+      "alpha": 0.7323232323232325,
+      "loss": 6.962625408172608,
+      "base_loss": 3.986223061879476,
+      "functional_return": 2.9764023462931317,
+      "task_eval_loss": 2.0446741580963135,
+      "loss_2alpha": 14.38524169921875,
+      "functional_return_2alpha": 10.399018637339273,
+      "perplexity": 1056.4034098002128,
+      "perplexity_2alpha": 1767791.7012764206,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 7.837888717651367,
+        "common_knowledge": 6.411083698272705,
+        "mixed_domain": 7.452217102050781,
+        "wikitext": 6.281398296356201
+      }
+    },
+    {
+      "alpha": 0.7525252525252526,
+      "loss": 7.212670612335205,
+      "base_loss": 3.986223061879476,
+      "functional_return": 3.226447550455729,
+      "task_eval_loss": 2.0815794467926025,
+      "loss_2alpha": 14.903949483235676,
+      "functional_return_2alpha": 10.9177264213562,
+      "perplexity": 1356.5101469783813,
+      "perplexity_2alpha": 2969634.630672384,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 8.082478523254395,
+        "common_knowledge": 6.653998374938965,
+        "mixed_domain": 7.708110809326172,
+        "wikitext": 6.539889335632324
+      }
+    },
+    {
+      "alpha": 0.7727272727272729,
+      "loss": 7.385121790568034,
+      "base_loss": 3.986223061879476,
+      "functional_return": 3.398898728688558,
+      "task_eval_loss": 2.114372730255127,
+      "loss_2alpha": 15.347662925720215,
+      "functional_return_2alpha": 11.361439863840738,
+      "perplexity": 1611.824088011386,
+      "perplexity_2alpha": 4628127.542146057,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 8.246427536010742,
+        "common_knowledge": 6.823259353637695,
+        "mixed_domain": 7.880634307861328,
+        "wikitext": 6.723917484283447
+      }
+    },
+    {
+      "alpha": 0.792929292929293,
+      "loss": 7.584445254007975,
+      "base_loss": 3.986223061879476,
+      "functional_return": 3.598222192128499,
+      "task_eval_loss": 2.149278402328491,
+      "loss_2alpha": 15.83111826578776,
+      "functional_return_2alpha": 11.844895203908283,
+      "perplexity": 1967.3549488841559,
+      "perplexity_2alpha": 7505287.017237271,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 8.433843612670898,
+        "common_knowledge": 7.013579368591309,
+        "mixed_domain": 8.080288887023926,
+        "wikitext": 6.938868999481201
+      }
+    },
+    {
+      "alpha": 0.8131313131313131,
+      "loss": 7.766157595316569,
+      "base_loss": 3.986223061879476,
+      "functional_return": 3.779934533437093,
+      "task_eval_loss": 2.1848981380462646,
+      "loss_2alpha": 16.305613454182943,
+      "functional_return_2alpha": 12.319390392303466,
+      "perplexity": 2359.3881249545707,
+      "perplexity_2alpha": 12062517.244002197,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 8.609560012817383,
+        "common_knowledge": 7.1899333000183105,
+        "mixed_domain": 8.261486053466797,
+        "wikitext": 7.136535167694092
+      }
+    },
+    {
+      "alpha": 0.8333333333333335,
+      "loss": 7.974940490722656,
+      "base_loss": 3.986223061879476,
+      "functional_return": 3.9887174288431804,
+      "task_eval_loss": 2.2245469093322754,
+      "loss_2alpha": 16.79167849222819,
+      "functional_return_2alpha": 12.805455430348713,
+      "perplexity": 2907.1848624837653,
+      "perplexity_2alpha": 19612516.007822484,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 8.80725383758545,
+        "common_knowledge": 7.389730453491211,
+        "mixed_domain": 8.46826457977295,
+        "wikitext": 7.364344120025635
+      }
+    },
+    {
+      "alpha": 0.8535353535353536,
+      "loss": 8.164147440592448,
+      "base_loss": 3.986223061879476,
+      "functional_return": 4.177924378712971,
+      "task_eval_loss": 2.2646262645721436,
+      "loss_2alpha": 17.28664182027181,
+      "functional_return_2alpha": 13.300418758392334,
+      "perplexity": 3512.7252531357644,
+      "perplexity_2alpha": 32173118.101493284,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 8.990236282348633,
+        "common_knowledge": 7.5696821212768555,
+        "mixed_domain": 8.659919738769531,
+        "wikitext": 7.568723678588867
+      }
+    },
+    {
+      "alpha": 0.8737373737373739,
+      "loss": 8.363939158121745,
+      "base_loss": 3.986223061879476,
+      "functional_return": 4.377716096242269,
+      "task_eval_loss": 2.302107334136963,
+      "loss_2alpha": 17.782664362589518,
+      "functional_return_2alpha": 13.796441300710041,
+      "perplexity": 4289.55877988761,
+      "perplexity_2alpha": 52833940.91889323,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 9.184165000915527,
+        "common_knowledge": 7.7623772621154785,
+        "mixed_domain": 8.861711502075195,
+        "wikitext": 7.7807183265686035
+      }
+    },
+    {
+      "alpha": 0.893939393939394,
+      "loss": 8.556096903483073,
+      "base_loss": 3.986223061879476,
+      "functional_return": 4.569873841603597,
+      "task_eval_loss": 2.342144727706909,
+      "loss_2alpha": 18.26455154418945,
+      "functional_return_2alpha": 14.278328482309975,
+      "perplexity": 5198.351855596069,
+      "perplexity_2alpha": 85544865.94669008,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 9.36585521697998,
+        "common_knowledge": 7.946822643280029,
+        "mixed_domain": 9.062520980834961,
+        "wikitext": 7.984981536865234
+      }
+    },
+    {
+      "alpha": 0.9141414141414144,
+      "loss": 8.757600021362304,
+      "base_loss": 3.986223061879476,
+      "functional_return": 4.7713769594828275,
+      "task_eval_loss": 2.384258985519409,
+      "loss_2alpha": 18.76797866821289,
+      "functional_return_2alpha": 14.781755606333414,
+      "perplexity": 6358.832188807715,
+      "perplexity_2alpha": 141523829.63921124,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 9.563735961914062,
+        "common_knowledge": 8.134611129760742,
+        "mixed_domain": 9.275543212890625,
+        "wikitext": 8.195113182067871
+      }
+    },
+    {
+      "alpha": 0.9343434343434345,
+      "loss": 8.94329439798991,
+      "base_loss": 3.986223061879476,
+      "functional_return": 4.957071336110433,
+      "task_eval_loss": 2.4220130443573,
+      "loss_2alpha": 19.244495391845703,
+      "functional_return_2alpha": 15.258272329966227,
+      "perplexity": 7656.378712312502,
+      "perplexity_2alpha": 227917753.56130043,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 9.742734909057617,
+        "common_knowledge": 8.308716773986816,
+        "mixed_domain": 9.471535682678223,
+        "wikitext": 8.386126518249512
+      }
+    },
+    {
+      "alpha": 0.9545454545454546,
+      "loss": 9.141007995605468,
+      "base_loss": 3.986223061879476,
+      "functional_return": 5.154784933725992,
+      "task_eval_loss": 2.46014404296875,
+      "loss_2alpha": 19.753252919514974,
+      "functional_return_2alpha": 15.767029857635498,
+      "perplexity": 9330.165158920654,
+      "perplexity_2alpha": 379078141.355872,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 9.938645362854004,
+        "common_knowledge": 8.492822647094727,
+        "mixed_domain": 9.680904388427734,
+        "wikitext": 8.589612007141113
+      }
+    },
+    {
+      "alpha": 0.9747474747474749,
+      "loss": 9.350360870361328,
+      "base_loss": 3.986223061879476,
+      "functional_return": 5.364137808481852,
+      "task_eval_loss": 2.507794141769409,
+      "loss_2alpha": 20.237822850545246,
+      "functional_return_2alpha": 16.25159978866577,
+      "perplexity": 11502.973778542437,
+      "perplexity_2alpha": 615424511.6812342,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 10.143357276916504,
+        "common_knowledge": 8.691834449768066,
+        "mixed_domain": 9.907590866088867,
+        "wikitext": 8.802467346191406
+      }
+    },
+    {
+      "alpha": 0.994949494949495,
+      "loss": 9.535816383361816,
+      "base_loss": 3.986223061879476,
+      "functional_return": 5.549593321482339,
+      "task_eval_loss": 2.548410415649414,
+      "loss_2alpha": 20.67301279703776,
+      "functional_return_2alpha": 16.686789735158285,
+      "perplexity": 13846.896171527507,
+      "perplexity_2alpha": 950988755.9446911,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 10.32692813873291,
+        "common_knowledge": 8.869377136230469,
+        "mixed_domain": 10.105884552001953,
+        "wikitext": 8.989419937133789
+      }
+    },
+    {
+      "alpha": 1.0151515151515154,
+      "loss": 9.660815747578939,
+      "base_loss": 3.986223061879476,
+      "functional_return": 5.674592685699462,
+      "task_eval_loss": 2.576063632965088,
+      "loss_2alpha": 21.106545639038085,
+      "functional_return_2alpha": 17.12032257715861,
+      "perplexity": 15690.579000738724,
+      "perplexity_2alpha": 1467088467.0669117,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 10.453510284423828,
+        "common_knowledge": 8.984635353088379,
+        "mixed_domain": 10.237571716308594,
+        "wikitext": 9.117594718933105
+      }
+    },
+    {
+      "alpha": 1.0353535353535355,
+      "loss": 9.871690114339193,
+      "base_loss": 3.986223061879476,
+      "functional_return": 5.885467052459717,
+      "task_eval_loss": 2.626491069793701,
+      "loss_2alpha": 21.554594802856446,
+      "functional_return_2alpha": 17.56837174097697,
+      "perplexity": 19374.055687792403,
+      "perplexity_2alpha": 2296368508.7611585,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 10.669780731201172,
+        "common_knowledge": 9.173534393310547,
+        "mixed_domain": 10.468992233276367,
+        "wikitext": 9.330703735351562
+      }
+    },
+    {
+      "alpha": 1.0555555555555556,
+      "loss": 10.080319277445476,
+      "base_loss": 3.986223061879476,
+      "functional_return": 6.094096215565999,
+      "task_eval_loss": 2.667379379272461,
+      "loss_2alpha": 22.01202112833659,
+      "functional_return_2alpha": 18.025798066457114,
+      "perplexity": 23868.60503291041,
+      "perplexity_2alpha": 3628267608.019224,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 10.884600639343262,
+        "common_knowledge": 9.361201286315918,
+        "mixed_domain": 10.696697235107422,
+        "wikitext": 9.53693962097168
+      }
+    },
+    {
+      "alpha": 1.075757575757576,
+      "loss": 10.270028495788575,
+      "base_loss": 3.986223061879476,
+      "functional_return": 6.283805433909098,
+      "task_eval_loss": 2.7135491371154785,
+      "loss_2alpha": 22.425499598185223,
+      "functional_return_2alpha": 18.439276536305748,
+      "perplexity": 28854.709392471825,
+      "perplexity_2alpha": 5486188550.056665,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 11.085953712463379,
+        "common_knowledge": 9.523651123046875,
+        "mixed_domain": 10.90328598022461,
+        "wikitext": 9.726777076721191
+      }
+    },
+    {
+      "alpha": 1.095959595959596,
+      "loss": 10.459409523010255,
+      "base_loss": 3.986223061879476,
+      "functional_return": 6.473186461130778,
+      "task_eval_loss": 2.7583160400390625,
+      "loss_2alpha": 22.826983896891274,
+      "functional_return_2alpha": 18.8407608350118,
+      "perplexity": 34870.95487015896,
+      "perplexity_2alpha": 8196588736.285131,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 11.288820266723633,
+        "common_knowledge": 9.68555736541748,
+        "mixed_domain": 11.111920356750488,
+        "wikitext": 9.91130256652832
+      }
+    },
+    {
+      "alpha": 1.1161616161616164,
+      "loss": 10.666338857014974,
+      "base_loss": 3.986223061879476,
+      "functional_return": 6.680115795135498,
+      "task_eval_loss": 2.803068161010742,
+      "loss_2alpha": 23.220648447672527,
+      "functional_return_2alpha": 19.234425385793052,
+      "perplexity": 42887.6359470831,
+      "perplexity_2alpha": 12150649324.765745,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 11.518431663513184,
+        "common_knowledge": 9.865790367126465,
+        "mixed_domain": 11.339781761169434,
+        "wikitext": 10.113470077514648
+      }
+    },
+    {
+      "alpha": 1.1363636363636365,
+      "loss": 10.877641487121583,
+      "base_loss": 3.986223061879476,
+      "functional_return": 6.891418425242106,
+      "task_eval_loss": 2.8572776317596436,
+      "loss_2alpha": 23.592703119913736,
+      "functional_return_2alpha": 19.60648005803426,
+      "perplexity": 52978.50197435572,
+      "perplexity_2alpha": 17627096341.151924,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 11.7501802444458,
+        "common_knowledge": 10.047418594360352,
+        "mixed_domain": 11.571499824523926,
+        "wikitext": 10.313127517700195
+      }
+    },
+    {
+      "alpha": 1.1565656565656568,
+      "loss": 11.06456381479899,
+      "base_loss": 3.986223061879476,
+      "functional_return": 7.078340752919514,
+      "task_eval_loss": 2.9052987098693848,
+      "loss_2alpha": 23.938399887084962,
+      "functional_return_2alpha": 19.952176825205488,
+      "perplexity": 63867.36658199373,
+      "perplexity_2alpha": 24906630424.65551,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 11.955564498901367,
+        "common_knowledge": 10.207991600036621,
+        "mixed_domain": 11.779084205627441,
+        "wikitext": 10.494811058044434
+      }
+    },
+    {
+      "alpha": 1.176767676767677,
+      "loss": 11.279343287150065,
+      "base_loss": 3.986223061879476,
+      "functional_return": 7.293120225270588,
+      "task_eval_loss": 2.95796537399292,
+      "loss_2alpha": 24.249081420898438,
+      "functional_return_2alpha": 20.262858359018963,
+      "perplexity": 79169.25335003044,
+      "perplexity_2alpha": 33981477064.82811,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 12.189690589904785,
+        "common_knowledge": 10.38896656036377,
+        "mixed_domain": 12.021783828735352,
+        "wikitext": 10.700316429138184
+      }
+    },
+    {
+      "alpha": 1.196969696969697,
+      "loss": 11.482016563415527,
+      "base_loss": 3.986223061879476,
+      "functional_return": 7.495793501536051,
+      "task_eval_loss": 3.00691556930542,
+      "loss_2alpha": 24.565135192871093,
+      "functional_return_2alpha": 20.57891213099162,
+      "perplexity": 96956.3894816414,
+      "perplexity_2alpha": 46612528453.19894,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 12.411816596984863,
+        "common_knowledge": 10.559980392456055,
+        "mixed_domain": 12.249011039733887,
+        "wikitext": 10.895698547363281
+      }
+    },
+    {
+      "alpha": 1.2171717171717173,
+      "loss": 11.673544629414875,
+      "base_loss": 3.986223061879476,
+      "functional_return": 7.687321567535399,
+      "task_eval_loss": 3.0510406494140625,
+      "loss_2alpha": 24.87792574564616,
+      "functional_return_2alpha": 20.891702683766685,
+      "perplexity": 117423.7692186236,
+      "perplexity_2alpha": 63730286745.72114,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 12.630704879760742,
+        "common_knowledge": 10.72005558013916,
+        "mixed_domain": 12.465535163879395,
+        "wikitext": 11.079758644104004
+      }
+    },
+    {
+      "alpha": 1.2373737373737375,
+      "loss": 11.888213030497234,
+      "base_loss": 3.986223061879476,
+      "functional_return": 7.901989968617757,
+      "task_eval_loss": 3.1021575927734375,
+      "loss_2alpha": 25.195441055297852,
+      "functional_return_2alpha": 21.209217993418378,
+      "perplexity": 145540.98801563817,
+      "perplexity_2alpha": 87546949777.83002,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 12.859295845031738,
+        "common_knowledge": 10.898025512695312,
+        "mixed_domain": 12.709146499633789,
+        "wikitext": 11.284797668457031
+      }
+    },
+    {
+      "alpha": 1.2575757575757578,
+      "loss": 12.117188517252604,
+      "base_loss": 3.986223061879476,
+      "functional_return": 8.130965455373127,
+      "task_eval_loss": 3.159459352493286,
+      "loss_2alpha": 25.412006632486978,
+      "functional_return_2alpha": 21.425783570607503,
+      "perplexity": 182990.31688970648,
+      "perplexity_2alpha": 108716197660.34412,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 13.122184753417969,
+        "common_knowledge": 11.08531665802002,
+        "mixed_domain": 12.96773910522461,
+        "wikitext": 11.503251075744629
+      }
+    },
+    {
+      "alpha": 1.277777777777778,
+      "loss": 12.325606791178386,
+      "base_loss": 3.986223061879476,
+      "functional_return": 8.339383729298909,
+      "task_eval_loss": 3.215177536010742,
+      "loss_2alpha": 25.703760147094727,
+      "functional_return_2alpha": 21.717537085215252,
+      "perplexity": 225394.34491805668,
+      "perplexity_2alpha": 145546308892.49875,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 13.347187995910645,
+        "common_knowledge": 11.255025863647461,
+        "mixed_domain": 13.202306747436523,
+        "wikitext": 11.702174186706543
+      }
+    },
+    {
+      "alpha": 1.2979797979797982,
+      "loss": 12.546693992614745,
+      "base_loss": 3.986223061879476,
+      "functional_return": 8.560470930735269,
+      "task_eval_loss": 3.266098976135254,
+      "loss_2alpha": 25.9693603515625,
+      "functional_return_2alpha": 21.983137289683025,
+      "perplexity": 281164.1643829499,
+      "perplexity_2alpha": 189823466128.47214,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 13.593624114990234,
+        "common_knowledge": 11.437599182128906,
+        "mixed_domain": 13.458744049072266,
+        "wikitext": 11.917401313781738
+      }
+    },
+    {
+      "alpha": 1.3181818181818183,
+      "loss": 12.76342290242513,
+      "base_loss": 3.986223061879476,
+      "functional_return": 8.777199840545654,
+      "task_eval_loss": 3.3187475204467773,
+      "loss_2alpha": 26.23324686686198,
+      "functional_return_2alpha": 22.247023804982504,
+      "perplexity": 349207.96166831977,
+      "perplexity_2alpha": 247146438634.34586,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 13.832240104675293,
+        "common_knowledge": 11.604308128356934,
+        "mixed_domain": 13.702605247497559,
+        "wikitext": 12.125259399414062
+      }
+    },
+    {
+      "alpha": 1.3383838383838385,
+      "loss": 12.967212677001953,
+      "base_loss": 3.986223061879476,
+      "functional_return": 8.980989615122477,
+      "task_eval_loss": 3.371427059173584,
+      "loss_2alpha": 26.443372853597005,
+      "functional_return_2alpha": 22.45714979171753,
+      "perplexity": 428143.06254806684,
+      "perplexity_2alpha": 304937554606.5467,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 14.059945106506348,
+        "common_knowledge": 11.772201538085938,
+        "mixed_domain": 13.938026428222656,
+        "wikitext": 12.321783065795898
+      }
+    },
+    {
+      "alpha": 1.3585858585858588,
+      "loss": 13.194312159220377,
+      "base_loss": 3.986223061879476,
+      "functional_return": 9.2080890973409,
+      "task_eval_loss": 3.4282093048095703,
+      "loss_2alpha": 26.67951889038086,
+      "functional_return_2alpha": 22.693295828501384,
+      "perplexity": 537300.151789133,
+      "perplexity_2alpha": 386160487365.97375,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 14.30555248260498,
+        "common_knowledge": 11.957529067993164,
+        "mixed_domain": 14.203431129455566,
+        "wikitext": 12.542255401611328
+      }
+    },
+    {
+      "alpha": 1.378787878787879,
+      "loss": 13.418379338582357,
+      "base_loss": 3.986223061879476,
+      "functional_return": 9.43215627670288,
+      "task_eval_loss": 3.4881982803344727,
+      "loss_2alpha": 26.822488021850585,
+      "functional_return_2alpha": 22.83626495997111,
+      "perplexity": 672245.808165419,
+      "perplexity_2alpha": 445511110014.5498,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 14.548580169677734,
+        "common_knowledge": 12.136075019836426,
+        "mixed_domain": 14.459226608276367,
+        "wikitext": 12.759733200073242
+      }
+    },
+    {
+      "alpha": 1.3989898989898992,
+      "loss": 13.649240239461262,
+      "base_loss": 3.986223061879476,
+      "functional_return": 9.663017177581786,
+      "task_eval_loss": 3.5468826293945312,
+      "loss_2alpha": 26.970204289754232,
+      "functional_return_2alpha": 22.983981227874757,
+      "perplexity": 846817.292864324,
+      "perplexity_2alpha": 516429329169.4163,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 14.793010711669922,
+        "common_knowledge": 12.320996284484863,
+        "mixed_domain": 14.73494815826416,
+        "wikitext": 12.982848167419434
+      }
+    },
+    {
+      "alpha": 1.4191919191919193,
+      "loss": 13.874034563700357,
+      "base_loss": 3.986223061879476,
+      "functional_return": 9.887811501820881,
+      "task_eval_loss": 3.599119186401367,
+      "loss_2alpha": 27.144337844848632,
+      "functional_return_2alpha": 23.158114782969157,
+      "perplexity": 1060270.4379614065,
+      "perplexity_2alpha": 614661683248.4655,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 15.042864799499512,
+        "common_knowledge": 12.503349304199219,
+        "mixed_domain": 14.993440628051758,
+        "wikitext": 13.202089309692383
+      }
+    },
+    {
+      "alpha": 1.4393939393939394,
+      "loss": 14.100837262471517,
+      "base_loss": 3.986223061879476,
+      "functional_return": 10.11461420059204,
+      "task_eval_loss": 3.6648738384246826,
+      "loss_2alpha": 27.307335408528647,
+      "functional_return_2alpha": 23.321112346649173,
+      "perplexity": 1330196.5383439804,
+      "perplexity_2alpha": 723477590304.056,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 15.278926849365234,
+        "common_knowledge": 12.689332008361816,
+        "mixed_domain": 15.259864807128906,
+        "wikitext": 13.423161506652832
+      }
+    },
+    {
+      "alpha": 1.4595959595959598,
+      "loss": 14.328794860839844,
+      "base_loss": 3.986223061879476,
+      "functional_return": 10.342571798960368,
+      "task_eval_loss": 3.7159104347229004,
+      "loss_2alpha": 27.47718391418457,
+      "functional_return_2alpha": 23.490960852305097,
+      "perplexity": 1670769.5068995766,
+      "perplexity_2alpha": 857411594762.2892,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 15.518871307373047,
+        "common_knowledge": 12.880088806152344,
+        "mixed_domain": 15.530189514160156,
+        "wikitext": 13.644186973571777
+      }
+    },
+    {
+      "alpha": 1.47979797979798,
+      "loss": 14.553096707661947,
+      "base_loss": 3.986223061879476,
+      "functional_return": 10.56687364578247,
+      "task_eval_loss": 3.7739131450653076,
+      "loss_2alpha": 27.685082117716473,
+      "functional_return_2alpha": 23.698859055836998,
+      "perplexity": 2090882.3411746155,
+      "perplexity_2alpha": 1055548990566.8223,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 15.759079933166504,
+        "common_knowledge": 13.06412124633789,
+        "mixed_domain": 15.793668746948242,
+        "wikitext": 13.859801292419434
+      }
+    },
+    {
+      "alpha": 1.5,
+      "loss": 14.813614590962727,
+      "base_loss": 3.986223061879476,
+      "functional_return": 10.82739152908325,
+      "task_eval_loss": 3.8439085483551025,
+      "loss_2alpha": 27.851216634114582,
+      "functional_return_2alpha": 23.864993572235107,
+      "perplexity": 2713132.9384165783,
+      "perplexity_2alpha": 1246320385068.0693,
+      "sentiment_preference": 0.0,
+      "task_eval_loss_negative": 0.0,
+      "category_losses": {
+        "coding": 16.031354904174805,
+        "common_knowledge": 13.277658462524414,
+        "mixed_domain": 16.097509384155273,
+        "wikitext": 14.106490135192871
+      }
+    }
+  ]
+}
