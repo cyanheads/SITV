@@ -71,7 +71,8 @@ class MarkdownReportGenerator:
         metrics: ExperimentMetrics,
         output_path: str = "experiment_report.md",
         results_2d: list[TwoDSweepResult] | None = None,
-        results_3d: list[ThreeDSweepResult] | None = None
+        results_3d: list[ThreeDSweepResult] | None = None,
+        composition_analysis: dict[str, Any] | None = None
     ) -> str:
         """Generate comprehensive Markdown report.
 
@@ -82,6 +83,7 @@ class MarkdownReportGenerator:
             output_path: Path to save report
             results_2d: Optional list of 2D composition results
             results_3d: Optional list of 3D composition results
+            composition_analysis: Optional composition analysis results
 
         Returns:
             Path to saved report
@@ -90,7 +92,7 @@ class MarkdownReportGenerator:
             >>> generator = MarkdownReportGenerator()
             >>> report_path = generator.generate(results, analysis, metrics)
         """
-        report = self._build_report(results, analysis, metrics, results_2d, results_3d)
+        report = self._build_report(results, analysis, metrics, results_2d, results_3d, composition_analysis)
 
         # Write report
         with open(output_path, 'w') as f:
@@ -105,7 +107,8 @@ class MarkdownReportGenerator:
         analysis: dict[str, Any],
         metrics: ExperimentMetrics,
         results_2d: list[TwoDSweepResult] | None = None,
-        results_3d: list[ThreeDSweepResult] | None = None
+        results_3d: list[ThreeDSweepResult] | None = None,
+        composition_analysis: dict[str, Any] | None = None
     ) -> str:
         """Build the complete report content.
 
@@ -115,6 +118,7 @@ class MarkdownReportGenerator:
             metrics: Experiment metrics
             results_2d: Optional list of 2D composition results
             results_3d: Optional list of 3D composition results
+            composition_analysis: Optional composition analysis results
 
         Returns:
             Complete Markdown report as string
@@ -154,6 +158,10 @@ class MarkdownReportGenerator:
         # Add 3D composition analysis if available
         if results_3d is not None and len(results_3d) > 0:
             sections.append(self._create_3d_composition_section(results_3d, metrics))
+
+        # Add composition analysis if available
+        if composition_analysis is not None:
+            sections.append(self._create_composition_analysis_section(composition_analysis))
 
         sections.append(self._create_theoretical_connection(analysis))
         sections.append(self._create_recommendations(analysis))
@@ -785,6 +793,97 @@ Three-task composition provides insights into:
 - **Model merging**: Strategies for merging models trained on different tasks
 - **Task interference**: Understanding when tasks help or hinder each other
 - **Dimensionality**: Whether task vector combinations live in lower-dimensional subspaces
+"""
+
+        return section
+
+    def _create_composition_analysis_section(
+        self,
+        composition_analysis: dict[str, Any]
+    ) -> str:
+        """Create composition analysis section.
+
+        Args:
+            composition_analysis: Composition analysis results from CompositionAnalyzer
+
+        Returns:
+            Composition analysis section as string
+        """
+        # Extract data
+        props_1d = composition_analysis.get('1d_properties', {})
+        props_2d = composition_analysis.get('2d_properties', {})
+        interaction = composition_analysis.get('interaction', {})
+        predictions = composition_analysis.get('predictions', {})
+        prediction_errors = composition_analysis.get('prediction_errors', {})
+
+        # Determine interaction type
+        r2 = interaction.get('r_squared', 0.0)
+        if r2 > 0.8:
+            interaction_type = "**Mostly Independent (Additive)**"
+            interaction_desc = "The tasks are largely independent, and their effects combine additively."
+        elif r2 > 0.5:
+            interaction_type = "**Moderate Interaction**"
+            interaction_desc = "The tasks show some interaction, but are not strongly dependent."
+        else:
+            interaction_type = "**Strong Interaction (Non-Additive)**"
+            interaction_desc = "The tasks exhibit strong interaction, and cannot be treated as independent."
+
+        # Build predictions table
+        pred_table_rows = []
+        for name, pred in predictions.items():
+            error = prediction_errors.get(name, 0.0)
+            pred_table_rows.append(
+                f"| {name} | ({pred[0]:.4f}, {pred[1]:.4f}) | {error:.4f} |"
+            )
+
+        section = f"""## Composition Analysis: Predicting Optimal Composition
+
+This analysis investigates whether the optimal 2D composition (α, β) can be predicted
+from the individual 1D task vector properties, and quantifies the interaction strength
+between task vectors.
+
+### 1D Task Vector Properties
+
+- **Optimal α**: {props_1d.get('alpha_opt', 0.0):.4f}
+- **Loss at optimal**: {props_1d.get('loss_opt', 0.0):.4f}
+- **Curvature**: {props_1d.get('curvature', 0.0):.4f if props_1d.get('curvature') is not None else 'N/A'}
+- **Zero-crossings**: {len(props_1d.get('zero_crossings', []))} found
+
+### 2D Composition Properties
+
+- **Optimal (α, β)**: ({props_2d.get('alpha_opt', 0.0):.4f}, {props_2d.get('beta_opt', 0.0):.4f})
+- **Loss at optimal**: {props_2d.get('loss_opt', 0.0):.4f}
+
+### Interaction Analysis
+
+- **Interaction Type**: {interaction_type}
+- **R² Score**: {r2:.4f}
+- **Interaction RMS**: {interaction.get('rms', 0.0):.4f}
+
+{interaction_desc}
+
+### Predictions from 1D Properties
+
+Can we predict the optimal 2D composition from individual task properties?
+
+| Strategy | Predicted (α, β) | Error |
+|----------|-----------------|-------|
+{chr(10).join(pred_table_rows)}
+
+**Best Prediction**: {min(prediction_errors, key=prediction_errors.get) if prediction_errors else 'N/A'} (error: {min(prediction_errors.values()):.4f} if prediction_errors else 0.0)
+
+### Key Insights
+
+1. **Task Independence**: The R² score of {r2:.4f} indicates that the additive model {'fits well' if r2 > 0.8 else 'has moderate fit' if r2 > 0.5 else 'fits poorly'}.
+
+2. **Predictability**: The best prediction strategy achieves an error of {min(prediction_errors.values()):.4f} if prediction_errors else 0.0,
+   {'suggesting that 2D optimal composition is predictable from 1D properties' if prediction_errors and min(prediction_errors.values()) < 0.5 else 'indicating limited predictability from 1D properties alone'}.
+
+3. **Practical Implications**: {'Since tasks are mostly independent, they can be composed additively without significant loss of performance.' if r2 > 0.8 else 'Task interactions should be considered when combining multiple task vectors.' if r2 > 0.5 else 'Strong task interactions require careful empirical tuning of composition parameters.'}
+
+**Data**: Full analysis results available in `composition_prediction_analysis.json`
+
+**Visualization**: See `composition_analysis.png` for visual comparison of predictions vs. actual optimal composition.
 """
 
         return section
