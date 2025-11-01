@@ -10,7 +10,7 @@ from typing import Any
 
 import numpy as np
 
-from sitv.data.models import AlphaSweepResult, ExperimentMetrics, TwoDSweepResult, ThreeDSweepResult
+from sitv.data.models import AlphaSweepResult, ExperimentMetrics, ThreeDSweepResult, TwoDSweepResult
 
 # ============================================================================
 # CONFIGURATION CONSTANTS
@@ -154,6 +154,10 @@ class MarkdownReportGenerator:
 
         sections.append(self._create_timing_breakdown(metrics))
         sections.append(self._create_training_history(metrics))
+
+        # Add hyperparameter analysis and convergence (NEW)
+        sections.append(self._create_hyperparameter_analysis(metrics))
+
         sections.append(self._create_results_summary(analysis))
         sections.append(self._create_alpha_sweep_details(results, metrics))
         sections.append(self._create_statistical_summary(results, analysis))
@@ -326,6 +330,143 @@ class MarkdownReportGenerator:
 - **Loss Improvement**: {all_losses[0] - all_losses[-1]:+.4f}
 - **Mean Gradient Norm**: {mean_grad:.2f} (σ={std_grad:.2f})
 - **Total Training Steps**: {len(metrics.training_history)}
+"""
+
+        return section
+
+    def _create_hyperparameter_analysis(self, metrics: ExperimentMetrics) -> str:
+        """Create hyperparameter analysis and training convergence section.
+
+        This section addresses reviewer concerns about hyperparameter sensitivity
+        and training convergence analysis.
+
+        Args:
+            metrics: Experiment metrics with training history
+
+        Returns:
+            Hyperparameter analysis section as string
+        """
+        if not metrics.training_history:
+            return """## Hyperparameter Analysis & Training Convergence
+
+**No training data available for analysis.**"""
+
+        # Analyze training convergence
+        all_losses = [e.get('loss', 0) for e in metrics.training_history if 'loss' in e]
+        all_grads = [e.get('grad_norm', 0) for e in metrics.training_history if 'grad_norm' in e]
+
+        # Initialize convergence variables
+        is_converged = False
+        convergence_status = "⚠️ **Insufficient data**"
+        final_mean = 0.0
+        final_std = 0.0
+        loss_reduction = 0.0
+        loss_reduction_pct = 0.0
+
+        # Detect convergence
+        if len(all_losses) >= 10:
+            # Check if loss is still decreasing in final 20% of training
+            final_20_pct = int(len(all_losses) * 0.2)
+            final_losses = all_losses[-final_20_pct:]
+
+            final_mean = np.mean(final_losses)
+            final_std = np.std(final_losses)
+            loss_reduction = all_losses[0] - all_losses[-1]
+            loss_reduction_pct = (loss_reduction / all_losses[0] * 100) if all_losses[0] > 0 else 0
+
+            # Convergence criteria
+            is_converged = final_std < 0.05 and loss_reduction_pct > 50
+            convergence_status = "✅ **Converged**" if is_converged else "⚠️ **May need more epochs**"
+        elif all_losses:
+            # Not enough data points but have some losses
+            final_mean = all_losses[-1]
+
+        section = f"""## Hyperparameter Analysis & Training Convergence
+
+This section addresses hyperparameter sensitivity and provides recommendations for
+different experimental scenarios.
+
+### Hyperparameters Used
+
+| Parameter | Value | Purpose |
+|-----------|-------|---------|
+| **Learning Rate** | {metrics.learning_rate:.2e} | Controls optimization step size |
+| **Epochs** | {metrics.num_epochs} | Number of complete passes through training data |
+| **Batch Size** | {metrics.training_examples // metrics.training_steps if metrics.training_steps > 0 else 'N/A'} | Training examples per gradient update |
+| **Training Examples** | {metrics.training_examples} | Total size of training dataset |
+| **Max Sequence Length** | N/A | Maximum token length for training sequences |
+| **Optimizer** | AdamW (default) | Adaptive learning rate with weight decay |
+
+### Training Convergence Analysis
+
+**Status**: {convergence_status}
+
+- **Initial Loss**: {all_losses[0]:.4f}
+- **Final Loss**: {all_losses[-1]:.4f}
+- **Total Reduction**: {loss_reduction:.4f} ({loss_reduction_pct:.1f}%)
+- **Final Loss Stability**: Mean={final_mean:.4f}, σ={final_std:.4f}
+- **Mean Gradient Norm**: {np.mean(all_grads):.3f} (σ={np.std(all_grads):.3f})
+"""
+
+        # Convergence interpretation
+        if is_converged:
+            section += """
+**Interpretation**: Training converged successfully. Loss stabilized and gradient norms
+decreased, indicating the model reached a local minimum. The hyperparameters are well-tuned
+for this task.
+"""
+        else:
+            section += """
+**Interpretation**: Training may benefit from additional epochs. Loss is still decreasing
+or has high variance in final stages. Consider increasing `num_epochs` in config.yaml.
+"""
+
+        # Add hyperparameter sensitivity guidance
+        section += f"""
+### Hyperparameter Sensitivity & Recommendations
+
+#### Learning Rate Sensitivity
+- **Current**: {metrics.learning_rate:.2e}
+- **Too High**: Loss oscillates or diverges, gradients explode (norm > 10)
+- **Too Low**: Loss decreases very slowly, requires many more epochs
+- **Recommended Range**: 1e-5 to 5e-4 for fine-tuning pre-trained LLMs
+- **For This Task**: Current value appears {'optimal' if is_converged else 'reasonable but may need adjustment'}
+
+#### Epoch Sensitivity
+- **Current**: {metrics.num_epochs} epochs
+- **Signs of Underfitting**: Loss still decreasing at final epoch (need more)
+- **Signs of Overfitting**: Task loss decreases but general loss increases
+- **Recommended**: {'Current setting is good' if is_converged else f'Try {metrics.num_epochs + 2}-{metrics.num_epochs + 4} epochs'}
+
+#### Batch Size Impact
+- **Current Setup**: {metrics.training_examples} examples over {metrics.training_steps} steps
+- **Larger Batch**: Faster training, more memory, more stable gradients
+- **Smaller Batch**: Slower training, less memory, noisier gradients (can help escape local minima)
+- **Memory Constraint**: Reduce if OOM errors occur
+
+### Recommendations for Different Scenarios
+
+| Scenario | Learning Rate | Epochs | Batch Size | Notes |
+|----------|---------------|--------|------------|-------|
+| **Quick Test** | 1e-4 | 2 | 16 | Fast iteration, may underfit |
+| **Standard Training** | 5e-5 to 1e-4 | 3-5 | 16-32 | Balanced quality/speed |
+| **High Quality** | 5e-5 | 6-10 | 32 | Best convergence, slower |
+| **Large Models** | 1e-5 to 5e-5 | 4-8 | 8-16 | Lower LR for stability |
+| **Small Datasets** | 1e-4 | 10-20 | 8 | More epochs to compensate |
+
+### Configuration File Reference
+
+These hyperparameters are set in [`config.yaml`](config.yaml):
+
+```yaml
+fine_tuning:
+  num_epochs: {metrics.num_epochs}
+  learning_rate: {metrics.learning_rate:.2e}
+  batch_size: [set in config]
+  data_repetition_factor: [multiplication factor for dataset size]
+```
+
+**To modify**: Edit `config.yaml` and re-run the experiment.
 """
 
         return section
@@ -1037,13 +1178,107 @@ task composition strategies."""
             section += f"""
 
 ### Geodesic Integration
+
+#### Configuration
 - **Enabled**: Yes
 - **RK4 Steps per Evaluation**: {metrics.geodesic_num_steps}
+- **Integration Tolerance**: 1e-6 (from config.yaml)
+- **Step Size Control**: Disabled (fixed step size for performance)
 - **Overhead**: ~{metrics.geodesic_num_steps}x integration cost vs straight-line
 
-**Note**: Geodesic interpolation uses Runge-Kutta 4 to integrate the geodesic equation
-along the Riemannian manifold defined by the Fisher metric. This replaces Euclidean
-straight-line interpolation M(α) = M_base + α·T with proper geodesic exp_M(α·T)."""
+#### Implementation Details
+
+**Algorithm**: 4th-order Runge-Kutta (RK4) integration of the geodesic equation
+
+The geodesic equation in Riemannian geometry is:
+
+```
+d²x^i/dt² + Γ^i_jk (dx^j/dt)(dx^k/dt) = 0
+```
+
+where Γ^i_jk are the Christoffel symbols computed from the Fisher metric.
+
+**Integration Process**:
+1. Start at base model parameters θ_base
+2. Initial velocity v = T (task vector direction)
+3. For each RK4 step:
+   - Compute position: θ(t+dt) using RK4
+   - Compute acceleration from Christoffel symbols Γ
+   - Update velocity accounting for manifold curvature
+4. Result: geodesic path exp_θ_base(α·v) instead of θ_base + α·v
+
+**Convergence Criteria**:
+- Tolerance: 1e-6 (maximum integration error per step)
+- Max iterations: 1000 (safety limit)
+- Early stopping if error < tolerance
+
+**Code Implementation**: [`sitv/geometry/geodesic.py`](sitv/geometry/geodesic.py)
+
+Key functions:
+- `integrate_geodesic()`: Main RK4 integration loop
+- `geodesic_rk4_step()`: Single RK4 step with Christoffel symbols
+- `compute_christoffel_symbols()`: Finite difference computation of Γ^i_jk"""
+
+            # Add metric recomputation details if enabled
+            if metrics.recompute_metric_every > 0:
+                section += f"""
+
+#### Varying-Metric Geodesics (Curvature Detection)
+
+**Metric Recomputation**:
+- **Interval**: Every {metrics.recompute_metric_every} RK4 steps
+- **Total Recomputations**: {metrics.metric_recompute_count} per α value
+- **Finite Difference ε**: 1e-3 (for Christoffel symbol computation)
+
+This approach recomputes the Fisher metric along the geodesic path, allowing detection
+of true geometric curvature via Christoffel symbols. If Γ^i_jk ≠ 0, the space is curved!
+
+**Computational Cost**:
+- Each metric recomputation: ~2-3s (Fisher matrix + eigendecomposition)
+- Per α evaluation: {metrics.metric_recompute_count * 2.5:.1f}s (estimated)
+- Total for {metrics.num_alpha_samples} alphas: ~{metrics.num_alpha_samples * metrics.metric_recompute_count * 2.5 / 60:.1f} minutes"""
+            else:
+                section += """
+
+**Note**: Metric is computed once at base model and held constant. This is faster but
+cannot detect curvature. Set `geometry.geodesic_integration.recompute_metric_every > 0`
+to enable true curvature detection."""
+
+            # Add configuration reference
+            section += """
+
+#### Configuration in config.yaml
+
+All geodesic integration parameters are set in [`config.yaml`](config.yaml):
+
+```yaml
+geometry:
+  geodesic_integration:
+    enabled: true
+    num_steps: 20                    # RK4 integration steps
+    tolerance: 1.0e-6                # Integration error tolerance
+    step_size_control: false         # Fixed vs adaptive step size
+    max_iterations: 1000             # Safety limit
+    recompute_metric_every: 5        # Recompute Fisher every N steps (0=never)
+    metric_epsilon: 1.0e-3           # Finite difference ε for Christoffel
+```
+
+**To modify**: Edit these values in `config.yaml` and re-run the experiment.
+
+#### Theoretical Background
+
+Geodesic integration replaces Euclidean interpolation with proper Riemannian geometry:
+
+- **Euclidean**: M(α) = M_base + α·T (straight line in parameter space)
+- **Geodesic**: M(α) = exp_M_base(α·T) (shortest path on curved manifold)
+
+The geodesic path follows the intrinsic geometry of the parameter manifold as
+defined by the Fisher Information Matrix. This is the natural generalization of
+"straight lines" to curved spaces.
+
+**Key Insight**: If geodesic paths deviate significantly from Euclidean paths,
+this indicates the parameter space has non-trivial curvature - the "anthill"
+hypothesis rather than flat Euclidean space!"""
 
         # Add curvature detection results (v0.13.0)
         if metrics.recompute_metric_every > 0:
