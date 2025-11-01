@@ -5,6 +5,87 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.15.0] - 2025-11-01
+
+### Added
+
+- **T2 1D Sweep Data Support** ([sitv/analysis/composition_analyzer.py](sitv/analysis/composition_analyzer.py)):
+  - Added `t2_1d_path` parameter to `CompositionAnalyzer.__init__()` for loading T2's 1D alpha sweep results
+  - Implemented `_load_t2_1d()` method with auto-detection of conventional filenames
+  - Added `--t2-1d` command-line argument to composition analysis script
+  - Enhanced `run_full_analysis()` to display T2 properties when available
+  - Improved "independent" prediction strategy using actual T2 optimal alpha when provided
+  - Falls back to symmetric prediction when T2 data unavailable
+
+- **Percentile Analysis Tables** ([sitv/reporting/markdown.py](sitv/reporting/markdown.py)):
+  - Added comprehensive percentile tables to statistical summary (10th, 25th, 50th, 75th, 90th)
+  - Shows alpha values at each loss percentile for pattern recognition
+  - Added ΔL from base column showing deviation from base model loss
+  - Extended percentile analysis to functional return and task performance distributions
+
+- **Category Evolution Tracking** ([sitv/reporting/markdown.py](sitv/reporting/markdown.py)):
+  - Added category loss evolution table showing how each domain changes across key alpha values
+  - Samples key alpha values (-3.0, -2.0, -1.0, 0.0, +1.0, +2.0, +3.0) for consistent comparison
+  - Marks optimal alpha in evolution table for easy identification
+  - Enables pattern analysis across different evaluation domains
+
+- **2D Axis Cross-Sections** ([sitv/reporting/markdown.py](sitv/reporting/markdown.py)):
+  - Added detailed axis slice tables for 2D composition landscapes
+  - Shows pure T1 effect along α-axis (β ≈ 0)
+  - Shows pure T2 effect along β-axis (α ≈ 0)
+  - Shows balanced composition along diagonal (α ≈ β)
+  - Each slice includes loss, ΔL from base, and perplexity
+
+- **Helper Functions** ([sitv/analysis/composition_analyzer.py](sitv/analysis/composition_analyzer.py)):
+  - Added `_closest_index_to_zero()` for robust base loss calculation
+  - Added `_robust_unique_sorted()` for handling floating-point grid jitter
+  - Added `_polyfit_curvature()` for local curvature estimation via quadratic fit
+
+### Changed
+
+- **Enhanced Numerical Robustness** ([sitv/analysis/composition_analyzer.py](sitv/analysis/composition_analyzer.py)):
+  - Improved `extract_1d_properties()` with better base loss calculation (finds alpha≈0 instead of first item)
+  - Enhanced zero-crossing detection with linear interpolation and finite value checks
+  - Improved curvature estimation using local quadratic fit instead of simple finite difference
+  - Better NaN handling throughout 2D property extraction
+  - Robust grid reconstruction with automatic rounding to handle floating-point jitter
+
+- **Enhanced Visualizations** ([sitv/analysis/composition_analyzer.py](sitv/analysis/composition_analyzer.py)):
+  - Improved color scaling using robust percentile-based limits (1st-99th percentile)
+  - Added NaN masking for cleaner display of incomplete grids
+  - Symmetric color limits for interaction heatmaps centered on zero
+  - Better axis cross-section plotting with NaN-aware interpolation
+
+- **Report Sampling Strategy** ([sitv/reporting/markdown.py](sitv/reporting/markdown.py)):
+  - Changed alpha sweep table to prioritize key alpha values (-3.0 to +3.0)
+  - Added intelligent sampling combining key values, optimal points, and evenly-spaced samples
+  - Increased display limits for better data visibility:
+    - `MAX_ZERO_CROSSINGS_DISPLAY`: 3 → 8
+    - `MAX_SAMPLE_DATA_POINTS`: 20 → 30
+    - `MAX_SQUARING_RETURNS_DISPLAY`: 10 → 15
+    - `TRAINING_STEP_INTERVAL`: 5 → 3
+    - `MAX_TRAINING_MILESTONES`: 25 → 35
+    - `GEODESIC_TABLE_SAMPLE_INTERVAL`: 5 → 3
+
+- **Squaring Test Analysis** ([sitv/reporting/markdown.py](sitv/reporting/markdown.py)):
+  - Enhanced squaring return table with L(α) column for better comparison
+  - Added pattern recognition guidance for |L(2α) - L_base| << |L(α) - L_base|
+  - Improved interpretation of functional return behavior
+
+- **Code Organization** ([sitv/analysis/composition_analyzer.py](sitv/analysis/composition_analyzer.py)):
+  - Added `from __future__ import annotations` for improved type hint support
+  - Reorganized imports following standard conventions
+  - Added section comments for better code navigation (helpers, 1D, 2D, cross-sections, etc.)
+  - Enhanced docstrings with parameter descriptions
+
+### Technical Details
+
+- **T2 Data Integration**: Enables asymmetric task pair analysis with actual optimal scaling for both tasks
+- **Numerical Stability**: Robust handling of floating-point grids and NaN values throughout analysis pipeline
+- **Visualization Quality**: Percentile-based color scaling prevents outliers from dominating color maps
+- **Report Density**: Increased sample counts provide more comprehensive data for LLM pattern recognition
+- **Key Alpha Values**: Standardized sampling at [-3.0, -2.5, -2.0, -1.5, -1.0, -0.5, 0.0, +0.5, +1.0, +1.5, +2.0, +2.5, +3.0]
+
 ## [0.14.4] - 2025-11-01
 
 ### Fixed
