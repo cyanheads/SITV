@@ -54,6 +54,21 @@ class ResultAnalyzer:
             >>> analysis = analyzer.analyze(sweep_results)
             >>> print(f"Best alpha: {analysis['min_general_loss'].alpha}")
         """
+        # Handle empty results
+        if not results:
+            print("\n" + "="*70)
+            print("LOSS LANDSCAPE ANALYSIS")
+            print("="*70)
+            print("\n⚠️  No results to analyze (experiment aborted or failed)\n")
+            return {
+                "min_general_loss": None,
+                "min_task_loss": None,
+                "best_return": None,
+                "zero_crossings": [],
+                "sorted_by_return": [],
+                "squaring_return_points": [],
+            }
+
         # Sort results by different criteria
         sorted_by_loss = sorted(results, key=lambda r: r.loss)
         sorted_by_task_loss = sorted(results, key=lambda r: r.task_eval_loss)
