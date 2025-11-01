@@ -18,14 +18,21 @@ from sitv.data.models import AlphaSweepResult, ExperimentMetrics, ThreeDSweepRes
 # These constants control report formatting and thresholds for analysis
 
 # Training history display
-TRAINING_STEP_INTERVAL = 5  # Show every Nth training step
-MAX_TRAINING_MILESTONES = 25  # Max milestones before trimming
+TRAINING_STEP_INTERVAL = 3  # Show every Nth training step
+MAX_TRAINING_MILESTONES = 35  # Max milestones before trimming
 
 # Result sampling for tables
-MAX_ZERO_CROSSINGS_DISPLAY = 3  # Max zero-crossings to show
-MAX_SAMPLE_DATA_POINTS = 20  # Max alpha sweep samples in table
-MAX_SQUARING_RETURNS_DISPLAY = 10  # Max squaring returns to show
-GEODESIC_TABLE_SAMPLE_INTERVAL = 5  # Sample every Nth geodesic result
+MAX_ZERO_CROSSINGS_DISPLAY = 8  # Max zero-crossings to show
+MAX_SAMPLE_DATA_POINTS = 30  # Max alpha sweep samples in table
+MAX_SQUARING_RETURNS_DISPLAY = 15  # Max squaring returns to show
+GEODESIC_TABLE_SAMPLE_INTERVAL = 3  # Sample every Nth geodesic result
+
+# Key alpha values to always include in reports
+KEY_ALPHA_VALUES = [-3.0, -2.5, -2.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0]
+KEY_ALPHA_TOLERANCE = 0.05  # Tolerance for matching key alphas
+
+# 2D composition axis sampling
+AXIS_SAMPLES_PER_DIMENSION = 12  # Number of samples along each axis for 2D tables
 
 # Numeric thresholds for analysis
 AXIS_PROXIMITY_THRESHOLD = 0.01  # Threshold for identifying α≈0 or β≈0
@@ -74,7 +81,7 @@ class MarkdownReportGenerator:
         results_3d: list[ThreeDSweepResult] | None = None,
         composition_analysis: dict[str, Any] | None = None,
         curvature_results: dict[str, Any] | None = None,
-        symmetry_results: dict[str, Any] | None = None
+        symmetry_results: dict[str, Any] | None = None,
     ) -> str:
         """Generate comprehensive Markdown report.
 
@@ -97,12 +104,18 @@ class MarkdownReportGenerator:
             >>> report_path = generator.generate(results, analysis, metrics)
         """
         report = self._build_report(
-            results, analysis, metrics, results_2d, results_3d,
-            composition_analysis, curvature_results, symmetry_results
+            results,
+            analysis,
+            metrics,
+            results_2d,
+            results_3d,
+            composition_analysis,
+            curvature_results,
+            symmetry_results,
         )
 
         # Write report
-        with open(output_path, 'w') as f:
+        with open(output_path, "w") as f:
             f.write(report)
 
         print(f"\nMarkdown report saved: {output_path}")
@@ -117,7 +130,7 @@ class MarkdownReportGenerator:
         results_3d: list[ThreeDSweepResult] | None = None,
         composition_analysis: dict[str, Any] | None = None,
         curvature_results: dict[str, Any] | None = None,
-        symmetry_results: dict[str, Any] | None = None
+        symmetry_results: dict[str, Any] | None = None,
     ) -> str:
         """Build the complete report content.
 
@@ -195,16 +208,14 @@ class MarkdownReportGenerator:
         """Create report header."""
         return f"""# SITV Experiment Report
 
-**Generated**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+**Generated**: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 **Model**: {metrics.model_name}
 **Task**: {metrics.task_name}
 **General Evaluation Dataset**: {metrics.general_eval_dataset}
 **Device**: {metrics.device}"""
 
     def _create_executive_summary(
-        self,
-        analysis: dict[str, Any],
-        metrics: ExperimentMetrics
+        self, analysis: dict[str, Any], metrics: ExperimentMetrics
     ) -> str:
         """Create executive summary section."""
         min_general = analysis["min_general_loss"]
@@ -212,7 +223,9 @@ class MarkdownReportGenerator:
         zero_crossings = len(analysis["zero_crossings"])
 
         # Safe duration formatting
-        total_duration = metrics.duration_seconds / 60 if metrics.duration_seconds is not None else 0
+        total_duration = (
+            metrics.duration_seconds / 60 if metrics.duration_seconds is not None else 0
+        )
 
         return f"""## Executive Summary
 
@@ -254,13 +267,29 @@ class MarkdownReportGenerator:
     def _create_timing_breakdown(self, metrics: ExperimentMetrics) -> str:
         """Create timing breakdown section."""
         # Guard against division by zero
-        ft_pct = (metrics.finetuning_duration_seconds / metrics.duration_seconds * 100) if metrics.duration_seconds > 0 else 0
-        sweep_pct = (metrics.sweep_duration_seconds / metrics.duration_seconds * 100) if metrics.duration_seconds > 0 else 0
+        ft_pct = (
+            (metrics.finetuning_duration_seconds / metrics.duration_seconds * 100)
+            if metrics.duration_seconds > 0
+            else 0
+        )
+        sweep_pct = (
+            (metrics.sweep_duration_seconds / metrics.duration_seconds * 100)
+            if metrics.duration_seconds > 0
+            else 0
+        )
 
         # Safe duration formatting
-        ft_duration = metrics.finetuning_duration_seconds / 60 if metrics.finetuning_duration_seconds is not None else 0
-        sweep_duration = metrics.sweep_duration_seconds / 60 if metrics.sweep_duration_seconds is not None else 0
-        total_duration = metrics.duration_seconds / 60 if metrics.duration_seconds is not None else 0
+        ft_duration = (
+            metrics.finetuning_duration_seconds / 60
+            if metrics.finetuning_duration_seconds is not None
+            else 0
+        )
+        sweep_duration = (
+            metrics.sweep_duration_seconds / 60 if metrics.sweep_duration_seconds is not None else 0
+        )
+        total_duration = (
+            metrics.duration_seconds / 60 if metrics.duration_seconds is not None else 0
+        )
 
         return f"""## Timing Breakdown
 
@@ -287,14 +316,22 @@ class MarkdownReportGenerator:
         # Get key training milestones (every N steps or at epoch boundaries)
         milestones = []
         for i, entry in enumerate(metrics.training_history):
-            step = entry.get('step', i + 1)
+            step = entry.get("step", i + 1)
             # Include every Nth step or steps near epoch boundaries
-            if step % TRAINING_STEP_INTERVAL == 0 or i == 0 or i == len(metrics.training_history) - 1:
+            if (
+                step % TRAINING_STEP_INTERVAL == 0
+                or i == 0
+                or i == len(metrics.training_history) - 1
+            ):
                 milestones.append(entry)
 
         # Limit to reasonable number for report (first 10, middle 5, last 10)
         if len(milestones) > MAX_TRAINING_MILESTONES:
-            selected = milestones[:10] + milestones[len(milestones)//2-2:len(milestones)//2+3] + milestones[-10:]
+            selected = (
+                milestones[:10]
+                + milestones[len(milestones) // 2 - 2 : len(milestones) // 2 + 3]
+                + milestones[-10:]
+            )
         else:
             selected = milestones
 
@@ -307,17 +344,17 @@ class MarkdownReportGenerator:
 """
 
         for entry in selected:
-            step = entry.get('step', 0)
-            epoch = entry.get('epoch', 0)
-            loss = entry.get('loss', 0)
-            lr = entry.get('learning_rate', 0)
-            grad_norm = entry.get('grad_norm', 0)
+            step = entry.get("step", 0)
+            epoch = entry.get("epoch", 0)
+            loss = entry.get("loss", 0)
+            lr = entry.get("learning_rate", 0)
+            grad_norm = entry.get("grad_norm", 0)
 
             section += f"| {step} | {epoch:.2f} | {loss:.4f} | {lr:.2e} | {grad_norm:.2f} |\n"
 
         # Add summary statistics
-        all_losses = [e.get('loss', 0) for e in metrics.training_history if 'loss' in e]
-        all_grads = [e.get('grad_norm', 0) for e in metrics.training_history if 'grad_norm' in e]
+        all_losses = [e.get("loss", 0) for e in metrics.training_history if "loss" in e]
+        all_grads = [e.get("grad_norm", 0) for e in metrics.training_history if "grad_norm" in e]
 
         if all_losses:
             mean_grad = np.mean(all_grads) if all_grads else 0
@@ -352,8 +389,8 @@ class MarkdownReportGenerator:
 **No training data available for analysis.**"""
 
         # Analyze training convergence
-        all_losses = [e.get('loss', 0) for e in metrics.training_history if 'loss' in e]
-        all_grads = [e.get('grad_norm', 0) for e in metrics.training_history if 'grad_norm' in e]
+        all_losses = [e.get("loss", 0) for e in metrics.training_history if "loss" in e]
+        all_grads = [e.get("grad_norm", 0) for e in metrics.training_history if "grad_norm" in e]
 
         # Initialize convergence variables
         is_converged = False
@@ -376,7 +413,9 @@ class MarkdownReportGenerator:
 
             # Convergence criteria
             is_converged = final_std < 0.05 and loss_reduction_pct > 50
-            convergence_status = "✅ **Converged**" if is_converged else "⚠️ **May need more epochs**"
+            convergence_status = (
+                "✅ **Converged**" if is_converged else "⚠️ **May need more epochs**"
+            )
         elif all_losses:
             # Not enough data points but have some losses
             final_mean = all_losses[-1]
@@ -392,7 +431,7 @@ different experimental scenarios.
 |-----------|-------|---------|
 | **Learning Rate** | {metrics.learning_rate:.2e} | Controls optimization step size |
 | **Epochs** | {metrics.num_epochs} | Number of complete passes through training data |
-| **Batch Size** | {metrics.training_examples // metrics.training_steps if metrics.training_steps > 0 else 'N/A'} | Training examples per gradient update |
+| **Batch Size** | {metrics.training_examples // metrics.training_steps if metrics.training_steps > 0 else "N/A"} | Training examples per gradient update |
 | **Training Examples** | {metrics.training_examples} | Total size of training dataset |
 | **Max Sequence Length** | N/A | Maximum token length for training sequences |
 | **Optimizer** | AdamW (default) | Adaptive learning rate with weight decay |
@@ -430,13 +469,13 @@ or has high variance in final stages. Consider increasing `num_epochs` in config
 - **Too High**: Loss oscillates or diverges, gradients explode (norm > 10)
 - **Too Low**: Loss decreases very slowly, requires many more epochs
 - **Recommended Range**: 1e-5 to 5e-4 for fine-tuning pre-trained LLMs
-- **For This Task**: Current value appears {'optimal' if is_converged else 'reasonable but may need adjustment'}
+- **For This Task**: Current value appears {"optimal" if is_converged else "reasonable but may need adjustment"}
 
 #### Epoch Sensitivity
 - **Current**: {metrics.num_epochs} epochs
 - **Signs of Underfitting**: Loss still decreasing at final epoch (need more)
 - **Signs of Overfitting**: Task loss decreases but general loss increases
-- **Recommended**: {'Current setting is good' if is_converged else f'Try {metrics.num_epochs + 2}-{metrics.num_epochs + 4} epochs'}
+- **Recommended**: {"Current setting is good" if is_converged else f"Try {metrics.num_epochs + 2}-{metrics.num_epochs + 4} epochs"}
 
 #### Batch Size Impact
 - **Current Setup**: {metrics.training_examples} examples over {metrics.training_steps} steps
@@ -480,7 +519,9 @@ fine_tuning:
         if zero_crossings:
             zc_section = "\n### Zero-Crossings Found ★\n\n"
             for i, result in enumerate(zero_crossings[:MAX_ZERO_CROSSINGS_DISPLAY], 1):
-                zc_section += f"{i}. α = {result.alpha:+.4f}, |ΔL| = {result.functional_return:.6f}\n"
+                zc_section += (
+                    f"{i}. α = {result.alpha:+.4f}, |ΔL| = {result.functional_return:.6f}\n"
+                )
 
         return f"""## Results Summary
 
@@ -491,9 +532,7 @@ fine_tuning:
 {zc_section}"""
 
     def _create_alpha_sweep_details(
-        self,
-        results: list[AlphaSweepResult],
-        metrics: ExperimentMetrics
+        self, results: list[AlphaSweepResult], metrics: ExperimentMetrics
     ) -> str:
         """Create alpha sweep details section with sample data points.
 
@@ -509,18 +548,43 @@ fine_tuning:
 
 **No alpha sweep results available.**"""
 
-        # Select representative samples (evenly spaced)
+        # Build selected samples set:
+        # 1. Key alpha values (standard points)
+        # 2. Optimal alphas
+        # 3. Evenly spaced samples to fill up to MAX_SAMPLE_DATA_POINTS
+        selected_set = set()
+
+        # Add key alpha values that exist in results
+        for key_alpha in KEY_ALPHA_VALUES:
+            for result in results:
+                if abs(result.alpha - key_alpha) < KEY_ALPHA_TOLERANCE:
+                    selected_set.add(result.alpha)
+                    break
+
+        # Add optimal points
+        min_general = min(results, key=lambda r: r.loss)
+        min_task = min(results, key=lambda r: r.task_eval_loss)
+        selected_set.add(min_general.alpha)
+        selected_set.add(min_task.alpha)
+
+        # Fill remaining with evenly spaced samples
         num_samples = min(MAX_SAMPLE_DATA_POINTS, len(results))
-        step = max(1, len(results) // num_samples)  # Guard against division issues
-        selected = [results[i * step] for i in range(num_samples) if i * step < len(results)]
-        if results[-1] not in selected:
-            selected.append(results[-1])
+        if len(selected_set) < num_samples:
+            step = max(1, len(results) // (num_samples - len(selected_set)))
+            for i in range(0, len(results), step):
+                selected_set.add(results[i].alpha)
+                if len(selected_set) >= num_samples:
+                    break
+
+        # Sort and get actual result objects
+        selected_alphas = sorted(selected_set)
+        selected = [r for r in results if r.alpha in selected_alphas]
 
         section = f"""## Alpha Sweep Details
 
 **Base Model Loss**: L(M_base) = {results[0].base_loss:.4f}
 
-### Sample Data Points
+### Sample Data Points (Key Alphas + Strategic Samples)
 
 | α | L(α) | L(2α) | |ΔL| | |ΔL(2α)| | Task L(α) | PPL(α) | PPL(2α) |
 |---|------|-------|--------|------------|-----------|--------|---------|
@@ -529,20 +593,29 @@ fine_tuning:
         for result in selected:
             # Calculate perplexities if not already set
             perplexity = result.perplexity if result.perplexity > 0 else np.exp(result.loss)
-            perplexity_2alpha = result.perplexity_2alpha if result.perplexity_2alpha > 0 else np.exp(result.loss_2alpha)
+            perplexity_2alpha = (
+                result.perplexity_2alpha
+                if result.perplexity_2alpha > 0
+                else np.exp(result.loss_2alpha)
+            )
 
             section += f"| {result.alpha:+.3f} | {result.loss:.4f} | {result.loss_2alpha:.4f} | "
             section += f"{result.functional_return:.6f} | {result.functional_return_2alpha:.6f} | "
-            section += f"{result.task_eval_loss:.4f} | {perplexity:.2f} | {perplexity_2alpha:.2f} |\n"
+            section += (
+                f"{result.task_eval_loss:.4f} | {perplexity:.2f} | {perplexity_2alpha:.2f} |\n"
+            )
 
         # Calculate step size safely
         alpha_step = 0.0
         if metrics.num_alpha_samples > 1:
-            alpha_step = (metrics.alpha_range[1] - metrics.alpha_range[0]) / (metrics.num_alpha_samples - 1)
+            alpha_step = (metrics.alpha_range[1] - metrics.alpha_range[0]) / (
+                metrics.num_alpha_samples - 1
+            )
 
         section += f"""
 ### Key Metrics
 - **Total Samples**: {len(results)}
+- **Samples Displayed**: {len(selected)} (includes key α values: {", ".join([f"{a:+.1f}" for a in KEY_ALPHA_VALUES if any(abs(r.alpha - a) < KEY_ALPHA_TOLERANCE for r in results)])})
 - **Alpha Range**: [{metrics.alpha_range[0]:.1f}, {metrics.alpha_range[1]:.1f}]
 - **Alpha Step Size**: {alpha_step:.4f}
 - **Total Sweep Time**: {metrics.sweep_duration_seconds / 60:.1f} minutes
@@ -552,9 +625,7 @@ fine_tuning:
         return section
 
     def _create_statistical_summary(
-        self,
-        results: list[AlphaSweepResult],
-        analysis: dict[str, Any]
+        self, results: list[AlphaSweepResult], analysis: dict[str, Any]
     ) -> str:
         """Create statistical summary section.
 
@@ -589,7 +660,41 @@ fine_tuning:
         min_task_idx = np.argmin(all_task_perfs)
         max_task_idx = np.argmax(all_task_perfs)
 
-        return f"""## Statistical Summary
+        # Get base loss for ΔL calculations
+        base_loss = results[0].base_loss
+
+        # Calculate percentiles
+        loss_percentiles = np.percentile(all_losses, [10, 25, 50, 75, 90])
+        fr_percentiles = np.percentile(all_functional_returns, [10, 25, 50, 75, 90])
+        task_percentiles = np.percentile(all_task_perfs, [10, 25, 50, 75, 90])
+
+        # Find alpha values closest to each percentile
+        def find_alpha_at_value(value, metric_key):
+            closest = min(results, key=lambda r: abs(getattr(r, metric_key) - value))
+            return closest.alpha
+
+        loss_p10_alpha = find_alpha_at_value(loss_percentiles[0], "loss")
+        loss_p25_alpha = find_alpha_at_value(loss_percentiles[1], "loss")
+        loss_p50_alpha = find_alpha_at_value(loss_percentiles[2], "loss")
+        loss_p75_alpha = find_alpha_at_value(loss_percentiles[3], "loss")
+        loss_p90_alpha = find_alpha_at_value(loss_percentiles[4], "loss")
+
+        # Build the full statistical summary
+        section = f"""## Statistical Summary
+
+### Loss Distribution Percentiles (Compact View)
+
+High-density summary for LLM pattern recognition:
+
+| Percentile | Loss | α at this Loss | ΔL from base |
+|------------|------|----------------|--------------|
+| 10th | {loss_percentiles[0]:.4f} | {loss_p10_alpha:+.4f} | {loss_percentiles[0] - base_loss:+.6f} |
+| 25th | {loss_percentiles[1]:.4f} | {loss_p25_alpha:+.4f} | {loss_percentiles[1] - base_loss:+.6f} |
+| 50th (Median) | {loss_percentiles[2]:.4f} | {loss_p50_alpha:+.4f} | {loss_percentiles[2] - base_loss:+.6f} |
+| 75th | {loss_percentiles[3]:.4f} | {loss_p75_alpha:+.4f} | {loss_percentiles[3] - base_loss:+.6f} |
+| 90th | {loss_percentiles[4]:.4f} | {loss_p90_alpha:+.4f} | {loss_percentiles[4] - base_loss:+.6f} |
+
+**Base Model Loss**: L(M_base) = {base_loss:.4f}
 
 ### Loss Distribution (General)
 - **Mean**: {np.mean(all_losses):.4f}
@@ -600,19 +705,31 @@ fine_tuning:
 ### Functional Return Distribution
 - **Mean**: {np.mean(all_functional_returns):.4f}
 - **Std Dev**: {np.std(all_functional_returns):.4f}
+- **Percentiles**:
+  - 10th: {fr_percentiles[0]:.6f}
+  - 25th: {fr_percentiles[1]:.6f}
+  - 50th (Median): {fr_percentiles[2]:.6f}
+  - 75th: {fr_percentiles[3]:.6f}
+  - 90th: {fr_percentiles[4]:.6f}
 - **Min**: {np.min(all_functional_returns):.6f} (at α = {results[min_fr_idx].alpha:+.4f})
 - **Max**: {np.max(all_functional_returns):.4f} (at α = {results[max_fr_idx].alpha:+.4f})
 
 ### Task Performance Distribution
 - **Mean**: {np.mean(all_task_perfs):.4f}
 - **Std Dev**: {np.std(all_task_perfs):.4f}
+- **Percentiles**:
+  - 10th: {task_percentiles[0]:.4f}
+  - 25th: {task_percentiles[1]:.4f}
+  - 50th (Median): {task_percentiles[2]:.4f}
+  - 75th: {task_percentiles[3]:.4f}
+  - 90th: {task_percentiles[4]:.4f}
 - **Min**: {np.min(all_task_perfs):.4f} (at α = {results[min_task_idx].alpha:+.4f})
 - **Max**: {np.max(all_task_perfs):.4f} (at α = {results[max_task_idx].alpha:+.4f})"""
 
+        return section
+
     def _create_category_breakdown(
-        self,
-        results: list[AlphaSweepResult],
-        metrics: ExperimentMetrics
+        self, results: list[AlphaSweepResult], metrics: ExperimentMetrics
     ) -> str:
         """Create per-category loss breakdown section.
 
@@ -635,7 +752,9 @@ fine_tuning:
         # Find best alpha for each category
         best_alphas = {}
         for category in categories:
-            category_losses_at_alpha = [(r.alpha, r.category_losses.get(category, float('inf'))) for r in results]
+            category_losses_at_alpha = [
+                (r.alpha, r.category_losses.get(category, float("inf"))) for r in results
+            ]
             best_alpha, best_loss = min(category_losses_at_alpha, key=lambda x: x[1])
             best_alphas[category] = (best_alpha, best_loss)
 
@@ -670,6 +789,39 @@ This breakdown shows how the task vector ({metrics.task_name}) affects each eval
 
         section += "\n**Insight**: Lower values indicate better performance in that domain."
 
+        # Add evolution table showing how categories change across key alphas
+        section += "\n\n### Category Loss Evolution Across Key Alpha Values\n\n"
+        section += "How does each category's loss change as α varies?\n\n"
+        section += f"| α | {' | '.join(categories)} |\n"
+        section += f"|---|{' | '.join(['---'] * len(categories))}|\n"
+
+        # Select key alpha values to display
+        key_results = []
+        for key_alpha in KEY_ALPHA_VALUES:
+            # Find closest result to this key alpha
+            closest = min(results, key=lambda r: abs(r.alpha - key_alpha))
+            if abs(closest.alpha - key_alpha) < KEY_ALPHA_TOLERANCE and closest not in key_results:
+                key_results.append(closest)
+
+        # Always include optimal alpha
+        min_general = min(results, key=lambda r: r.loss)
+        if min_general not in key_results:
+            key_results.append(min_general)
+
+        # Sort by alpha
+        key_results.sort(key=lambda r: r.alpha)
+
+        # Build table rows
+        for result in key_results:
+            alpha_label = f"{result.alpha:+.2f}"
+            if abs(result.alpha - min_general.alpha) < 0.01:
+                alpha_label += " (opt)"
+
+            category_values = [f"{result.category_losses.get(cat, 0.0):.4f}" for cat in categories]
+            section += f"| {alpha_label} | {' | '.join(category_values)} |\n"
+
+        section += "\n**Pattern Analysis**: Look for categories that improve/degrade at different rates as α changes."
+
         return section
 
     def _create_squaring_test_analysis(self, analysis: dict[str, Any]) -> str:
@@ -698,11 +850,13 @@ doubling the task vector scaling returns the loss to approximately the base mode
 
 Found {len(squaring_returns)} α value(s) where L(2α) ≈ L(M_base):
 
-| # | α | L(2α) | |L(2α) - L_base| |
-|---|---|-------|----------------|
+#### Detailed Comparison Table
+
+| # | α | L(α) | L(2α) | |L(α) - L_base| | |L(2α) - L_base| |
+|---|---|------|-------|----------------|-----------------|
 """
             for i, sr in enumerate(squaring_returns[:MAX_SQUARING_RETURNS_DISPLAY], 1):
-                section += f"| {i} | {sr.alpha:+.4f} | {sr.loss_2alpha:.4f} | {sr.functional_return_2alpha:.6f} |\n"
+                section += f"| {i} | {sr.alpha:+.4f} | {sr.loss:.4f} | {sr.loss_2alpha:.4f} | {sr.functional_return:.6f} | {sr.functional_return_2alpha:.6f} |\n"
 
             section += """
 **Interpretation**: These α values suggest special scaling factors where doubling the task
@@ -711,6 +865,8 @@ rotation-like symmetry!
 
 **Connection to paper**: Analogous to the 180° rotations in SO(3) that square to identity,
 these α values represent "functional return" points under doubling in the neural loss landscape.
+
+**Pattern to watch**: If |L(2α) - L_base| << |L(α) - L_base|, this indicates strong "squaring return" behavior.
 """
         else:
             section += """### No Squaring Return Points Found
@@ -725,9 +881,7 @@ neural loss landscape does not show similar self-inverse properties under task v
         return section
 
     def _create_2d_composition_section(
-        self,
-        results_2d: list[TwoDSweepResult],
-        metrics: ExperimentMetrics
+        self, results_2d: list[TwoDSweepResult], metrics: ExperimentMetrics
     ) -> str:
         """Create 2D composition analysis section.
 
@@ -825,7 +979,53 @@ This experiment explores the loss landscape under composition of two task vector
 - **Std Dev**: {np.std(all_losses):.4f}
 - **Loss Range**: [{np.min(all_losses):.4f}, {np.max(all_losses):.4f}]
 - **Mean Functional Return**: {np.mean(all_functional_returns):.4f}
+"""
 
+        # Add axis slices to show structure
+        section += "\n### 2D Landscape Cross-Sections (Raw Data Samples)\n\n"
+        section += "These tables show loss values along key axes and diagonal:\n\n"
+
+        # Along α-axis (β ≈ 0)
+        alpha_axis_samples = [r for r in results_2d if abs(r.beta) < AXIS_PROXIMITY_THRESHOLD]
+        if alpha_axis_samples:
+            alpha_axis_samples.sort(key=lambda r: r.alpha)
+            # Sample up to AXIS_SAMPLES_PER_DIMENSION points
+            step = max(1, len(alpha_axis_samples) // AXIS_SAMPLES_PER_DIMENSION)
+            sampled_alpha = alpha_axis_samples[::step][:AXIS_SAMPLES_PER_DIMENSION]
+
+            section += "#### Along α-axis (β ≈ 0): Pure T1 Effect\n\n"
+            section += "| α | β | Loss | ΔL from base | PPL |\n"
+            section += "|---|---|------|--------------|-----|\n"
+            for r in sampled_alpha:
+                section += f"| {r.alpha:+.3f} | {r.beta:+.3f} | {r.loss:.4f} | {r.functional_return:.6f} | {r.perplexity:.2f} |\n"
+
+        # Along β-axis (α ≈ 0)
+        beta_axis_samples = [r for r in results_2d if abs(r.alpha) < AXIS_PROXIMITY_THRESHOLD]
+        if beta_axis_samples:
+            beta_axis_samples.sort(key=lambda r: r.beta)
+            step = max(1, len(beta_axis_samples) // AXIS_SAMPLES_PER_DIMENSION)
+            sampled_beta = beta_axis_samples[::step][:AXIS_SAMPLES_PER_DIMENSION]
+
+            section += "\n#### Along β-axis (α ≈ 0): Pure T2 Effect\n\n"
+            section += "| α | β | Loss | ΔL from base | PPL |\n"
+            section += "|---|---|------|--------------|-----|\n"
+            for r in sampled_beta:
+                section += f"| {r.alpha:+.3f} | {r.beta:+.3f} | {r.loss:.4f} | {r.functional_return:.6f} | {r.perplexity:.2f} |\n"
+
+        # Along diagonal (α ≈ β)
+        diagonal_samples = [r for r in results_2d if abs(r.alpha - r.beta) < 0.1]
+        if diagonal_samples:
+            diagonal_samples.sort(key=lambda r: r.alpha)
+            step = max(1, len(diagonal_samples) // AXIS_SAMPLES_PER_DIMENSION)
+            sampled_diagonal = diagonal_samples[::step][:AXIS_SAMPLES_PER_DIMENSION]
+
+            section += "\n#### Along Diagonal (α ≈ β): Balanced Composition\n\n"
+            section += "| α | β | Loss | ΔL from base | PPL |\n"
+            section += "|---|---|------|--------------|-----|\n"
+            for r in sampled_diagonal:
+                section += f"| {r.alpha:+.3f} | {r.beta:+.3f} | {r.loss:.4f} | {r.functional_return:.6f} | {r.perplexity:.2f} |\n"
+
+        section += """
 ### Interpretation
 
 The 2D composition experiment reveals how two task vectors interact when combined.
@@ -846,9 +1046,7 @@ marked at the origin (α=0, β=0).
         return section
 
     def _create_3d_composition_section(
-        self,
-        results_3d: list[ThreeDSweepResult],
-        metrics: ExperimentMetrics
+        self, results_3d: list[ThreeDSweepResult], metrics: ExperimentMetrics
     ) -> str:
         """Create 3D composition analysis section.
 
@@ -957,10 +1155,7 @@ Three-task composition provides insights into:
 
         return section
 
-    def _create_composition_analysis_section(
-        self,
-        composition_analysis: dict[str, Any]
-    ) -> str:
+    def _create_composition_analysis_section(self, composition_analysis: dict[str, Any]) -> str:
         """Create composition analysis section.
 
         Args:
@@ -970,31 +1165,33 @@ Three-task composition provides insights into:
             Composition analysis section as string
         """
         # Extract data
-        props_1d = composition_analysis.get('1d_properties', {})
-        props_2d = composition_analysis.get('2d_properties', {})
-        interaction = composition_analysis.get('interaction', {})
-        predictions = composition_analysis.get('predictions', {})
-        prediction_errors = composition_analysis.get('prediction_errors', {})
+        props_1d = composition_analysis.get("1d_properties", {})
+        props_2d = composition_analysis.get("2d_properties", {})
+        interaction = composition_analysis.get("interaction", {})
+        predictions = composition_analysis.get("predictions", {})
+        prediction_errors = composition_analysis.get("prediction_errors", {})
 
         # Determine interaction type
-        r2 = interaction.get('r_squared', 0.0)
+        r2 = interaction.get("r_squared", 0.0)
         if r2 > 0.8:
             interaction_type = "**Mostly Independent (Additive)**"
-            interaction_desc = "The tasks are largely independent, and their effects combine additively."
+            interaction_desc = (
+                "The tasks are largely independent, and their effects combine additively."
+            )
         elif r2 > 0.5:
             interaction_type = "**Moderate Interaction**"
             interaction_desc = "The tasks show some interaction, but are not strongly dependent."
         else:
             interaction_type = "**Strong Interaction (Non-Additive)**"
-            interaction_desc = "The tasks exhibit strong interaction, and cannot be treated as independent."
+            interaction_desc = (
+                "The tasks exhibit strong interaction, and cannot be treated as independent."
+            )
 
         # Build predictions table
         pred_table_rows = []
         for name, pred in predictions.items():
             error = prediction_errors.get(name, 0.0)
-            pred_table_rows.append(
-                f"| {name} | ({pred[0]:.4f}, {pred[1]:.4f}) | {error:.4f} |"
-            )
+            pred_table_rows.append(f"| {name} | ({pred[0]:.4f}, {pred[1]:.4f}) | {error:.4f} |")
 
         section = f"""## Composition Analysis: Predicting Optimal Composition
 
@@ -1004,21 +1201,21 @@ between task vectors.
 
 ### 1D Task Vector Properties
 
-- **Optimal α**: {props_1d.get('alpha_opt', 0.0):.4f}
-- **Loss at optimal**: {props_1d.get('loss_opt', 0.0):.4f}
-- **Curvature**: {props_1d.get('curvature', 0.0):.4f if props_1d.get('curvature') is not None else 'N/A'}
-- **Zero-crossings**: {len(props_1d.get('zero_crossings', []))} found
+- **Optimal α**: {props_1d.get("alpha_opt", 0.0):.4f}
+- **Loss at optimal**: {props_1d.get("loss_opt", 0.0):.4f}
+- **Curvature**: {props_1d.get("curvature", 0.0):.4f if props_1d.get('curvature') is not None else 'N/A'}
+- **Zero-crossings**: {len(props_1d.get("zero_crossings", []))} found
 
 ### 2D Composition Properties
 
-- **Optimal (α, β)**: ({props_2d.get('alpha_opt', 0.0):.4f}, {props_2d.get('beta_opt', 0.0):.4f})
-- **Loss at optimal**: {props_2d.get('loss_opt', 0.0):.4f}
+- **Optimal (α, β)**: ({props_2d.get("alpha_opt", 0.0):.4f}, {props_2d.get("beta_opt", 0.0):.4f})
+- **Loss at optimal**: {props_2d.get("loss_opt", 0.0):.4f}
 
 ### Interaction Analysis
 
 - **Interaction Type**: {interaction_type}
 - **R² Score**: {r2:.4f}
-- **Interaction RMS**: {interaction.get('rms', 0.0):.4f}
+- **Interaction RMS**: {interaction.get("rms", 0.0):.4f}
 
 {interaction_desc}
 
@@ -1030,16 +1227,16 @@ Can we predict the optimal 2D composition from individual task properties?
 |----------|-----------------|-------|
 {chr(10).join(pred_table_rows)}
 
-**Best Prediction**: {min(prediction_errors, key=prediction_errors.get) if prediction_errors else 'N/A'} (error: {min(prediction_errors.values()):.4f} if prediction_errors else 0.0)
+**Best Prediction**: {min(prediction_errors, key=prediction_errors.get) if prediction_errors else "N/A"} (error: {min(prediction_errors.values()):.4f} if prediction_errors else 0.0)
 
 ### Key Insights
 
-1. **Task Independence**: The R² score of {r2:.4f} indicates that the additive model {'fits well' if r2 > 0.8 else 'has moderate fit' if r2 > 0.5 else 'fits poorly'}.
+1. **Task Independence**: The R² score of {r2:.4f} indicates that the additive model {"fits well" if r2 > 0.8 else "has moderate fit" if r2 > 0.5 else "fits poorly"}.
 
 2. **Predictability**: The best prediction strategy achieves an error of {min(prediction_errors.values()):.4f} if prediction_errors else 0.0,
-   {'suggesting that 2D optimal composition is predictable from 1D properties' if prediction_errors and min(prediction_errors.values()) < 0.5 else 'indicating limited predictability from 1D properties alone'}.
+   {"suggesting that 2D optimal composition is predictable from 1D properties" if prediction_errors and min(prediction_errors.values()) < 0.5 else "indicating limited predictability from 1D properties alone"}.
 
-3. **Practical Implications**: {'Since tasks are mostly independent, they can be composed additively without significant loss of performance.' if r2 > 0.8 else 'Task interactions should be considered when combining multiple task vectors.' if r2 > 0.5 else 'Strong task interactions require careful empirical tuning of composition parameters.'}
+3. **Practical Implications**: {"Since tasks are mostly independent, they can be composed additively without significant loss of performance." if r2 > 0.8 else "Task interactions should be considered when combining multiple task vectors." if r2 > 0.5 else "Strong task interactions require careful empirical tuning of composition parameters."}
 
 **Data**: Full analysis results available in `composition_prediction_analysis.json`
 
@@ -1119,9 +1316,13 @@ task composition strategies."""
         lines = []
 
         if metrics.geometry_enabled:
-            lines.append(f"\n- **Euclidean Magnitude (||T||)**: {metrics.task_vector_magnitude:.4f}")
+            lines.append(
+                f"\n- **Euclidean Magnitude (||T||)**: {metrics.task_vector_magnitude:.4f}"
+            )
             if metrics.task_vector_magnitude_riemannian > 0:
-                lines.append(f"- **Riemannian Magnitude (||T||_g)**: {metrics.task_vector_magnitude_riemannian:.4f}")
+                lines.append(
+                    f"- **Riemannian Magnitude (||T||_g)**: {metrics.task_vector_magnitude_riemannian:.4f}"
+                )
                 if metrics.task_vector_magnitude > 0:
                     ratio = metrics.task_vector_magnitude_riemannian / metrics.task_vector_magnitude
                     lines.append(f"- **Norm Ratio (||T||_g / ||T||)**: {ratio:.4f}")
@@ -1142,7 +1343,9 @@ task composition strategies."""
         # Calculate Fisher computation overhead
         fisher_overhead_pct = 0.0
         if metrics.sweep_duration_seconds > 0:
-            fisher_overhead_pct = (metrics.fisher_computation_time / metrics.sweep_duration_seconds) * 100
+            fisher_overhead_pct = (
+                metrics.fisher_computation_time / metrics.sweep_duration_seconds
+            ) * 100
 
         section = f"""## Riemannian Geometry Analysis
 
@@ -1160,13 +1363,19 @@ task composition strategies."""
 - **Euclidean Norm ||T||**: {metrics.task_vector_magnitude_euclidean:.4f}"""
 
         if metrics.task_vector_magnitude_riemannian > 0:
-            ratio = metrics.task_vector_magnitude_riemannian / metrics.task_vector_magnitude_euclidean if metrics.task_vector_magnitude_euclidean > 0 else 0
+            ratio = (
+                metrics.task_vector_magnitude_riemannian / metrics.task_vector_magnitude_euclidean
+                if metrics.task_vector_magnitude_euclidean > 0
+                else 0
+            )
             section += f"""
 - **Riemannian Norm ||T||_g**: {metrics.task_vector_magnitude_riemannian:.4f}
 - **Ratio ||T||_g / ||T||**: {ratio:.4f}"""
 
             if ratio > NORM_RATIO_SIGNIFICANT_HIGH:
-                interp = "The Fisher metric amplifies the task vector (information-rich directions)."
+                interp = (
+                    "The Fisher metric amplifies the task vector (information-rich directions)."
+                )
             elif ratio < NORM_RATIO_SIGNIFICANT_LOW:
                 interp = "The Fisher metric shrinks the task vector (information-poor directions)."
             else:
@@ -1397,23 +1606,23 @@ curvature (hyperbolic/saddle-like) means geodesics diverge.
         # Add statistics
         section += f"""| Metric | Value |
 |--------|-------|
-| Mean curvature | {curvature_results['mean_curvature']:.6f} |
-| Standard deviation | {curvature_results['std_curvature']:.6f} |
-| Min curvature | {curvature_results['min_curvature']:.6f} |
-| Max curvature | {curvature_results['max_curvature']:.6f} |
-| Samples analyzed | {curvature_results['num_samples']} |
+| Mean curvature | {curvature_results["mean_curvature"]:.6f} |
+| Standard deviation | {curvature_results["std_curvature"]:.6f} |
+| Min curvature | {curvature_results["min_curvature"]:.6f} |
+| Max curvature | {curvature_results["max_curvature"]:.6f} |
+| Samples analyzed | {curvature_results["num_samples"]} |
 
 """
 
         # Add interpretation
         section += f"""### Interpretation
 
-**{curvature_results['interpretation']}**
+**{curvature_results["interpretation"]}**
 
 """
 
         # Explain what this means
-        mean_curv = curvature_results['mean_curvature']
+        mean_curv = curvature_results["mean_curvature"]
         if abs(mean_curv) < 1e-4:
             explanation = """The manifold is nearly flat in the base model region. This suggests that
 Euclidean operations (simple addition of task vectors) provide a good approximation.
@@ -1456,11 +1665,11 @@ providing a more principled geometric analysis.
 
         # Check each symmetry type
         symmetries_found = []
-        for sym_type in ['rotation', 'permutation', 'scaling']:
+        for sym_type in ["rotation", "permutation", "scaling"]:
             if sym_type in symmetry_results:
                 result = symmetry_results[sym_type]
-                is_sym = result.get('is_symmetric', False)
-                score = result.get('symmetry_score', 0.0)
+                is_sym = result.get("is_symmetric", False)
+                score = result.get("symmetry_score", 0.0)
                 status = "✅ **Detected**" if is_sym else "❌ Not detected"
 
                 section += f"""#### {sym_type.title()} Symmetry
@@ -1471,20 +1680,24 @@ providing a more principled geometric analysis.
 
                 if is_sym:
                     symmetries_found.append(sym_type)
-                    section += f"- Average loss deviation: {result.get('avg_loss_deviation', 0.0):.6f}\n"
+                    section += (
+                        f"- Average loss deviation: {result.get('avg_loss_deviation', 0.0):.6f}\n"
+                    )
                     section += f"- Number of tests: {result.get('num_tests', 0)}\n"
 
-                    if sym_type == 'permutation':
-                        section += "- Neurons within layers can be reordered without affecting loss\n"
-                    elif sym_type == 'rotation':
+                    if sym_type == "permutation":
+                        section += (
+                            "- Neurons within layers can be reordered without affecting loss\n"
+                        )
+                    elif sym_type == "rotation":
                         section += "- Parameter subspaces exhibit rotation invariance\n"
-                    elif sym_type == 'scaling':
+                    elif sym_type == "scaling":
                         section += "- Layer-wise rescaling preserves model behavior\n"
 
                     section += "\n"
 
         # Summary
-        num_symmetries = symmetry_results.get('summary', {}).get('num_symmetries_detected', 0)
+        num_symmetries = symmetry_results.get("summary", {}).get("num_symmetries_detected", 0)
         section += f"""### Summary
 
 - **Total symmetries detected**: {num_symmetries}
