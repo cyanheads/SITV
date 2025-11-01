@@ -72,7 +72,9 @@ class MarkdownReportGenerator:
         output_path: str = "experiment_report.md",
         results_2d: list[TwoDSweepResult] | None = None,
         results_3d: list[ThreeDSweepResult] | None = None,
-        composition_analysis: dict[str, Any] | None = None
+        composition_analysis: dict[str, Any] | None = None,
+        curvature_results: dict[str, Any] | None = None,
+        symmetry_results: dict[str, Any] | None = None
     ) -> str:
         """Generate comprehensive Markdown report.
 
@@ -84,6 +86,8 @@ class MarkdownReportGenerator:
             results_2d: Optional list of 2D composition results
             results_3d: Optional list of 3D composition results
             composition_analysis: Optional composition analysis results
+            curvature_results: Optional curvature analysis results
+            symmetry_results: Optional symmetry analysis results
 
         Returns:
             Path to saved report
@@ -92,7 +96,10 @@ class MarkdownReportGenerator:
             >>> generator = MarkdownReportGenerator()
             >>> report_path = generator.generate(results, analysis, metrics)
         """
-        report = self._build_report(results, analysis, metrics, results_2d, results_3d, composition_analysis)
+        report = self._build_report(
+            results, analysis, metrics, results_2d, results_3d,
+            composition_analysis, curvature_results, symmetry_results
+        )
 
         # Write report
         with open(output_path, 'w') as f:
@@ -108,7 +115,9 @@ class MarkdownReportGenerator:
         metrics: ExperimentMetrics,
         results_2d: list[TwoDSweepResult] | None = None,
         results_3d: list[ThreeDSweepResult] | None = None,
-        composition_analysis: dict[str, Any] | None = None
+        composition_analysis: dict[str, Any] | None = None,
+        curvature_results: dict[str, Any] | None = None,
+        symmetry_results: dict[str, Any] | None = None
     ) -> str:
         """Build the complete report content.
 
@@ -119,6 +128,8 @@ class MarkdownReportGenerator:
             results_2d: Optional list of 2D composition results
             results_3d: Optional list of 3D composition results
             composition_analysis: Optional composition analysis results
+            curvature_results: Optional curvature analysis results
+            symmetry_results: Optional symmetry analysis results
 
         Returns:
             Complete Markdown report as string
@@ -132,6 +143,14 @@ class MarkdownReportGenerator:
         # Add Riemannian geometry section if enabled
         if metrics.geometry_enabled:
             sections.append(self._create_riemannian_geometry_section(metrics))
+
+        # Add curvature analysis if available
+        if curvature_results is not None:
+            sections.append(self._create_curvature_section(curvature_results))
+
+        # Add symmetry analysis if available
+        if symmetry_results is not None:
+            sections.append(self._create_symmetry_section(symmetry_results))
 
         sections.append(self._create_timing_breakdown(metrics))
         sections.append(self._create_training_history(metrics))
@@ -1026,6 +1045,39 @@ task composition strategies."""
 along the Riemannian manifold defined by the Fisher metric. This replaces Euclidean
 straight-line interpolation M(α) = M_base + α·T with proper geodesic exp_M(α·T)."""
 
+        # Add curvature detection results (v0.13.0)
+        if metrics.recompute_metric_every > 0:
+            section += f"""
+
+### 🔍 Curvature Detection (Varying-Metric Geodesics)
+
+**Configuration**:
+- **Metric Recomputation Interval**: Every {metrics.recompute_metric_every} RK4 steps
+- **Total Recomputations per α**: {metrics.metric_recompute_count}
+
+**Christoffel Symbol Analysis**:
+- **RMS Magnitude**: {metrics.christoffel_rms:.6f}
+- **Curvature Detected**: {"✅ **YES** - Space is curved!" if metrics.curvature_detected else "❌ No - Space appears flat"}
+
+**Interpretation**:
+"""
+            if metrics.curvature_detected:
+                section += f"""The Christoffel symbols Γ are **significantly non-zero** (RMS = {metrics.christoffel_rms:.6f}).
+This indicates the Fisher metric varies along task vector paths, meaning:
+- **Neural network parameter space has intrinsic curvature**
+- Geodesic paths curve rather than following straight lines
+- The "anthill" hypothesis is supported - rich geometric structure exists!
+
+This is a **major finding**: Task vectors navigate curved geometry, not flat Euclidean space."""
+            else:
+                section += f"""The Christoffel symbols Γ are approximately zero (RMS = {metrics.christoffel_rms:.6f}).
+This indicates the Fisher metric is approximately constant, meaning:
+- Parameter space appears flat (Euclidean approximation valid)
+- Geodesic paths are nearly identical to straight lines
+- Riemannian geometry provides minimal benefit over Euclidean operations
+
+This validates the simpler Euclidean approach: M(α) = M_base + α·T."""
+
         section += """
 
 ### Interpretation
@@ -1085,6 +1137,138 @@ This table compares geodesic paths (following Fisher metric) vs Euclidean straig
 
 The ratio reveals whether the parameter manifold curves positively (like a sphere)
 or negatively (like a saddle) in the task vector direction."""
+
+        return section
+
+    def _create_curvature_section(self, curvature_results: dict[str, Any]) -> str:
+        """Create curvature analysis section.
+
+        Args:
+            curvature_results: Curvature analysis results
+
+        Returns:
+            Markdown section for curvature analysis
+        """
+        section = """## Curvature Analysis
+
+The parameter manifold's curvature reveals how the loss landscape curves in different
+directions. Positive curvature (sphere-like) means geodesics converge, while negative
+curvature (hyperbolic/saddle-like) means geodesics diverge.
+
+### Sectional Curvature Distribution
+
+"""
+
+        # Add statistics
+        section += f"""| Metric | Value |
+|--------|-------|
+| Mean curvature | {curvature_results['mean_curvature']:.6f} |
+| Standard deviation | {curvature_results['std_curvature']:.6f} |
+| Min curvature | {curvature_results['min_curvature']:.6f} |
+| Max curvature | {curvature_results['max_curvature']:.6f} |
+| Samples analyzed | {curvature_results['num_samples']} |
+
+"""
+
+        # Add interpretation
+        section += f"""### Interpretation
+
+**{curvature_results['interpretation']}**
+
+"""
+
+        # Explain what this means
+        mean_curv = curvature_results['mean_curvature']
+        if abs(mean_curv) < 1e-4:
+            explanation = """The manifold is nearly flat in the base model region. This suggests that
+Euclidean operations (simple addition of task vectors) provide a good approximation.
+Geodesics and straight lines are nearly identical."""
+        elif mean_curv > 1e-4:
+            explanation = f"""The manifold exhibits positive curvature (K = {mean_curv:.6f}), similar to
+a sphere. Geodesics converge, and parallel transport rotates vectors. This means:
+- Task vector composition may exhibit non-linear interactions
+- Geodesic paths are shorter than Euclidean paths
+- The loss landscape has "bowl-like" geometry in parameter space"""
+        else:
+            explanation = f"""The manifold exhibits negative curvature (K = {mean_curv:.6f}), similar to
+a saddle or hyperbolic space. Geodesics diverge, suggesting:
+- Task vectors may interfere in complex ways
+- Multiple local minima likely exist
+- The loss landscape has "saddle-like" geometry"""
+
+        section += explanation + "\n"
+
+        return section
+
+    def _create_symmetry_section(self, symmetry_results: dict[str, Any]) -> str:
+        """Create symmetry analysis section.
+
+        Args:
+            symmetry_results: Symmetry analysis results
+
+        Returns:
+            Markdown section for symmetry analysis
+        """
+        section = """## Symmetry Analysis
+
+Parameter space symmetries reveal redundancies in model representations. Detecting
+these symmetries allows working in quotient space (parameters modulo symmetries),
+providing a more principled geometric analysis.
+
+### Detected Symmetries
+
+"""
+
+        # Check each symmetry type
+        symmetries_found = []
+        for sym_type in ['rotation', 'permutation', 'scaling']:
+            if sym_type in symmetry_results:
+                result = symmetry_results[sym_type]
+                is_sym = result.get('is_symmetric', False)
+                score = result.get('symmetry_score', 0.0)
+                status = "✅ **Detected**" if is_sym else "❌ Not detected"
+
+                section += f"""#### {sym_type.title()} Symmetry
+
+**Status**: {status} (score: {score:.2f}/1.00)
+
+"""
+
+                if is_sym:
+                    symmetries_found.append(sym_type)
+                    section += f"- Average loss deviation: {result.get('avg_loss_deviation', 0.0):.6f}\n"
+                    section += f"- Number of tests: {result.get('num_tests', 0)}\n"
+
+                    if sym_type == 'permutation':
+                        section += "- Neurons within layers can be reordered without affecting loss\n"
+                    elif sym_type == 'rotation':
+                        section += "- Parameter subspaces exhibit rotation invariance\n"
+                    elif sym_type == 'scaling':
+                        section += "- Layer-wise rescaling preserves model behavior\n"
+
+                    section += "\n"
+
+        # Summary
+        num_symmetries = symmetry_results.get('summary', {}).get('num_symmetries_detected', 0)
+        section += f"""### Summary
+
+- **Total symmetries detected**: {num_symmetries}
+"""
+
+        if symmetries_found:
+            section += f"- **Detected types**: {', '.join(symmetries_found)}\n"
+            section += """
+**Implication**: The model exhibits parameter redundancy. Working in quotient space
+(parameters modulo these symmetries) provides a more canonical representation and
+addresses the theoretical critique from arXiv:2506.13018.
+
+"""
+        else:
+            section += """
+**Implication**: No significant parameter symmetries detected. The parameter
+representation appears to have minimal redundancy for the tested transformations.
+
+"""
 
         return section
 
