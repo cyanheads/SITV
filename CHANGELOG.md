@@ -5,6 +5,59 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.3] - 2025-11-01
+
+### Fixed
+
+- **Critical: Base Model Contamination in Composition Experiments** ([sitv/experiments/orchestrator.py](sitv/experiments/orchestrator.py)):
+  - Fixed base model contamination bug where alpha sweep modified base_model in-place, causing subsequent 2D/3D composition experiments to use contaminated parameters (stuck at last alpha value)
+  - Implemented pristine base model pattern: separate `base_for_eval` and `base_for_ft` instances prevent mutation
+  - Updated `_run_2d_composition()` to load fresh base models before fine-tuning task 2 and before running composition experiment
+  - Updated `_run_3d_composition()` to load pristine base for evaluation with separate copies for fine-tuning tasks 2 and 3
+  - Modified `_fine_tune_and_compute_task_vector()` helper to never mutate caller-provided models
+  - **Impact**: All 2D and 3D composition results prior to this fix were scientifically incorrect
+
+- **Geometry Configuration Bug** ([sitv/experiments/orchestrator.py](sitv/experiments/orchestrator.py)):
+  - Fixed incorrect reference to `self.config.geometry.use_riemannian` (changed to `self.config.geometry.enabled`)
+  - Fixed incorrect reference to `self.config.geometry.use_geodesics` (changed to `self.config.geometry.geodesic_integration.enabled`)
+  - Fixed potential division by zero in Riemannian magnitude ratio calculation
+
+### Changed
+
+- **Code Quality and Type Safety** ([sitv/experiments/orchestrator.py](sitv/experiments/orchestrator.py)):
+  - Added `from __future__ import annotations` for improved type hint support
+  - Enhanced type annotations with explicit generic types (e.g., `dict[str, dict[str, torch.Tensor]]`)
+  - Improved docstrings: removed verbose parameter documentation, added concise notes about key behaviors
+  - Removed unused variables (`ft_metrics_2`, `metadata_2d`, `metadata_3d`)
+  - Consistent code formatting (spacing, line breaks, import organization)
+
+- **Reproducibility Improvements** ([sitv/experiments/orchestrator.py](sitv/experiments/orchestrator.py)):
+  - Enhanced `set_random_seed()` with `PYTHONHASHSEED` environment variable for complete Python hash reproducibility
+  - Added conditional CUDA checks (`torch.cuda.is_available()`) before setting CUDA-specific seeds
+  - Added conditional cuDNN checks to prevent errors on non-CUDA systems
+  - Added comment about `torch.use_deterministic_algorithms()` for strict determinism
+
+- **Memory Management** ([sitv/experiments/orchestrator.py](sitv/experiments/orchestrator.py)):
+  - Added MPS (Apple Silicon) cache clearing support alongside existing CUDA cache clearing
+  - Improved accelerator cache handling with proper error handling for unsupported platforms
+  - Enhanced GPU memory cleanup after Fisher metric computation
+
+- **Parameter Protection** ([sitv/experiments/orchestrator.py](sitv/experiments/orchestrator.py)):
+  - Changed Christoffel computation to use `.clone()` when passing base_params to prevent in-place mutation
+  - Changed curvature analysis to use `.clone()` when extracting base parameters
+
+- **Analysis-Only Mode Enhancement** ([sitv/experiments/orchestrator.py](sitv/experiments/orchestrator.py)):
+  - Added guards to skip 2D/3D composition experiments when `analysis_only=True` (these require fresh fine-tuning)
+  - Added informative warning messages explaining why composition experiments are skipped
+
+### Technical Details
+
+- **Bug Severity**: Critical - all 2D/3D composition results before this fix used contaminated base models
+- **Root Cause**: Alpha sweep modifies base_model in-place via `Experiment.apply_task_vector()`, leaving parameters at last α value
+- **Solution**: Load pristine base models immediately before composition experiments and fine-tuning operations
+- **Verification**: Task vector magnitudes should now be independent of alpha sweep execution order
+- **Code Quality**: Improved type safety, documentation clarity, and code consistency throughout orchestrator
+
 ## [0.14.2] - 2025-11-01
 
 ### Added
