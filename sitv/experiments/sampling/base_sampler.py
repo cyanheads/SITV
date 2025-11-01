@@ -21,11 +21,7 @@ class BaseSampler(ABC):
         num_samples: Target number of samples to generate
     """
 
-    def __init__(
-        self,
-        alpha_range: Tuple[float, float],
-        num_samples: int
-    ):
+    def __init__(self, alpha_range: Tuple[float, float], num_samples: int):
         """Initialize the sampler.
 
         Args:
@@ -37,10 +33,7 @@ class BaseSampler(ABC):
         self.alpha_min, self.alpha_max = alpha_range
 
     @abstractmethod
-    def generate_samples(
-        self,
-        results: Optional[List[AlphaSweepResult]] = None
-    ) -> np.ndarray:
+    def generate_samples(self, results: Optional[List[AlphaSweepResult]] = None) -> np.ndarray:
         """Generate alpha values to evaluate.
 
         Args:
@@ -55,10 +48,7 @@ class BaseSampler(ABC):
         raise NotImplementedError("Subclasses must implement generate_samples()")
 
     @abstractmethod
-    def should_continue(
-        self,
-        results: List[AlphaSweepResult]
-    ) -> bool:
+    def should_continue(self, results: List[AlphaSweepResult]) -> bool:
         """Decide if sampling should continue.
 
         Args:

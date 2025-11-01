@@ -27,6 +27,7 @@ class CriticalPoint:
         curvature: Second derivative at this point
         significance: How significant this point is (0-1 scale)
     """
+
     alpha: float
     loss: float
     point_type: str
@@ -51,7 +52,7 @@ class CriticalPointFinder:
         self,
         gradient_threshold: float = 0.01,
         curvature_threshold: float = 0.001,
-        smooth_sigma: float = 0.5
+        smooth_sigma: float = 0.5,
     ):
         """Initialize critical point finder.
 
@@ -65,8 +66,7 @@ class CriticalPointFinder:
         self.gradient_analyzer = NumericalGradientAnalyzer(smooth_sigma=smooth_sigma)
 
     def find_all_critical_points(
-        self,
-        results: List[AlphaSweepResult]
+        self, results: List[AlphaSweepResult]
     ) -> Dict[str, List[CriticalPoint]]:
         """Find all critical points in the loss landscape.
 
@@ -87,7 +87,7 @@ class CriticalPointFinder:
         """
         if len(results) < 5:
             logger.warning("Not enough results for critical point analysis (need at least 5)")
-            return {'minima': [], 'maxima': [], 'inflection': [], 'all': []}
+            return {"minima": [], "maxima": [], "inflection": [], "all": []}
 
         # Compute gradients and curvatures
         alphas_grad, gradients = self.gradient_analyzer.compute_gradients(results)
@@ -102,12 +102,7 @@ class CriticalPointFinder:
 
         all_points = minima + maxima + inflection
 
-        return {
-            'minima': minima,
-            'maxima': maxima,
-            'inflection': inflection,
-            'all': all_points
-        }
+        return {"minima": minima, "maxima": maxima, "inflection": inflection, "all": all_points}
 
     def find_minima(
         self,
@@ -115,7 +110,7 @@ class CriticalPointFinder:
         alphas_grad: np.ndarray,
         gradients: np.ndarray,
         alphas_curv: np.ndarray,
-        curvatures: np.ndarray
+        curvatures: np.ndarray,
     ) -> List[CriticalPoint]:
         """Find local minima (gradient ≈ 0, curvature > 0).
 
@@ -151,14 +146,16 @@ class CriticalPointFinder:
                 # Compute significance (larger curvature = more significant minimum)
                 significance = min(1.0, abs(curv) / 1.0)  # Normalize to 0-1
 
-                minima.append(CriticalPoint(
-                    alpha=alpha,
-                    loss=loss,
-                    point_type='minimum',
-                    gradient=gradients[idx],
-                    curvature=curv,
-                    significance=significance
-                ))
+                minima.append(
+                    CriticalPoint(
+                        alpha=alpha,
+                        loss=loss,
+                        point_type="minimum",
+                        gradient=gradients[idx],
+                        curvature=curv,
+                        significance=significance,
+                    )
+                )
 
         return minima
 
@@ -168,7 +165,7 @@ class CriticalPointFinder:
         alphas_grad: np.ndarray,
         gradients: np.ndarray,
         alphas_curv: np.ndarray,
-        curvatures: np.ndarray
+        curvatures: np.ndarray,
     ) -> List[CriticalPoint]:
         """Find local maxima (gradient ≈ 0, curvature < 0).
 
@@ -204,22 +201,21 @@ class CriticalPointFinder:
                 # Compute significance
                 significance = min(1.0, abs(curv) / 1.0)
 
-                maxima.append(CriticalPoint(
-                    alpha=alpha,
-                    loss=loss,
-                    point_type='maximum',
-                    gradient=gradients[idx],
-                    curvature=curv,
-                    significance=significance
-                ))
+                maxima.append(
+                    CriticalPoint(
+                        alpha=alpha,
+                        loss=loss,
+                        point_type="maximum",
+                        gradient=gradients[idx],
+                        curvature=curv,
+                        significance=significance,
+                    )
+                )
 
         return maxima
 
     def find_inflection_points(
-        self,
-        results: List[AlphaSweepResult],
-        alphas_curv: np.ndarray,
-        curvatures: np.ndarray
+        self, results: List[AlphaSweepResult], alphas_curv: np.ndarray, curvatures: np.ndarray
     ) -> List[CriticalPoint]:
         """Find inflection points (where curvature changes sign).
 
@@ -243,10 +239,7 @@ class CriticalPointFinder:
 
             # Interpolate alpha where curvature crosses zero
             alpha = self._interpolate_zero_crossing(
-                alphas_curv[idx],
-                alphas_curv[idx + 1],
-                curvatures[idx],
-                curvatures[idx + 1]
+                alphas_curv[idx], alphas_curv[idx + 1], curvatures[idx], curvatures[idx + 1]
             )
 
             # Get loss at this alpha
@@ -258,21 +251,20 @@ class CriticalPointFinder:
             # Compute significance (larger gradient = more significant inflection)
             significance = min(1.0, abs(grad) / 1.0)
 
-            inflection.append(CriticalPoint(
-                alpha=alpha,
-                loss=loss,
-                point_type='inflection',
-                gradient=grad,
-                curvature=0.0,  # By definition
-                significance=significance
-            ))
+            inflection.append(
+                CriticalPoint(
+                    alpha=alpha,
+                    loss=loss,
+                    point_type="inflection",
+                    gradient=grad,
+                    curvature=0.0,  # By definition
+                    significance=significance,
+                )
+            )
 
         return inflection
 
-    def _find_zero_crossings(
-        self,
-        values: np.ndarray
-    ) -> List[int]:
+    def _find_zero_crossings(self, values: np.ndarray) -> List[int]:
         """Find indices where values cross zero.
 
         Detects both sign changes and points very close to zero.
@@ -302,10 +294,7 @@ class CriticalPointFinder:
         return sorted(indices_set)
 
     def _interpolate_curvature(
-        self,
-        alpha: float,
-        alphas_curv: np.ndarray,
-        curvatures: np.ndarray
+        self, alpha: float, alphas_curv: np.ndarray, curvatures: np.ndarray
     ) -> float:
         """Interpolate curvature at a specific alpha.
 
@@ -319,13 +308,7 @@ class CriticalPointFinder:
         """
         return float(np.interp(alpha, alphas_curv, curvatures))
 
-    def _interpolate_zero_crossing(
-        self,
-        x1: float,
-        x2: float,
-        y1: float,
-        y2: float
-    ) -> float:
+    def _interpolate_zero_crossing(self, x1: float, x2: float, y1: float, y2: float) -> float:
         """Interpolate x where y crosses zero between two points.
 
         Args:
@@ -341,11 +324,7 @@ class CriticalPointFinder:
         # Linear interpolation
         return x1 - y1 * (x2 - x1) / (y2 - y1)
 
-    def _get_loss_at_alpha(
-        self,
-        results: List[AlphaSweepResult],
-        alpha: float
-    ) -> float:
+    def _get_loss_at_alpha(self, results: List[AlphaSweepResult], alpha: float) -> float:
         """Get loss value at a specific alpha (interpolated if needed).
 
         Args:
@@ -361,11 +340,7 @@ class CriticalPointFinder:
 
         return float(np.interp(alpha, alphas, losses))
 
-    def _get_gradient_at_alpha(
-        self,
-        results: List[AlphaSweepResult],
-        alpha: float
-    ) -> float:
+    def _get_gradient_at_alpha(self, results: List[AlphaSweepResult], alpha: float) -> float:
         """Get gradient at a specific alpha.
 
         Args:
@@ -378,10 +353,7 @@ class CriticalPointFinder:
         alphas_grad, gradients = self.gradient_analyzer.compute_gradients(results)
         return float(np.interp(alpha, alphas_grad, gradients))
 
-    def classify_critical_points(
-        self,
-        results: List[AlphaSweepResult]
-    ) -> Dict:
+    def classify_critical_points(self, results: List[AlphaSweepResult]) -> Dict:
         """Full classification of all critical points with analysis.
 
         Args:
@@ -404,39 +376,37 @@ class CriticalPointFinder:
 
         analysis = {
             **critical_points,
-            'summary': {
-                'num_minima': len(critical_points['minima']),
-                'num_maxima': len(critical_points['maxima']),
-                'num_inflection': len(critical_points['inflection']),
-                'total_critical_points': len(critical_points['all'])
-            }
+            "summary": {
+                "num_minima": len(critical_points["minima"]),
+                "num_maxima": len(critical_points["maxima"]),
+                "num_inflection": len(critical_points["inflection"]),
+                "total_critical_points": len(critical_points["all"]),
+            },
         }
 
         # Find global minimum and maximum
-        if critical_points['minima']:
-            analysis['global_minimum'] = min(critical_points['minima'], key=lambda cp: cp.loss)  # type: ignore[type-var,arg-type,attr-defined,assignment]
+        if critical_points["minima"]:
+            analysis["global_minimum"] = min(critical_points["minima"], key=lambda cp: cp.loss)  # type: ignore[type-var,arg-type,attr-defined,assignment]
         else:
             # If no critical minima, use boundary
             sorted_results = sorted(results, key=lambda r: r.loss)
             best_result = sorted_results[0]
-            analysis['global_minimum'] = CriticalPoint(  # type: ignore[assignment]
+            analysis["global_minimum"] = CriticalPoint(  # type: ignore[assignment]
                 alpha=best_result.alpha,
                 loss=best_result.loss,
-                point_type='boundary_minimum',
+                point_type="boundary_minimum",
                 gradient=0.0,
                 curvature=0.0,
-                significance=1.0
+                significance=1.0,
             )
 
-        if critical_points['maxima']:
-            analysis['global_maximum'] = max(critical_points['maxima'], key=lambda cp: cp.loss)  # type: ignore[type-var,arg-type,attr-defined]
+        if critical_points["maxima"]:
+            analysis["global_maximum"] = max(critical_points["maxima"], key=lambda cp: cp.loss)  # type: ignore[type-var,arg-type,attr-defined]
 
         # Most significant points
-        if critical_points['all']:
-            analysis['most_significant'] = sorted(
-                critical_points['all'],
-                key=lambda cp: cp.significance,
-                reverse=True
+        if critical_points["all"]:
+            analysis["most_significant"] = sorted(
+                critical_points["all"], key=lambda cp: cp.significance, reverse=True
             )[:5]
 
         return analysis

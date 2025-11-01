@@ -42,7 +42,7 @@ class SymmetryAnalyzer:
         self,
         config: SymmetryAnalysisConfig,
         evaluator,  # EvaluationService (avoid circular import)
-        device: str = "cuda"
+        device: str = "cuda",
     ):
         """Initialize the symmetry analyzer.
 
@@ -59,10 +59,7 @@ class SymmetryAnalyzer:
     # === Rotation Symmetry ===
 
     def detect_rotation_symmetry(
-        self,
-        model: nn.Module,
-        eval_texts: list[str],
-        num_tests: int = 10
+        self, model: nn.Module, eval_texts: list[str], num_tests: int = 10
     ) -> dict[str, Any]:
         """Test for rotation symmetry L(R·θ) ≈ L(θ).
 
@@ -100,10 +97,7 @@ class SymmetryAnalyzer:
         # Test random rotations on different layers
         for test_idx in range(num_tests):
             # Clone model parameters
-            original_state = {
-                name: param.clone()
-                for name, param in model.named_parameters()
-            }
+            original_state = {name: param.clone() for name, param in model.named_parameters()}
 
             # Select a random layer to rotate
             rotatable_layers = self._get_rotatable_layers(model)
@@ -124,13 +118,15 @@ class SymmetryAnalyzer:
 
                 # Check if symmetry violated
                 if deviation > self.symmetry_tolerance:
-                    violations.append({
-                        'test_idx': test_idx,
-                        'layer': layer_name,
-                        'baseline_loss': baseline_loss,
-                        'rotated_loss': rotated_loss,
-                        'deviation': deviation
-                    })
+                    violations.append(
+                        {
+                            "test_idx": test_idx,
+                            "layer": layer_name,
+                            "baseline_loss": baseline_loss,
+                            "rotated_loss": rotated_loss,
+                            "deviation": deviation,
+                        }
+                    )
 
             finally:
                 # Restore original parameters
@@ -146,12 +142,12 @@ class SymmetryAnalyzer:
         is_symmetric = symmetry_score > 0.8  # Threshold for "symmetric"
 
         return {
-            'is_symmetric': is_symmetric,
-            'symmetry_score': symmetry_score,
-            'avg_loss_deviation': avg_deviation,
-            'violations': violations,
-            'num_tests': len(deviations),
-            'tested_layers': list(set(tested_layers))
+            "is_symmetric": is_symmetric,
+            "symmetry_score": symmetry_score,
+            "avg_loss_deviation": avg_deviation,
+            "violations": violations,
+            "num_tests": len(deviations),
+            "tested_layers": list(set(tested_layers)),
         }
 
     def _apply_rotation_to_layer(self, model: nn.Module, layer_name: str) -> None:
@@ -227,17 +223,14 @@ class SymmetryAnalyzer:
         rotatable = []
         for name, param in model.named_parameters():
             # Only 2D weight matrices (not biases)
-            if param.dim() == 2 and 'weight' in name:
+            if param.dim() == 2 and "weight" in name:
                 rotatable.append(name)
         return rotatable
 
     # === Permutation Symmetry ===
 
     def detect_permutation_symmetry(
-        self,
-        model: nn.Module,
-        eval_texts: list[str],
-        num_tests: int = 10
+        self, model: nn.Module, eval_texts: list[str], num_tests: int = 10
     ) -> dict[str, Any]:
         """Test for neuron permutation symmetry.
 
@@ -263,10 +256,7 @@ class SymmetryAnalyzer:
 
         for test_idx in range(num_tests):
             # Clone parameters
-            original_state = {
-                name: param.clone()
-                for name, param in model.named_parameters()
-            }
+            original_state = {name: param.clone() for name, param in model.named_parameters()}
 
             # Get permutable layers
             permutable_layers = self._get_permutable_layers(model)
@@ -286,11 +276,9 @@ class SymmetryAnalyzer:
                 deviations.append(deviation)
 
                 if deviation > self.symmetry_tolerance:
-                    violations.append({
-                        'test_idx': test_idx,
-                        'layer': layer_name,
-                        'deviation': deviation
-                    })
+                    violations.append(
+                        {"test_idx": test_idx, "layer": layer_name, "deviation": deviation}
+                    )
 
             finally:
                 # Restore parameters
@@ -306,12 +294,12 @@ class SymmetryAnalyzer:
         is_symmetric = symmetry_score > 0.8
 
         return {
-            'is_symmetric': is_symmetric,
-            'symmetry_score': symmetry_score,
-            'avg_loss_deviation': avg_deviation,
-            'violations': violations,
-            'num_tests': len(deviations),
-            'tested_layers': list(set(tested_layers))
+            "is_symmetric": is_symmetric,
+            "symmetry_score": symmetry_score,
+            "avg_loss_deviation": avg_deviation,
+            "violations": violations,
+            "num_tests": len(deviations),
+            "tested_layers": list(set(tested_layers)),
         }
 
     def _apply_neuron_permutation(self, model: nn.Module, layer_name: str) -> None:
@@ -345,7 +333,7 @@ class SymmetryAnalyzer:
             weight.copy_(weight[:, perm])
 
             # Permute corresponding bias if it exists
-            bias_name = layer_name.replace('.weight', '.bias')
+            bias_name = layer_name.replace(".weight", ".bias")
             if bias_name in param_dict:
                 bias = param_dict[bias_name]
                 if bias.shape[0] == n:
@@ -353,12 +341,16 @@ class SymmetryAnalyzer:
 
             # Find and permute downstream layer
             # (This is simplified - full implementation would trace computational graph)
-            layer_prefix = '.'.join(layer_name.split('.')[:-1])
-            next_layer_idx = int(layer_prefix.split('.')[-1]) + 1 if layer_prefix.split('.')[-1].isdigit() else None
+            layer_prefix = ".".join(layer_name.split(".")[:-1])
+            next_layer_idx = (
+                int(layer_prefix.split(".")[-1]) + 1
+                if layer_prefix.split(".")[-1].isdigit()
+                else None
+            )
 
             if next_layer_idx is not None:
                 # Try to find next layer weight
-                next_layer_prefix = '.'.join(layer_prefix.split('.')[:-1] + [str(next_layer_idx)])
+                next_layer_prefix = ".".join(layer_prefix.split(".")[:-1] + [str(next_layer_idx)])
                 next_weight_name = f"{next_layer_prefix}.weight"
 
                 if next_weight_name in param_dict:
@@ -380,7 +372,7 @@ class SymmetryAnalyzer:
         """
         permutable = []
         for name, param in model.named_parameters():
-            if param.dim() == 2 and 'weight' in name:
+            if param.dim() == 2 and "weight" in name:
                 permutable.append(name)
         return permutable
 
@@ -391,7 +383,7 @@ class SymmetryAnalyzer:
         model: nn.Module,
         eval_texts: list[str],
         num_tests: int = 10,
-        scale_range: tuple[float, float] = (0.5, 2.0)
+        scale_range: tuple[float, float] = (0.5, 2.0),
     ) -> dict[str, Any]:
         """Test for layer-wise scaling symmetry.
 
@@ -417,10 +409,7 @@ class SymmetryAnalyzer:
 
         for test_idx in range(num_tests):
             # Clone parameters
-            original_state = {
-                name: param.clone()
-                for name, param in model.named_parameters()
-            }
+            original_state = {name: param.clone() for name, param in model.named_parameters()}
 
             # Random scaling factor
             scale_factor = torch.rand(1).item() * (scale_range[1] - scale_range[0]) + scale_range[0]
@@ -438,11 +427,9 @@ class SymmetryAnalyzer:
                 deviations.append(deviation)
 
                 if deviation > self.symmetry_tolerance:
-                    violations.append({
-                        'test_idx': test_idx,
-                        'scale_factor': scale_factor,
-                        'deviation': deviation
-                    })
+                    violations.append(
+                        {"test_idx": test_idx, "scale_factor": scale_factor, "deviation": deviation}
+                    )
 
             finally:
                 # Restore parameters
@@ -458,20 +445,18 @@ class SymmetryAnalyzer:
         is_symmetric = symmetry_score > 0.8
 
         return {
-            'is_symmetric': is_symmetric,
-            'symmetry_score': symmetry_score,
-            'avg_loss_deviation': avg_deviation,
-            'violations': violations,
-            'num_tests': len(deviations),
-            'tested_scales': tested_scales
+            "is_symmetric": is_symmetric,
+            "symmetry_score": symmetry_score,
+            "avg_loss_deviation": avg_deviation,
+            "violations": violations,
+            "num_tests": len(deviations),
+            "tested_scales": tested_scales,
         }
 
     # === Quotient Space ===
 
     def compute_canonical_representative(
-        self,
-        params: dict[str, torch.Tensor],
-        symmetry_group: str = "permutation"
+        self, params: dict[str, torch.Tensor], symmetry_group: str = "permutation"
     ) -> dict[str, torch.Tensor]:
         """Compute canonical form in quotient space Θ/G.
 
@@ -500,10 +485,7 @@ class SymmetryAnalyzer:
         else:
             return params
 
-    def _canonical_permutation(
-        self,
-        params: dict[str, torch.Tensor]
-    ) -> dict[str, torch.Tensor]:
+    def _canonical_permutation(self, params: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
         """Canonical form for permutation symmetry.
 
         Sorts neurons by L2 norm of incoming weights (decreasing order).
@@ -517,7 +499,7 @@ class SymmetryAnalyzer:
         canonical = {}
 
         for name, param in params.items():
-            if param.dim() == 2 and 'weight' in name:
+            if param.dim() == 2 and "weight" in name:
                 # Compute L2 norm of each column (neuron)
                 norms = torch.norm(param, dim=0)
 
@@ -528,7 +510,7 @@ class SymmetryAnalyzer:
                 canonical[name] = param[:, sorted_idx].clone()
 
                 # Handle corresponding bias
-                bias_name = name.replace('.weight', '.bias')
+                bias_name = name.replace(".weight", ".bias")
                 if bias_name in params:
                     canonical[bias_name] = params[bias_name][sorted_idx].clone()
             elif name not in canonical:  # Avoid duplicating bias
@@ -536,10 +518,7 @@ class SymmetryAnalyzer:
 
         return canonical
 
-    def _canonical_scaling(
-        self,
-        params: dict[str, torch.Tensor]
-    ) -> dict[str, torch.Tensor]:
+    def _canonical_scaling(self, params: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
         """Canonical form for scaling symmetry.
 
         Normalizes parameters to unit Frobenius norm.
@@ -555,7 +534,7 @@ class SymmetryAnalyzer:
         # Compute total Frobenius norm
         total_norm_squared = torch.tensor(0.0, device=self.device)
         for p in params.values():
-            total_norm_squared = total_norm_squared + torch.sum(p ** 2)
+            total_norm_squared = total_norm_squared + torch.sum(p**2)
         total_norm = torch.sqrt(total_norm_squared)
 
         # Normalize all parameters
@@ -564,11 +543,7 @@ class SymmetryAnalyzer:
 
         return canonical
 
-    def project_to_quotient_space(
-        self,
-        model: nn.Module,
-        symmetry_types: list[str]
-    ) -> nn.Module:
+    def project_to_quotient_space(self, model: nn.Module, symmetry_types: list[str]) -> nn.Module:
         """Project model parameters to quotient space.
 
         Applies canonical representative mapping to all parameters,
@@ -608,10 +583,7 @@ class SymmetryAnalyzer:
     # === Analysis and Reporting ===
 
     def analyze_all_symmetries(
-        self,
-        model: nn.Module,
-        eval_texts: list[str],
-        num_tests_per_type: int = 10
+        self, model: nn.Module, eval_texts: list[str], num_tests_per_type: int = 10
     ) -> dict[str, Any]:
         """Run all enabled symmetry tests.
 
@@ -633,30 +605,28 @@ class SymmetryAnalyzer:
         results = {}
 
         if self.config.detect_rotations:
-            results['rotation'] = self.detect_rotation_symmetry(
+            results["rotation"] = self.detect_rotation_symmetry(
                 model, eval_texts, num_tests_per_type
             )
 
         if self.config.detect_permutations:
-            results['permutation'] = self.detect_permutation_symmetry(
+            results["permutation"] = self.detect_permutation_symmetry(
                 model, eval_texts, num_tests_per_type
             )
 
         if self.config.detect_scaling:
-            results['scaling'] = self.detect_scaling_symmetry(
-                model, eval_texts, num_tests_per_type
-            )
+            results["scaling"] = self.detect_scaling_symmetry(model, eval_texts, num_tests_per_type)
 
         # Summary
-        results['summary'] = {
-            'any_symmetry_detected': any(
-                res.get('is_symmetric', False) for res in results.values()
-                if isinstance(res, dict)
+        results["summary"] = {
+            "any_symmetry_detected": any(
+                res.get("is_symmetric", False) for res in results.values() if isinstance(res, dict)
             ),
-            'num_symmetries_detected': sum(
-                1 for res in results.values()
-                if isinstance(res, dict) and res.get('is_symmetric', False)
-            )
+            "num_symmetries_detected": sum(
+                1
+                for res in results.values()
+                if isinstance(res, dict) and res.get("is_symmetric", False)
+            ),
         }
 
         return results
@@ -673,10 +643,10 @@ class SymmetryAnalyzer:
             Dictionary with default values
         """
         return {
-            'is_symmetric': False,
-            'symmetry_score': 0.0,
-            'avg_loss_deviation': 0.0,
-            'violations': [],
-            'num_tests': 0,
-            'note': f'{symmetry_type} symmetry detection disabled'
+            "is_symmetric": False,
+            "symmetry_score": 0.0,
+            "avg_loss_deviation": 0.0,
+            "violations": [],
+            "num_tests": 0,
+            "note": f"{symmetry_type} symmetry detection disabled",
         }

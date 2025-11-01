@@ -40,9 +40,7 @@ class FileManager:
         os.makedirs(self.output_dir, exist_ok=True)
 
     def save_results(
-        self,
-        results: List[AlphaSweepResult],
-        filename: str = "loss_landscape_results.json"
+        self, results: List[AlphaSweepResult], filename: str = "loss_landscape_results.json"
     ) -> str:
         """Save alpha sweep results to JSON.
 
@@ -63,16 +61,14 @@ class FileManager:
         results_dict = [asdict(r) for r in results]
 
         # Save to JSON
-        with open(filepath, 'w') as f:
+        with open(filepath, "w") as f:
             json.dump(results_dict, f, indent=2)
 
         print(f"Results saved: {filepath}")
         return filepath
 
     def save_2d_results(
-        self,
-        results: List[TwoDSweepResult],
-        filename: str = "loss_landscape_2d_results.json"
+        self, results: List[TwoDSweepResult], filename: str = "loss_landscape_2d_results.json"
     ) -> str:
         """Save 2D composition results to JSON.
 
@@ -93,16 +89,14 @@ class FileManager:
         results_dict = [asdict(r) for r in results]
 
         # Save to JSON
-        with open(filepath, 'w') as f:
+        with open(filepath, "w") as f:
             json.dump(results_dict, f, indent=2)
 
         print(f"2D results saved: {filepath}")
         return filepath
 
     def save_metrics(
-        self,
-        metrics: ExperimentMetrics,
-        filename: str = "experiment_metrics.json"
+        self, metrics: ExperimentMetrics, filename: str = "experiment_metrics.json"
     ) -> str:
         """Save experiment metrics to JSON.
 
@@ -123,16 +117,14 @@ class FileManager:
         metrics_dict = asdict(metrics)
 
         # Save to JSON
-        with open(filepath, 'w') as f:
+        with open(filepath, "w") as f:
             json.dump(metrics_dict, f, indent=2)
 
         print(f"Metrics saved: {filepath}")
         return filepath
 
     def save_analysis(
-        self,
-        analysis: Dict[str, Any],
-        filename: str = "analysis_results.json"
+        self, analysis: Dict[str, Any], filename: str = "analysis_results.json"
     ) -> str:
         """Save analysis results to JSON.
 
@@ -163,16 +155,13 @@ class FileManager:
                 serializable_analysis[key] = value
 
         # Save to JSON
-        with open(filepath, 'w') as f:
+        with open(filepath, "w") as f:
             json.dump(serializable_analysis, f, indent=2)
 
         print(f"Analysis saved: {filepath}")
         return filepath
 
-    def load_results(
-        self,
-        filename: str = "loss_landscape_results.json"
-    ) -> List[Dict[str, Any]]:
+    def load_results(self, filename: str = "loss_landscape_results.json") -> List[Dict[str, Any]]:
         """Load results from JSON file.
 
         Args:
@@ -190,7 +179,7 @@ class FileManager:
         if not os.path.exists(filepath):
             raise FileNotFoundError(f"Results file not found: {filepath}")
 
-        with open(filepath, 'r') as f:
+        with open(filepath, "r") as f:
             results: List[Dict[str, Any]] = json.load(f)
 
         return results

@@ -55,7 +55,7 @@ def _get(keys: str, default):
     Returns the same type as the default value provided.
     """
     value: Any = _YAML_CONFIG
-    for key in keys.split('.'):
+    for key in keys.split("."):
         if isinstance(value, dict):
             value = value.get(key)
             if value is None:
@@ -80,23 +80,21 @@ class SamplingConfig:
         bayesian_acquisition: Acquisition function ('ei', 'ucb') (bayesian)
     """
 
-    strategy: str = field(
-        default_factory=lambda: _get('alpha_sweep.sampling_strategy', 'uniform')
-    )
+    strategy: str = field(default_factory=lambda: _get("alpha_sweep.sampling_strategy", "uniform"))
     adaptive_coarse_samples: int = field(
-        default_factory=lambda: _get('alpha_sweep.adaptive_coarse_samples', 20)
+        default_factory=lambda: _get("alpha_sweep.adaptive_coarse_samples", 20)
     )
     adaptive_refine_factor: int = field(
-        default_factory=lambda: _get('alpha_sweep.adaptive_refine_factor', 3)
+        default_factory=lambda: _get("alpha_sweep.adaptive_refine_factor", 3)
     )
     adaptive_curvature_threshold: float = field(
-        default_factory=lambda: _get('alpha_sweep.adaptive_curvature_threshold', 0.5)
+        default_factory=lambda: _get("alpha_sweep.adaptive_curvature_threshold", 0.5)
     )
     bayesian_n_initial: int = field(
-        default_factory=lambda: _get('alpha_sweep.bayesian_n_initial', 10)
+        default_factory=lambda: _get("alpha_sweep.bayesian_n_initial", 10)
     )
     bayesian_acquisition: str = field(
-        default_factory=lambda: _get('alpha_sweep.bayesian_acquisition', 'ei')
+        default_factory=lambda: _get("alpha_sweep.bayesian_acquisition", "ei")
     )
 
 
@@ -112,16 +110,16 @@ class GradientAnalysisConfig:
     """
 
     enable: bool = field(
-        default_factory=lambda: _get('alpha_sweep.enable_gradient_analysis', False)
+        default_factory=lambda: _get("alpha_sweep.enable_gradient_analysis", False)
     )
     smooth_sigma: float = field(
-        default_factory=lambda: _get('alpha_sweep.gradient_smooth_sigma', 0.5)
+        default_factory=lambda: _get("alpha_sweep.gradient_smooth_sigma", 0.5)
     )
     gradient_threshold: float = field(
-        default_factory=lambda: _get('alpha_sweep.gradient_threshold', 0.01)
+        default_factory=lambda: _get("alpha_sweep.gradient_threshold", 0.01)
     )
     curvature_threshold: float = field(
-        default_factory=lambda: _get('alpha_sweep.curvature_threshold', 0.001)
+        default_factory=lambda: _get("alpha_sweep.curvature_threshold", 0.001)
     )
 
 
@@ -140,19 +138,15 @@ class AlphaSweepConfig:
 
     alpha_range: tuple[float, float] = field(
         default_factory=lambda: (
-            _get('alpha_sweep.alpha_min', -3.0),
-            _get('alpha_sweep.alpha_max', 3.0)
+            _get("alpha_sweep.alpha_min", -3.0),
+            _get("alpha_sweep.alpha_max", 3.0),
         )
     )
-    num_samples: int = field(
-        default_factory=lambda: _get('alpha_sweep.num_samples', 150)
-    )
+    num_samples: int = field(default_factory=lambda: _get("alpha_sweep.num_samples", 150))
     enable_squaring_test: bool = field(
-        default_factory=lambda: _get('alpha_sweep.enable_squaring_test', True)
+        default_factory=lambda: _get("alpha_sweep.enable_squaring_test", True)
     )
-    threshold: float = field(
-        default_factory=lambda: _get('alpha_sweep.threshold', 0.1)
-    )
+    threshold: float = field(default_factory=lambda: _get("alpha_sweep.threshold", 0.1))
 
     # Sub-configurations
     sampling: SamplingConfig = field(default_factory=SamplingConfig)
@@ -172,21 +166,21 @@ class Composition2DConfig:
 
     alpha_range: tuple[float, float] = field(
         default_factory=lambda: (
-            _get('composition_2d.alpha_min', -2.0),
-            _get('composition_2d.alpha_max', 2.0)
+            _get("composition_2d.alpha_min", -2.0),
+            _get("composition_2d.alpha_max", 2.0),
         )
     )
     beta_range: tuple[float, float] = field(
         default_factory=lambda: (
-            _get('composition_2d.beta_min', -2.0),
-            _get('composition_2d.beta_max', 2.0)
+            _get("composition_2d.beta_min", -2.0),
+            _get("composition_2d.beta_max", 2.0),
         )
     )
     num_samples_per_dim: int = field(
-        default_factory=lambda: _get('composition_2d.num_samples_per_dim', 30)
+        default_factory=lambda: _get("composition_2d.num_samples_per_dim", 30)
     )
     enable_analysis: bool = field(
-        default_factory=lambda: _get('composition_2d.enable_analysis', True)
+        default_factory=lambda: _get("composition_2d.enable_analysis", True)
     )
 
 
@@ -204,35 +198,31 @@ class Composition3DConfig:
         num_samples_per_dim: Samples per dimension (creates n³ grid)
     """
 
-    task_1: str = field(
-        default_factory=lambda: _get('composition_3d.task_1', 'sentiment_negative')
-    )
-    task_2: str = field(
-        default_factory=lambda: _get('composition_3d.task_2', 'sentiment_positive')
-    )
+    task_1: str = field(default_factory=lambda: _get("composition_3d.task_1", "sentiment_negative"))
+    task_2: str = field(default_factory=lambda: _get("composition_3d.task_2", "sentiment_positive"))
     task_3: str = field(
-        default_factory=lambda: _get('composition_3d.task_3', 'instruction_following')
+        default_factory=lambda: _get("composition_3d.task_3", "instruction_following")
     )
     alpha_range: tuple[float, float] = field(
         default_factory=lambda: (
-            _get('composition_3d.alpha_min', -1.0),
-            _get('composition_3d.alpha_max', 1.0)
+            _get("composition_3d.alpha_min", -1.0),
+            _get("composition_3d.alpha_max", 1.0),
         )
     )
     beta_range: tuple[float, float] = field(
         default_factory=lambda: (
-            _get('composition_3d.beta_min', -1.0),
-            _get('composition_3d.beta_max', 1.0)
+            _get("composition_3d.beta_min", -1.0),
+            _get("composition_3d.beta_max", 1.0),
         )
     )
     gamma_range: tuple[float, float] = field(
         default_factory=lambda: (
-            _get('composition_3d.gamma_min', -1.0),
-            _get('composition_3d.gamma_max', 1.0)
+            _get("composition_3d.gamma_min", -1.0),
+            _get("composition_3d.gamma_max", 1.0),
         )
     )
     num_samples_per_dim: int = field(
-        default_factory=lambda: _get('composition_3d.num_samples_per_dim', 10)
+        default_factory=lambda: _get("composition_3d.num_samples_per_dim", 10)
     )
 
 
@@ -250,27 +240,15 @@ class FineTuningConfig:
         logging_steps: Steps between logging
     """
 
-    num_epochs: int = field(
-        default_factory=lambda: _get('fine_tuning.num_epochs', 2)
-    )
-    learning_rate: float = field(
-        default_factory=lambda: _get('fine_tuning.learning_rate', 5e-5)
-    )
-    batch_size: int = field(
-        default_factory=lambda: _get('fine_tuning.batch_size', 16)
-    )
-    max_length: int = field(
-        default_factory=lambda: _get('fine_tuning.max_length', 512)
-    )
+    num_epochs: int = field(default_factory=lambda: _get("fine_tuning.num_epochs", 2))
+    learning_rate: float = field(default_factory=lambda: _get("fine_tuning.learning_rate", 5e-5))
+    batch_size: int = field(default_factory=lambda: _get("fine_tuning.batch_size", 16))
+    max_length: int = field(default_factory=lambda: _get("fine_tuning.max_length", 512))
     data_repetition_factor: int = field(
-        default_factory=lambda: _get('fine_tuning.data_repetition_factor', 100)
+        default_factory=lambda: _get("fine_tuning.data_repetition_factor", 100)
     )
-    save_strategy: str = field(
-        default_factory=lambda: _get('fine_tuning.save_strategy', 'no')
-    )
-    logging_steps: int = field(
-        default_factory=lambda: _get('fine_tuning.logging_steps', 10)
-    )
+    save_strategy: str = field(default_factory=lambda: _get("fine_tuning.save_strategy", "no"))
+    logging_steps: int = field(default_factory=lambda: _get("fine_tuning.logging_steps", 10))
 
 
 @dataclass
@@ -286,17 +264,13 @@ class EvaluationConfig:
     """
 
     general_dataset: str = field(
-        default_factory=lambda: _get('evaluation.general_dataset', 'mixed_domain')
+        default_factory=lambda: _get("evaluation.general_dataset", "mixed_domain")
     )
-    batch_size: int = field(
-        default_factory=lambda: _get('evaluation.batch_size', 8)
-    )
+    batch_size: int = field(default_factory=lambda: _get("evaluation.batch_size", 8))
     enable_mixed_precision: bool = field(
-        default_factory=lambda: _get('evaluation.enable_mixed_precision', True)
+        default_factory=lambda: _get("evaluation.enable_mixed_precision", True)
     )
-    max_length: int = field(
-        default_factory=lambda: _get('evaluation.max_length', 512)
-    )
+    max_length: int = field(default_factory=lambda: _get("evaluation.max_length", 512))
 
 
 @dataclass
@@ -321,29 +295,17 @@ class ExperimentConfig:
         geometry: Riemannian geometry configuration
     """
 
-    model_name: str = field(
-        default_factory=lambda: _get('model.name', 'google/gemma-3-4b-it')
-    )
-    seed: Optional[int] = field(
-        default_factory=lambda: _get('reproducibility.seed', 42)
-    )
-    output_dir: str = field(
-        default_factory=lambda: _get('output.dir', 'outputs')
-    )
-    device: Optional[str] = field(
-        default_factory=lambda: _get('model.device', None)
-    )
-    task_name: str = field(
-        default_factory=lambda: _get('task.name', 'sentiment_positive')
-    )
-    analysis_only: bool = field(
-        default_factory=lambda: _get('output.analysis_only', False)
-    )
+    model_name: str = field(default_factory=lambda: _get("model.name", "google/gemma-3-4b-it"))
+    seed: Optional[int] = field(default_factory=lambda: _get("reproducibility.seed", 42))
+    output_dir: str = field(default_factory=lambda: _get("output.dir", "outputs"))
+    device: Optional[str] = field(default_factory=lambda: _get("model.device", None))
+    task_name: str = field(default_factory=lambda: _get("task.name", "sentiment_positive"))
+    analysis_only: bool = field(default_factory=lambda: _get("output.analysis_only", False))
     enable_2d_composition: bool = field(
-        default_factory=lambda: _get('composition_2d.enable', False)
+        default_factory=lambda: _get("composition_2d.enable", False)
     )
     enable_3d_composition: bool = field(
-        default_factory=lambda: _get('composition_3d.enable', False)
+        default_factory=lambda: _get("composition_3d.enable", False)
     )
 
     # Sub-configurations
@@ -358,6 +320,7 @@ class ExperimentConfig:
     def geometry(self):
         """Geometry configuration (lazy loaded to avoid circular imports)."""
         from sitv.geometry.config import GeometryConfig
+
         return GeometryConfig()
 
     @classmethod
@@ -378,14 +341,14 @@ class ExperimentConfig:
             >>> config = ExperimentConfig.from_args(args)
         """
         # Reload config if custom path provided
-        if hasattr(args, 'config') and args.config is not None:
+        if hasattr(args, "config") and args.config is not None:
             reload_config(args.config)
 
         # Load config entirely from YAML, only override analysis_only if provided
         config = cls()
 
         # Override analysis_only if provided via CLI
-        if hasattr(args, 'analysis_only') and args.analysis_only:
+        if hasattr(args, "analysis_only") and args.analysis_only:
             config.analysis_only = True
 
         return config

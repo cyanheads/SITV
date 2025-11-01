@@ -56,26 +56,24 @@ class DatasetLoader:
         """
         if not file_path.exists():
             raise FileNotFoundError(
-                f"Dataset file not found: {file_path}\n"
-                f"Expected location: {file_path.absolute()}"
+                f"Dataset file not found: {file_path}\nExpected location: {file_path.absolute()}"
             )
 
         examples = []
-        with open(file_path, 'r', encoding='utf-8') as f:
+        with open(file_path, "r", encoding="utf-8") as f:
             for line in f:
                 # Strip whitespace
                 line = line.strip()
 
                 # Skip empty lines and comments
-                if not line or line.startswith('#'):
+                if not line or line.startswith("#"):
                     continue
 
                 examples.append(line)
 
         if not examples:
             raise ValueError(
-                f"No examples found in {file_path}. "
-                f"File may be empty or contain only comments."
+                f"No examples found in {file_path}. File may be empty or contain only comments."
             )
 
         return examples
@@ -248,9 +246,7 @@ class DatasetLoader:
         if not directory.exists():
             return []
 
-        return sorted([
-            f.stem for f in directory.glob("*.txt")
-        ])
+        return sorted([f.stem for f in directory.glob("*.txt")])
 
     def verify_setup(self) -> dict:
         """Verify that the data directory structure is set up correctly.

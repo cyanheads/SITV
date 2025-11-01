@@ -104,9 +104,9 @@ class FineTuner:
         """
         ft_start_time = time.time()
 
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("FINE-TUNING MODEL")
-        print("="*70)
+        print("=" * 70)
         print(f"  Training examples: {len(train_texts)}")
         print(f"  Epochs: {self.num_epochs}")
         print(f"  Learning rate: {self.learning_rate:.2e}")
@@ -136,7 +136,7 @@ class FineTuner:
         # Data collator
         data_collator = DataCollatorForLanguageModeling(
             tokenizer=tokenizer,
-            mlm=False  # Causal LM, not masked LM
+            mlm=False,  # Causal LM, not masked LM
         )
 
         # Progress callback
@@ -170,14 +170,14 @@ class FineTuner:
             "training_history": progress_callback.training_history,
         }
 
-        print(f"\n{'='*70}")
+        print(f"\n{'=' * 70}")
         print("FINE-TUNING COMPLETE")
-        print(f"{'='*70}")
+        print(f"{'=' * 70}")
         print(f"  Duration: {ft_duration / 60:.1f} minutes ({ft_duration:.0f}s)")
         print(f"  Final loss: {train_result.training_loss:.4f}")
         print(f"  Total steps: {train_result.global_step}")
         print(f"  Avg time/step: {ft_duration / train_result.global_step:.2f}s")
-        print(f"{'='*70}\n")
+        print(f"{'=' * 70}\n")
 
         return trainer.model, metrics
 

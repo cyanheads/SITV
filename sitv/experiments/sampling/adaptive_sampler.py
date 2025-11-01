@@ -63,10 +63,7 @@ class AdaptiveSampler(BaseSampler):
         self.coarse_done = False
         self.refinement_done = False
 
-    def generate_samples(
-        self,
-        results: Optional[List[AlphaSweepResult]] = None
-    ) -> np.ndarray:
+    def generate_samples(self, results: Optional[List[AlphaSweepResult]] = None) -> np.ndarray:
         """Generate alpha values adaptively.
 
         Args:
@@ -99,10 +96,7 @@ class AdaptiveSampler(BaseSampler):
         self.refinement_done = True
         return np.array([])
 
-    def should_continue(
-        self,
-        results: List[AlphaSweepResult]
-    ) -> bool:
+    def should_continue(self, results: List[AlphaSweepResult]) -> bool:
         """Check if more adaptive samples are needed.
 
         Args:
@@ -125,16 +119,9 @@ class AdaptiveSampler(BaseSampler):
         Returns:
             Array of coarse alpha values
         """
-        return np.linspace(
-            self.alpha_min,
-            self.alpha_max,
-            self.coarse_samples
-        )
+        return np.linspace(self.alpha_min, self.alpha_max, self.coarse_samples)
 
-    def _plan_refinement(
-        self,
-        results: List[AlphaSweepResult]
-    ) -> np.ndarray:
+    def _plan_refinement(self, results: List[AlphaSweepResult]) -> np.ndarray:
         """Plan refinement samples based on coarse results.
 
         Args:
@@ -190,11 +177,7 @@ class AdaptiveSampler(BaseSampler):
 
         return refinement_samples
 
-    def _find_high_curvature_regions(
-        self,
-        alphas: np.ndarray,
-        losses: np.ndarray
-    ) -> List[float]:
+    def _find_high_curvature_regions(self, alphas: np.ndarray, losses: np.ndarray) -> List[float]:
         """Find regions with high curvature (second derivative).
 
         Uses proper finite difference formula for non-uniform grids with
@@ -214,17 +197,19 @@ class AdaptiveSampler(BaseSampler):
         # For interior points: d²f/dx² ≈ 2*((f[i+1]-f[i])/h_f - (f[i]-f[i-1])/h_b) / (h_f + h_b)
         second_deriv = np.zeros(len(alphas) - 2)
         for i in range(1, len(alphas) - 1):
-            h_forward = alphas[i+1] - alphas[i]
-            h_backward = alphas[i] - alphas[i-1]
+            h_forward = alphas[i + 1] - alphas[i]
+            h_backward = alphas[i] - alphas[i - 1]
 
             # Add epsilon to prevent division by very small values
             epsilon = 1e-10
             h_forward = max(h_forward, epsilon)
             h_backward = max(h_backward, epsilon)
 
-            first_deriv_forward = (losses[i+1] - losses[i]) / h_forward
-            first_deriv_backward = (losses[i] - losses[i-1]) / h_backward
-            second_deriv[i-1] = 2 * (first_deriv_forward - first_deriv_backward) / (h_forward + h_backward)
+            first_deriv_forward = (losses[i + 1] - losses[i]) / h_forward
+            first_deriv_backward = (losses[i] - losses[i - 1]) / h_backward
+            second_deriv[i - 1] = (
+                2 * (first_deriv_forward - first_deriv_backward) / (h_forward + h_backward)
+            )
 
         # Find regions with high absolute curvature
         high_curvature_idx = np.where(np.abs(second_deriv) > self.curvature_threshold)[0]
@@ -233,10 +218,7 @@ class AdaptiveSampler(BaseSampler):
         return [alphas[i + 1] for i in high_curvature_idx]
 
     def _find_zero_crossing_regions(
-        self,
-        alphas: np.ndarray,
-        losses: np.ndarray,
-        base_loss: float
+        self, alphas: np.ndarray, losses: np.ndarray, base_loss: float
     ) -> List[float]:
         """Find regions where loss crosses base_loss.
 
@@ -255,11 +237,7 @@ class AdaptiveSampler(BaseSampler):
 
         return [alphas[i] for i in crossing_idx]
 
-    def _find_extrema_regions(
-        self,
-        alphas: np.ndarray,
-        losses: np.ndarray
-    ) -> List[float]:
+    def _find_extrema_regions(self, alphas: np.ndarray, losses: np.ndarray) -> List[float]:
         """Find local minima and maxima.
 
         Args:
@@ -276,19 +254,16 @@ class AdaptiveSampler(BaseSampler):
 
         # Find local minima and maxima
         for i in range(1, len(losses) - 1):
-            if losses[i] < losses[i-1] and losses[i] < losses[i+1]:
+            if losses[i] < losses[i - 1] and losses[i] < losses[i + 1]:
                 # Local minimum
                 extrema.append(alphas[i])
-            elif losses[i] > losses[i-1] and losses[i] > losses[i+1]:
+            elif losses[i] > losses[i - 1] and losses[i] > losses[i + 1]:
                 # Local maximum
                 extrema.append(alphas[i])
 
         return extrema
 
-    def _merge_regions(
-        self,
-        regions: List[float]
-    ) -> List[float]:
+    def _merge_regions(self, regions: List[float]) -> List[float]:
         """Merge overlapping or nearby regions.
 
         Args:
@@ -316,11 +291,7 @@ class AdaptiveSampler(BaseSampler):
 
         return merged
 
-    def _refine_region(
-        self,
-        center: float,
-        existing_alphas: np.ndarray
-    ) -> List[float]:
+    def _refine_region(self, center: float, existing_alphas: np.ndarray) -> List[float]:
         """Generate refinement samples around a region center.
 
         Args:
@@ -356,10 +327,12 @@ class AdaptiveSampler(BaseSampler):
             Dictionary with sampler configuration
         """
         config = super().get_config()
-        config.update({
-            "coarse_samples": self.coarse_samples,
-            "refine_factor": self.refine_factor,
-            "curvature_threshold": self.curvature_threshold,
-            "refinement_window": self.refinement_window,
-        })
+        config.update(
+            {
+                "coarse_samples": self.coarse_samples,
+                "refine_factor": self.refine_factor,
+                "curvature_threshold": self.curvature_threshold,
+                "refinement_window": self.refinement_window,
+            }
+        )
         return config

@@ -48,7 +48,7 @@ class FisherMetricService:
         approximation_type: FisherApproximationType = FisherApproximationType.DIAGONAL,
         num_samples: int = 1000,
         eigenvalue_floor: float = 1e-6,
-        max_length: int = 512
+        max_length: int = 512,
     ):
         """Initialize the Fisher metric service.
 
@@ -71,11 +71,7 @@ class FisherMetricService:
         self._cached_fisher: dict[str, torch.Tensor] | None = None
 
     def compute_fisher_information_matrix(
-        self,
-        model: nn.Module,
-        texts: list[str],
-        batch_size: int = 8,
-        show_progress: bool = True
+        self, model: nn.Module, texts: list[str], batch_size: int = 8, show_progress: bool = True
     ) -> dict[str, torch.Tensor | dict[str, Any]]:
         """Compute Fisher Information Matrix for model parameters.
 
@@ -106,14 +102,21 @@ class FisherMetricService:
         # Sample subset of data if needed
         if len(texts) > self.num_samples:
             import random
+
             texts = random.sample(texts, self.num_samples)
 
         model.eval()
 
         if self.approximation_type == FisherApproximationType.DIAGONAL:
-            return cast(dict[str, torch.Tensor | dict[str, Any]], self._compute_diagonal_fisher(model, texts, batch_size, show_progress))
+            return cast(
+                dict[str, torch.Tensor | dict[str, Any]],
+                self._compute_diagonal_fisher(model, texts, batch_size, show_progress),
+            )
         elif self.approximation_type == FisherApproximationType.KFAC:
-            return cast(dict[str, torch.Tensor | dict[str, Any]], self._compute_kfac_fisher(model, texts, batch_size, show_progress))
+            return cast(
+                dict[str, torch.Tensor | dict[str, Any]],
+                self._compute_kfac_fisher(model, texts, batch_size, show_progress),
+            )
         elif self.approximation_type == FisherApproximationType.FULL:
             return self._compute_full_fisher(model, texts, batch_size, show_progress)
         else:
@@ -135,11 +138,7 @@ class FisherMetricService:
         return fisher
 
     def _compute_diagonal_fisher(
-        self,
-        model: nn.Module,
-        texts: list[str],
-        batch_size: int,
-        show_progress: bool = True
+        self, model: nn.Module, texts: list[str], batch_size: int, show_progress: bool = True
     ) -> dict[str, torch.Tensor]:
         """Compute diagonal Fisher approximation.
 
@@ -172,7 +171,7 @@ class FisherMetricService:
         # Accumulate gradients over batches
         for i in range(0, len(texts), batch_size):
             tracker.start_iteration()
-            batch_texts = texts[i:i + batch_size]
+            batch_texts = texts[i : i + batch_size]
 
             # Tokenize
             inputs = self.tokenizer(
@@ -180,7 +179,7 @@ class FisherMetricService:
                 return_tensors="pt",
                 truncation=True,
                 max_length=self.max_length,
-                padding=True
+                padding=True,
             )
             inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
@@ -197,7 +196,7 @@ class FisherMetricService:
             # Accumulate squared gradients (diagonal Fisher)
             for name, param in model.named_parameters():
                 if param.requires_grad and param.grad is not None:
-                    fisher_diag[name] += param.grad.data ** 2
+                    fisher_diag[name] += param.grad.data**2
 
             count += len(batch_texts)
 
@@ -205,7 +204,7 @@ class FisherMetricService:
             if show_progress:
                 tracker.end_iteration()
                 msg = f"  Batch progress: {tracker.get_status()}"
-                print(f"{msg:<80}", end='\r', flush=True)
+                print(f"{msg:<80}", end="\r", flush=True)
 
         if show_progress:
             print()  # New line after completion
@@ -217,11 +216,7 @@ class FisherMetricService:
         return fisher_diag
 
     def _compute_kfac_fisher(
-        self,
-        model: nn.Module,
-        texts: list[str],
-        batch_size: int,
-        show_progress: bool = True
+        self, model: nn.Module, texts: list[str], batch_size: int, show_progress: bool = True
     ) -> dict[str, torch.Tensor]:
         """Compute KFAC (Kronecker-Factored) Fisher approximation.
 
@@ -250,11 +245,7 @@ class FisherMetricService:
         return self._compute_diagonal_fisher(model, texts, batch_size, show_progress)
 
     def _compute_full_fisher(
-        self,
-        model: nn.Module,
-        texts: list[str],
-        batch_size: int,
-        show_progress: bool = True
+        self, model: nn.Module, texts: list[str], batch_size: int, show_progress: bool = True
     ) -> dict[str, torch.Tensor | dict[str, Any]]:
         """Compute full Fisher Information Matrix.
 
@@ -293,9 +284,7 @@ class FisherMetricService:
 
         # Initialize Fisher matrix accumulator
         fisher_full = torch.zeros(
-            (total_params, total_params),
-            device=self.device,
-            dtype=torch.float32
+            (total_params, total_params), device=self.device, dtype=torch.float32
         )
 
         count = 0
@@ -307,14 +296,14 @@ class FisherMetricService:
         # Accumulate gradient outer products
         for i in range(0, len(texts), batch_size):
             tracker.start_iteration()
-            batch_texts = texts[i:i + batch_size]
+            batch_texts = texts[i : i + batch_size]
 
             inputs = self.tokenizer(
                 batch_texts,
                 return_tensors="pt",
                 truncation=True,
                 max_length=self.max_length,
-                padding=True
+                padding=True,
             )
             inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
@@ -340,7 +329,7 @@ class FisherMetricService:
             if show_progress:
                 tracker.end_iteration()
                 msg = f"  Batch progress: {tracker.get_status()}"
-                print(f"{msg:<80}", end='\r', flush=True)
+                print(f"{msg:<80}", end="\r", flush=True)
 
         if show_progress:
             print()  # New line after completion
@@ -353,14 +342,12 @@ class FisherMetricService:
         # For simplicity, return as single matrix with metadata
         fisher_dict: dict[str, torch.Tensor | dict[str, Any]] = {
             "_full_matrix": fisher_full,
-            "_param_shapes": param_shapes
+            "_param_shapes": param_shapes,
         }
         return fisher_dict
 
     def compute_riemannian_norm(
-        self,
-        vector: dict[str, torch.Tensor],
-        fisher: dict[str, torch.Tensor]
+        self, vector: dict[str, torch.Tensor], fisher: dict[str, torch.Tensor]
     ) -> float:
         """Compute Riemannian norm ||v||_g = sqrt(v^T G v).
 
@@ -391,15 +378,12 @@ class FisherMetricService:
 
         if self.approximation_type == FisherApproximationType.EUCLIDEAN:
             # Euclidean norm: ||v||² = Σ ||v_i||²
-            norm_sq = sum(
-                torch.sum(vector[name] ** 2).item()
-                for name in vector
-            )
-            return float(norm_sq ** 0.5)
+            norm_sq = sum(torch.sum(vector[name] ** 2).item() for name in vector)
+            return float(norm_sq**0.5)
 
         elif self.approximation_type in [
             FisherApproximationType.DIAGONAL,
-            FisherApproximationType.KFAC
+            FisherApproximationType.KFAC,
         ]:
             # Diagonal metric: ||v||² = Σ v_i² F_ii
             norm_sq = sum(
@@ -407,7 +391,7 @@ class FisherMetricService:
                 for name in vector
                 if name in fisher
             )
-            return float(norm_sq ** 0.5)
+            return float(norm_sq**0.5)
 
         elif self.approximation_type == FisherApproximationType.FULL:
             # Full metric: ||v||² = v^T F v
@@ -427,7 +411,7 @@ class FisherMetricService:
         self,
         params1: dict[str, torch.Tensor],
         params2: dict[str, torch.Tensor],
-        fisher: dict[str, torch.Tensor]
+        fisher: dict[str, torch.Tensor],
     ) -> float:
         """Compute Riemannian distance between two parameter sets.
 
@@ -457,9 +441,7 @@ class FisherMetricService:
         return self.compute_riemannian_norm(diff, fisher)
 
     def compute_christoffel_symbols(
-        self,
-        model: nn.Module,
-        fisher: dict[str, torch.Tensor]
+        self, model: nn.Module, fisher: dict[str, torch.Tensor]
     ) -> dict:
         """Compute Christoffel symbols from Fisher metric.
 
@@ -497,7 +479,7 @@ class FisherMetricService:
         data_texts: list[str],
         epsilon: float = 1e-3,
         batch_size: int = 8,
-        config: "ChristoffelComputationConfig | None" = None
+        config: "ChristoffelComputationConfig | None" = None,
     ) -> dict[str, torch.Tensor]:
         """Compute Christoffel symbols via finite differences of Fisher metric.
 
@@ -551,7 +533,9 @@ class FisherMetricService:
         model_params = {n: p for n, p in model.named_parameters()}
 
         # Get Fisher at base point (suppress progress bars for nested computation)
-        F_base = self.compute_fisher_information_matrix(model, data_texts, batch_size, show_progress=False)
+        F_base = self.compute_fisher_information_matrix(
+            model, data_texts, batch_size, show_progress=False
+        )
 
         christoffel = {}
 
@@ -598,12 +582,13 @@ class FisherMetricService:
 
         # Apply max_parameters limit if specified
         if config.max_parameters is not None and len(params_to_process) > config.max_parameters:
-            params_to_process = params_to_process[:config.max_parameters]
+            params_to_process = params_to_process[: config.max_parameters]
             stats["processed"] = config.max_parameters
 
         # Apply parameter sampling if fraction < 1.0
         if config.parameter_sample_fraction < 1.0:
             import random
+
             sample_size = max(1, int(len(params_to_process) * config.parameter_sample_fraction))
             params_to_process = random.sample(params_to_process, sample_size)
             stats["processed"] = sample_size
@@ -620,7 +605,6 @@ class FisherMetricService:
         tracker = ProgressTracker(total=stats["processed"])
 
         for name, param in params_to_process:
-
             tracker.start_iteration()
 
             # Initialize Christoffel for this parameter
@@ -675,7 +659,7 @@ class FisherMetricService:
                     f"  Overall: [{tracker.current}/{tracker.total}] {tracker.get_status()} "
                     f"| Current: {display_name} (shape: {param_shape})"
                 )
-                print(f"{msg:<150}", end='\r', flush=True)
+                print(f"{msg:<150}", end="\r", flush=True)
 
         print()  # New line after completion
         return christoffel

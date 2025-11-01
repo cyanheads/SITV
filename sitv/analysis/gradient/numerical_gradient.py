@@ -27,11 +27,7 @@ class NumericalGradientAnalyzer:
         method: Finite difference method ('central', 'forward', 'backward')
     """
 
-    def __init__(
-        self,
-        smooth_sigma: float = 0.5,
-        method: str = 'central'
-    ):
+    def __init__(self, smooth_sigma: float = 0.5, method: str = "central"):
         """Initialize gradient analyzer.
 
         Args:
@@ -41,13 +37,13 @@ class NumericalGradientAnalyzer:
         self.smooth_sigma = smooth_sigma
         self.method = method
 
-        if method not in ['central', 'forward', 'backward']:
-            raise ValueError(f"Invalid method: {method}. Must be 'central', 'forward', or 'backward'")
+        if method not in ["central", "forward", "backward"]:
+            raise ValueError(
+                f"Invalid method: {method}. Must be 'central', 'forward', or 'backward'"
+            )
 
     def compute_gradients(
-        self,
-        results: list[AlphaSweepResult],
-        smooth: bool = True
+        self, results: list[AlphaSweepResult], smooth: bool = True
     ) -> tuple[np.ndarray, np.ndarray]:
         """Compute first derivative dL/dα.
 
@@ -75,9 +71,9 @@ class NumericalGradientAnalyzer:
             losses = gaussian_filter1d(losses, self.smooth_sigma)
 
         # Compute gradients using finite differences
-        if self.method == 'central':
+        if self.method == "central":
             gradients = self._central_difference(alphas, losses)
-        elif self.method == 'forward':
+        elif self.method == "forward":
             gradients = self._forward_difference(alphas, losses)
         else:  # backward
             gradients = self._backward_difference(alphas, losses)
@@ -85,9 +81,7 @@ class NumericalGradientAnalyzer:
         return alphas, gradients
 
     def compute_second_derivative(
-        self,
-        results: list[AlphaSweepResult],
-        smooth: bool = True
+        self, results: list[AlphaSweepResult], smooth: bool = True
     ) -> Tuple[np.ndarray, np.ndarray]:
         """Compute second derivative d²L/dα² (curvature).
 
@@ -120,11 +114,7 @@ class NumericalGradientAnalyzer:
         # Return corresponding alphas (middle points)
         return alphas[1:-1], second_deriv
 
-    def _central_difference(
-        self,
-        x: np.ndarray,
-        y: np.ndarray
-    ) -> np.ndarray:
+    def _central_difference(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
         """Compute gradient using central differences.
 
         More accurate than forward/backward for interior points.
@@ -140,14 +130,11 @@ class NumericalGradientAnalyzer:
 
         # Interior points: central difference
         for i in range(1, len(y) - 1):
-            h_forward = x[i+1] - x[i]
-            h_backward = x[i] - x[i-1]
+            h_forward = x[i + 1] - x[i]
+            h_backward = x[i] - x[i - 1]
 
             # Weighted central difference for non-uniform spacing
-            grad[i] = (
-                (y[i+1] - y[i]) / h_forward +
-                (y[i] - y[i-1]) / h_backward
-            ) / 2
+            grad[i] = ((y[i + 1] - y[i]) / h_forward + (y[i] - y[i - 1]) / h_backward) / 2
 
         # Boundary points: forward/backward difference
         grad[0] = (y[1] - y[0]) / (x[1] - x[0])
@@ -155,11 +142,7 @@ class NumericalGradientAnalyzer:
 
         return grad
 
-    def _forward_difference(
-        self,
-        x: np.ndarray,
-        y: np.ndarray
-    ) -> np.ndarray:
+    def _forward_difference(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
         """Compute gradient using forward differences.
 
         Args:
@@ -172,19 +155,15 @@ class NumericalGradientAnalyzer:
         grad = np.zeros_like(y)
 
         for i in range(len(y) - 1):
-            h = x[i+1] - x[i]
-            grad[i] = (y[i+1] - y[i]) / h
+            h = x[i + 1] - x[i]
+            grad[i] = (y[i + 1] - y[i]) / h
 
         # Last point uses backward difference
         grad[-1] = (y[-1] - y[-2]) / (x[-1] - x[-2])
 
         return grad
 
-    def _backward_difference(
-        self,
-        x: np.ndarray,
-        y: np.ndarray
-    ) -> np.ndarray:
+    def _backward_difference(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
         """Compute gradient using backward differences.
 
         Args:
@@ -200,16 +179,12 @@ class NumericalGradientAnalyzer:
         grad[0] = (y[1] - y[0]) / (x[1] - x[0])
 
         for i in range(1, len(y)):
-            h = x[i] - x[i-1]
-            grad[i] = (y[i] - y[i-1]) / h
+            h = x[i] - x[i - 1]
+            grad[i] = (y[i] - y[i - 1]) / h
 
         return grad
 
-    def _second_order_central_difference(
-        self,
-        x: np.ndarray,
-        y: np.ndarray
-    ) -> np.ndarray:
+    def _second_order_central_difference(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
         """Compute second derivative using central differences.
 
         Args:
@@ -222,22 +197,18 @@ class NumericalGradientAnalyzer:
         second_deriv = np.zeros(len(y) - 2)
 
         for i in range(1, len(y) - 1):
-            h_forward = x[i+1] - x[i]
-            h_backward = x[i] - x[i-1]
+            h_forward = x[i + 1] - x[i]
+            h_backward = x[i] - x[i - 1]
             h_avg = (h_forward + h_backward) / 2
 
             # Second derivative approximation
-            second_deriv[i-1] = (
-                (y[i+1] - y[i]) / h_forward -
-                (y[i] - y[i-1]) / h_backward
+            second_deriv[i - 1] = (
+                (y[i + 1] - y[i]) / h_forward - (y[i] - y[i - 1]) / h_backward
             ) / h_avg
 
         return second_deriv
 
-    def estimate_noise_level(
-        self,
-        results: list[AlphaSweepResult]
-    ) -> float:
+    def estimate_noise_level(self, results: list[AlphaSweepResult]) -> float:
         """Estimate noise level in the loss measurements.
 
         This helps determine appropriate smoothing parameters.

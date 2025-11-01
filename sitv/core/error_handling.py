@@ -17,18 +17,18 @@ logger = logging.getLogger(__name__)
 
 class EvaluationError(Exception):
     """Exception raised when model evaluation fails."""
+
     pass
 
 
 class CUDAOutOfMemoryError(Exception):
     """Exception raised when CUDA runs out of memory."""
+
     pass
 
 
 def retry_on_cuda_oom(
-    max_retries: int = 3,
-    backoff_factor: float = 2.0,
-    cleanup_fn: Optional[Callable] = None
+    max_retries: int = 3, backoff_factor: float = 2.0, cleanup_fn: Optional[Callable] = None
 ):
     """Decorator to retry function on CUDA OOM errors.
 
@@ -45,6 +45,7 @@ def retry_on_cuda_oom(
         ... def evaluate_model(model, inputs):
         ...     return model(**inputs)
     """
+
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
@@ -58,7 +59,7 @@ def retry_on_cuda_oom(
                         last_exception = CUDAOutOfMemoryError(f"CUDA OOM: {str(e)}")
 
                         if attempt < max_retries:
-                            wait_time = backoff_factor ** attempt
+                            wait_time = backoff_factor**attempt
                             logger.warning(
                                 f"CUDA OOM on attempt {attempt + 1}/{max_retries + 1}. "
                                 f"Retrying in {wait_time:.1f}s..."
@@ -86,13 +87,12 @@ def retry_on_cuda_oom(
                 raise last_exception
 
         return wrapper
+
     return decorator
 
 
 def retry_on_evaluation_failure(
-    max_retries: int = 2,
-    backoff_factor: float = 1.5,
-    return_on_failure: Any = float('inf')
+    max_retries: int = 2, backoff_factor: float = 1.5, return_on_failure: Any = float("inf")
 ):
     """Decorator to retry function on evaluation failures.
 
@@ -109,6 +109,7 @@ def retry_on_evaluation_failure(
         ... def evaluate_loss(model, texts):
         ...     return compute_loss(model, texts)
     """
+
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
@@ -121,7 +122,7 @@ def retry_on_evaluation_failure(
                     last_exception = e
 
                     if attempt < max_retries:
-                        wait_time = backoff_factor ** attempt
+                        wait_time = backoff_factor**attempt
                         logger.warning(
                             f"Evaluation failed on attempt {attempt + 1}/{max_retries + 1}: {str(e)}. "
                             f"Retrying in {wait_time:.1f}s..."
@@ -138,13 +139,12 @@ def retry_on_evaluation_failure(
             return return_on_failure
 
         return wrapper
+
     return decorator
 
 
 def handle_evaluation_error(
-    error: Exception,
-    alpha: float,
-    context: str = "evaluation"
+    error: Exception, alpha: float, context: str = "evaluation"
 ) -> Tuple[float, bool]:
     """Handle evaluation error with graceful degradation.
 
@@ -173,22 +173,21 @@ def handle_evaluation_error(
             f"Consider reducing batch size or model size."
         )
         # For OOM, we might want to stop the experiment
-        return float('inf'), False
+        return float("inf"), False
 
     # Check if it's a numerical instability
-    if any(keyword in error_msg.lower() for keyword in ['nan', 'inf', 'numerical']):
+    if any(keyword in error_msg.lower() for keyword in ["nan", "inf", "numerical"]):
         logger.warning(
             f"Numerical instability during {context} at α={alpha:.3f}. "
             f"Continuing with fallback loss."
         )
-        return float('inf'), True
+        return float("inf"), True
 
     # Generic error - log and continue
     logger.warning(
-        f"Error during {context} at α={alpha:.3f}: {error_msg}. "
-        f"Continuing with fallback loss."
+        f"Error during {context} at α={alpha:.3f}: {error_msg}. Continuing with fallback loss."
     )
-    return float('inf'), True
+    return float("inf"), True
 
 
 def safe_cuda_cleanup():
@@ -217,11 +216,7 @@ class FailureTracker:
         max_total_failures_pct: Maximum allowed failure percentage
     """
 
-    def __init__(
-        self,
-        max_consecutive_failures: int = 5,
-        max_total_failures_pct: float = 0.3
-    ):
+    def __init__(self, max_consecutive_failures: int = 5, max_total_failures_pct: float = 0.3):
         """Initialize failure tracker.
 
         Args:

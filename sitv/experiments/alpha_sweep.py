@@ -201,9 +201,9 @@ class AlphaSweepExperiment(Experiment):
         """
         self.start_timing()
 
-        print(f"\n{'='*70}")
+        print(f"\n{'=' * 70}")
         print("LOSS LANDSCAPE SWEEP: L(M_base + αT)")
-        print(f"{'='*70}")
+        print(f"{'=' * 70}")
         print(f"Range: α ∈ [{self.alpha_range[0]:.1f}, {self.alpha_range[1]:.1f}]")
         print(f"Samples: {self.num_samples}")
         print(f"Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
@@ -254,8 +254,7 @@ class AlphaSweepExperiment(Experiment):
                 eta_str = self._calculate_eta(alpha_times, i, total_alphas)
 
                 print(
-                    f"[{i+1:3d}/{total_alphas}] ({progress_pct:5.1f}%) "
-                    f"α = {alpha:+.3f} | ",
+                    f"[{i + 1:3d}/{total_alphas}] ({progress_pct:5.1f}%) α = {alpha:+.3f} | ",
                     end="",
                     flush=True,
                 )
@@ -400,7 +399,9 @@ class AlphaSweepExperiment(Experiment):
         functional_return = abs(loss_alpha - base_loss)
 
         # Task evaluation loss
-        task_eval_loss = float(self.evaluator.evaluate_task_performance(self.base_model, self.task_eval_texts))
+        task_eval_loss = float(
+            self.evaluator.evaluate_task_performance(self.base_model, self.task_eval_texts)
+        )
         if not math.isfinite(task_eval_loss):
             task_eval_loss = float("inf")
 
@@ -423,21 +424,29 @@ class AlphaSweepExperiment(Experiment):
             )
 
         # Compute perplexities with overflow/NaN protection
-        perplexity = float("inf") if (not math.isfinite(loss_alpha) or loss_alpha > 88.0) else float(np.exp(loss_alpha))
+        perplexity = (
+            float("inf")
+            if (not math.isfinite(loss_alpha) or loss_alpha > 88.0)
+            else float(np.exp(loss_alpha))
+        )
         perplexity_2alpha = 0.0
         if self.enable_squaring_test:
             perplexity_2alpha = (
-                float("inf") if (not math.isfinite(loss_2alpha) or loss_2alpha > 88.0) else float(np.exp(loss_2alpha))
+                float("inf")
+                if (not math.isfinite(loss_2alpha) or loss_2alpha > 88.0)
+                else float(np.exp(loss_2alpha))
             )
 
         # Sentiment preference (if opposite sentiment texts provided)
         sentiment_preference = 0.0
         task_eval_loss_negative = 0.0
         if self.opposite_sentiment_eval_texts:
-            _, task_eval_loss_negative, sentiment_preference = self.evaluator.evaluate_sentiment_preference(
-                self.base_model,
-                self.task_eval_texts,
-                self.opposite_sentiment_eval_texts,
+            _, task_eval_loss_negative, sentiment_preference = (
+                self.evaluator.evaluate_sentiment_preference(
+                    self.base_model,
+                    self.task_eval_texts,
+                    self.opposite_sentiment_eval_texts,
+                )
             )
 
         return AlphaSweepResult(
@@ -556,7 +565,9 @@ class AlphaSweepExperiment(Experiment):
                 f"{elapsed:.1f}s | {eta_str}"
             )
 
-    def _print_summary(self, alpha_times: list[float], results: list[AlphaSweepResult], total_samples: int) -> None:
+    def _print_summary(
+        self, alpha_times: list[float], results: list[AlphaSweepResult], total_samples: int
+    ) -> None:
         """Print experiment summary.
 
         Args:
@@ -567,9 +578,9 @@ class AlphaSweepExperiment(Experiment):
         duration = self.get_duration()
         avg_time = sum(alpha_times) / len(alpha_times) if alpha_times else 0.0
 
-        print(f"\n{'='*70}")
+        print(f"\n{'=' * 70}")
         print("ALPHA SWEEP COMPLETE")
-        print(f"{'='*70}")
+        print(f"{'=' * 70}")
         print(f"  Duration: {duration / 60:.1f} minutes ({duration:.0f}s)")
         print(f"  Samples Completed: {len(results)}/{total_samples}")
         print(f"  Avg time/sample: {avg_time:.2f}s")
@@ -579,7 +590,7 @@ class AlphaSweepExperiment(Experiment):
         if "Failures: 0/" not in failure_summary:
             print(f"  {failure_summary}")
 
-        print(f"{'='*70}\n")
+        print(f"{'=' * 70}\n")
 
     def _create_metadata(self, alpha_times: list[float]) -> dict[str, Any]:
         """Create metadata dictionary for results.

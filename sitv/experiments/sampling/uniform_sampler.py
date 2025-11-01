@@ -25,10 +25,7 @@ class UniformSampler(BaseSampler):
         >>> print(alphas[0], alphas[-1])  # -1.0, 2.0
     """
 
-    def generate_samples(
-        self,
-        results: Optional[List[AlphaSweepResult]] = None
-    ) -> np.ndarray:
+    def generate_samples(self, results: Optional[List[AlphaSweepResult]] = None) -> np.ndarray:
         """Generate uniformly spaced alpha values.
 
         Args:
@@ -37,16 +34,9 @@ class UniformSampler(BaseSampler):
         Returns:
             Array of evenly spaced alpha values
         """
-        return np.linspace(
-            self.alpha_min,
-            self.alpha_max,
-            self.num_samples
-        )
+        return np.linspace(self.alpha_min, self.alpha_max, self.num_samples)
 
-    def should_continue(
-        self,
-        results: List[AlphaSweepResult]
-    ) -> bool:
+    def should_continue(self, results: List[AlphaSweepResult]) -> bool:
         """Check if more samples are needed.
 
         For uniform sampling, we generate all samples at once,

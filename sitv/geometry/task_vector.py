@@ -33,12 +33,7 @@ class GeodesicTaskVectorService:
         geodesic_integrator: Geodesic integration service
     """
 
-    def __init__(
-        self,
-        config: GeometryConfig,
-        tokenizer,
-        device: str = "cuda"
-    ):
+    def __init__(self, config: GeometryConfig, tokenizer, device: str = "cuda"):
         """Initialize the geodesic task vector service.
 
         Args:
@@ -56,14 +51,12 @@ class GeodesicTaskVectorService:
             device=device,
             approximation_type=config.metric_type,
             num_samples=config.fisher_approximation.num_samples,
-            eigenvalue_floor=config.fisher_approximation.eigenvalue_floor
+            eigenvalue_floor=config.fisher_approximation.eigenvalue_floor,
         )
 
         # Initialize geodesic integrator with Fisher service for metric recomputation
         self.geodesic_integrator = GeodesicIntegrator(
-            config=config.geodesic_integration,
-            device=device,
-            fisher_metric=self.fisher_service
+            config=config.geodesic_integration, device=device, fisher_metric=self.fisher_service
         )
 
         # Cache for Fisher metrics
@@ -73,7 +66,7 @@ class GeodesicTaskVectorService:
         self,
         base_model: PreTrainedModel,
         finetuned_model: PreTrainedModel,
-        data_texts: Optional[list[str]] = None
+        data_texts: Optional[list[str]] = None,
     ) -> Dict[str, torch.Tensor]:
         """Compute task vector using Riemannian geometry.
 
@@ -94,14 +87,12 @@ class GeodesicTaskVectorService:
         """
         # Get base parameters as dict
         base_params = {
-            name: param.detach().cpu().clone()
-            for name, param in base_model.named_parameters()
+            name: param.detach().cpu().clone() for name, param in base_model.named_parameters()
         }
 
         # Get finetuned parameters as dict
         ft_params = {
-            name: param.detach().cpu().clone()
-            for name, param in finetuned_model.named_parameters()
+            name: param.detach().cpu().clone() for name, param in finetuned_model.named_parameters()
         }
 
         # If parallel transport enabled and data provided, use Riemannian log map
@@ -112,6 +103,7 @@ class GeodesicTaskVectorService:
             # Use logarithm map to get tangent vector
             # Note: For full Fisher approximation with metadata, cast to expected type
             from typing import cast as typing_cast
+
             task_vector = self.geodesic_integrator.log_map(
                 base_params, ft_params, typing_cast(Optional[Dict[str, torch.Tensor]], fisher)
             )
@@ -122,9 +114,7 @@ class GeodesicTaskVectorService:
         return task_vector
 
     def compute_magnitude(
-        self,
-        task_vector: Dict[str, torch.Tensor],
-        fisher: Optional[Dict[str, torch.Tensor]] = None
+        self, task_vector: Dict[str, torch.Tensor], fisher: Optional[Dict[str, torch.Tensor]] = None
     ) -> float:
         """Compute Riemannian magnitude of task vector.
 
@@ -155,7 +145,7 @@ class GeodesicTaskVectorService:
         alpha: float,
         fisher: Optional[Dict[str, torch.Tensor]] = None,
         christoffel: Optional[Dict[str, torch.Tensor]] = None,
-        data_texts: Optional[list[str]] = None
+        data_texts: Optional[list[str]] = None,
     ) -> PreTrainedModel:
         """Apply task vector via geodesic exponential map.
 
@@ -183,10 +173,7 @@ class GeodesicTaskVectorService:
             ... )
         """
         # Get base parameters as dict
-        base_params = {
-            name: param.data.clone()
-            for name, param in base_model.named_parameters()
-        }
+        base_params = {name: param.data.clone() for name, param in base_model.named_parameters()}
 
         # Compute geodesic endpoint
         if self.config.use_geodesics and fisher is not None:
@@ -198,7 +185,7 @@ class GeodesicTaskVectorService:
                 fisher_metric=fisher,
                 christoffel=christoffel,
                 model=base_model,
-                data_texts=data_texts
+                data_texts=data_texts,
             )
         else:
             # Fall back to Euclidean straight line
@@ -207,7 +194,7 @@ class GeodesicTaskVectorService:
                 tangent_vector=task_vector,
                 t=alpha,
                 fisher_metric=None,
-                christoffel=None
+                christoffel=None,
             )
 
         # Apply new parameters to model
@@ -219,10 +206,7 @@ class GeodesicTaskVectorService:
         return base_model
 
     def get_or_compute_fisher(
-        self,
-        model: PreTrainedModel,
-        data_texts: list[str],
-        cache_key: str
+        self, model: PreTrainedModel, data_texts: list[str], cache_key: str
     ) -> Dict[str, torch.Tensor | Dict[str, Any]]:
         """Get Fisher metric from cache or compute it.
 
@@ -243,9 +227,7 @@ class GeodesicTaskVectorService:
 
         # Compute Fisher matrix
         fisher = self.fisher_service.compute_fisher_information_matrix(
-            model=model,
-            texts=data_texts,
-            batch_size=8
+            model=model, texts=data_texts, batch_size=8
         )
 
         # Cache if enabled
@@ -255,9 +237,7 @@ class GeodesicTaskVectorService:
         return fisher
 
     def compute_christoffel(
-        self,
-        model: PreTrainedModel,
-        fisher: Dict[str, torch.Tensor]
+        self, model: PreTrainedModel, fisher: Dict[str, torch.Tensor]
     ) -> Dict[str, torch.Tensor]:
         """Compute Christoffel symbols from Fisher metric.
 

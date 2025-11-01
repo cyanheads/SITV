@@ -156,9 +156,9 @@ class FineTuningProgressCallback(TrainerCallback):
         """
         self.epoch_start_time = time.time()
         epoch_num = int(state.epoch) if state.epoch else 0
-        print(f"\n{'─'*60}")
+        print(f"\n{'─' * 60}")
         print(f"Epoch {epoch_num + 1}/{args.num_train_epochs}")
-        print(f"{'─'*60}")
+        print(f"{'─' * 60}")
 
     def on_log(self, args, state, control, logs=None, **kwargs):
         """Called when the trainer logs information.
@@ -176,9 +176,7 @@ class FineTuningProgressCallback(TrainerCallback):
 
             # Calculate ETA
             if len(self.step_times) > 1 and state.max_steps:
-                avg_step_time = (
-                    self.step_times[-1] - self.step_times[0]
-                ) / len(self.step_times)
+                avg_step_time = (self.step_times[-1] - self.step_times[0]) / len(self.step_times)
                 remaining_steps = state.max_steps - state.global_step
                 eta_seconds = avg_step_time * remaining_steps
                 eta_str = f"{eta_seconds / 60:.1f}m" if eta_seconds > 60 else f"{eta_seconds:.0f}s"

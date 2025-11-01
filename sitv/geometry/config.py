@@ -44,16 +44,16 @@ class FisherApproximationConfig:
     """
 
     sampling_strategy: str = field(
-        default_factory=lambda: _get('geometry.fisher_approximation.sampling_strategy', 'subset')
+        default_factory=lambda: _get("geometry.fisher_approximation.sampling_strategy", "subset")
     )
     num_samples: int = field(
-        default_factory=lambda: _get('geometry.fisher_approximation.num_samples', 1000)
+        default_factory=lambda: _get("geometry.fisher_approximation.num_samples", 1000)
     )
     block_size: int = field(
-        default_factory=lambda: _get('geometry.fisher_approximation.block_size', 256)
+        default_factory=lambda: _get("geometry.fisher_approximation.block_size", 256)
     )
     eigenvalue_floor: float = field(
-        default_factory=lambda: _get('geometry.fisher_approximation.eigenvalue_floor', 1e-6)
+        default_factory=lambda: _get("geometry.fisher_approximation.eigenvalue_floor", 1e-6)
     )
 
 
@@ -72,25 +72,25 @@ class GeodesicIntegrationConfig:
     """
 
     enabled: bool = field(
-        default_factory=lambda: _get('geometry.geodesic_integration.enabled', True)
+        default_factory=lambda: _get("geometry.geodesic_integration.enabled", True)
     )
     num_steps: int = field(
-        default_factory=lambda: _get('geometry.geodesic_integration.num_steps', 100)
+        default_factory=lambda: _get("geometry.geodesic_integration.num_steps", 100)
     )
     tolerance: float = field(
-        default_factory=lambda: _get('geometry.geodesic_integration.tolerance', 1e-6)
+        default_factory=lambda: _get("geometry.geodesic_integration.tolerance", 1e-6)
     )
     step_size_control: bool = field(
-        default_factory=lambda: _get('geometry.geodesic_integration.step_size_control', False)
+        default_factory=lambda: _get("geometry.geodesic_integration.step_size_control", False)
     )
     max_iterations: int = field(
-        default_factory=lambda: _get('geometry.geodesic_integration.max_iterations', 1000)
+        default_factory=lambda: _get("geometry.geodesic_integration.max_iterations", 1000)
     )
     recompute_metric_every: int = field(
-        default_factory=lambda: _get('geometry.geodesic_integration.recompute_metric_every', 0)
+        default_factory=lambda: _get("geometry.geodesic_integration.recompute_metric_every", 0)
     )
     metric_epsilon: float = field(
-        default_factory=lambda: _get('geometry.geodesic_integration.metric_epsilon', 1e-3)
+        default_factory=lambda: _get("geometry.geodesic_integration.metric_epsilon", 1e-3)
     )
 
 
@@ -107,23 +107,21 @@ class SymmetryAnalysisConfig:
         symmetry_tolerance: Tolerance for detecting symmetries (L(R·θ) ≈ L(θ))
     """
 
-    enabled: bool = field(
-        default_factory=lambda: _get('geometry.symmetry_analysis.enabled', False)
-    )
+    enabled: bool = field(default_factory=lambda: _get("geometry.symmetry_analysis.enabled", False))
     detect_rotations: bool = field(
-        default_factory=lambda: _get('geometry.symmetry_analysis.detect_rotations', True)
+        default_factory=lambda: _get("geometry.symmetry_analysis.detect_rotations", True)
     )
     detect_permutations: bool = field(
-        default_factory=lambda: _get('geometry.symmetry_analysis.detect_permutations', True)
+        default_factory=lambda: _get("geometry.symmetry_analysis.detect_permutations", True)
     )
     detect_scaling: bool = field(
-        default_factory=lambda: _get('geometry.symmetry_analysis.detect_scaling', True)
+        default_factory=lambda: _get("geometry.symmetry_analysis.detect_scaling", True)
     )
     quotient_space: bool = field(
-        default_factory=lambda: _get('geometry.symmetry_analysis.quotient_space', False)
+        default_factory=lambda: _get("geometry.symmetry_analysis.quotient_space", False)
     )
     symmetry_tolerance: float = field(
-        default_factory=lambda: _get('geometry.symmetry_analysis.symmetry_tolerance', 0.01)
+        default_factory=lambda: _get("geometry.symmetry_analysis.symmetry_tolerance", 0.01)
     )
 
 
@@ -140,19 +138,19 @@ class CurvatureAnalysisConfig:
     """
 
     enabled: bool = field(
-        default_factory=lambda: _get('geometry.curvature_analysis.enabled', False)
+        default_factory=lambda: _get("geometry.curvature_analysis.enabled", False)
     )
     compute_sectional: bool = field(
-        default_factory=lambda: _get('geometry.curvature_analysis.compute_sectional', True)
+        default_factory=lambda: _get("geometry.curvature_analysis.compute_sectional", True)
     )
     compute_ricci: bool = field(
-        default_factory=lambda: _get('geometry.curvature_analysis.compute_ricci', False)
+        default_factory=lambda: _get("geometry.curvature_analysis.compute_ricci", False)
     )
     compute_scalar: bool = field(
-        default_factory=lambda: _get('geometry.curvature_analysis.compute_scalar', False)
+        default_factory=lambda: _get("geometry.curvature_analysis.compute_scalar", False)
     )
     num_tangent_samples: int = field(
-        default_factory=lambda: _get('geometry.curvature_analysis.num_tangent_samples', 10)
+        default_factory=lambda: _get("geometry.curvature_analysis.num_tangent_samples", 10)
     )
 
 
@@ -169,19 +167,21 @@ class ChristoffelComputationConfig:
     """
 
     skip_vision_tower: bool = field(
-        default_factory=lambda: _get('geometry.christoffel_computation.skip_vision_tower', True)
+        default_factory=lambda: _get("geometry.christoffel_computation.skip_vision_tower", True)
     )
     skip_frozen: bool = field(
-        default_factory=lambda: _get('geometry.christoffel_computation.skip_frozen', True)
+        default_factory=lambda: _get("geometry.christoffel_computation.skip_frozen", True)
     )
     num_samples: int = field(
-        default_factory=lambda: _get('geometry.christoffel_computation.num_samples', 20)
+        default_factory=lambda: _get("geometry.christoffel_computation.num_samples", 20)
     )
     parameter_sample_fraction: float = field(
-        default_factory=lambda: _get('geometry.christoffel_computation.parameter_sample_fraction', 1.0)
+        default_factory=lambda: _get(
+            "geometry.christoffel_computation.parameter_sample_fraction", 1.0
+        )
     )
     max_parameters: int | None = field(
-        default_factory=lambda: _get('geometry.christoffel_computation.max_parameters', None)
+        default_factory=lambda: _get("geometry.christoffel_computation.max_parameters", None)
     )
 
 
@@ -205,19 +205,13 @@ class GeometryConfig:
         parallel_transport: Whether to use parallel transport for task vectors
     """
 
-    enabled: bool = field(
-        default_factory=lambda: _get('geometry.enabled', False)
-    )
+    enabled: bool = field(default_factory=lambda: _get("geometry.enabled", False))
     metric_type: FisherApproximationType = field(
-        default_factory=lambda: FisherApproximationType(
-            _get('geometry.metric_type', 'euclidean')
-        )
+        default_factory=lambda: FisherApproximationType(_get("geometry.metric_type", "euclidean"))
     )
-    cache_metric: bool = field(
-        default_factory=lambda: _get('geometry.cache_metric', True)
-    )
+    cache_metric: bool = field(default_factory=lambda: _get("geometry.cache_metric", True))
     parallel_transport: bool = field(
-        default_factory=lambda: _get('geometry.parallel_transport', False)
+        default_factory=lambda: _get("geometry.parallel_transport", False)
     )
 
     # Sub-configurations
@@ -230,12 +224,8 @@ class GeometryConfig:
     christoffel_computation: ChristoffelComputationConfig = field(
         default_factory=ChristoffelComputationConfig
     )
-    symmetry_analysis: SymmetryAnalysisConfig = field(
-        default_factory=SymmetryAnalysisConfig
-    )
-    curvature_analysis: CurvatureAnalysisConfig = field(
-        default_factory=CurvatureAnalysisConfig
-    )
+    symmetry_analysis: SymmetryAnalysisConfig = field(default_factory=SymmetryAnalysisConfig)
+    curvature_analysis: CurvatureAnalysisConfig = field(default_factory=CurvatureAnalysisConfig)
 
     @property
     def use_riemannian(self) -> bool:

@@ -77,7 +77,7 @@ class Composition2DExperiment(Experiment):
             device,
             batch_size=eval_batch_size,
             enable_mixed_precision=eval_enable_mixed_precision,
-            max_length=eval_max_length
+            max_length=eval_max_length,
         )
 
     def run(self) -> tuple[List[TwoDSweepResult], Dict[str, Any]]:
@@ -90,14 +90,16 @@ class Composition2DExperiment(Experiment):
         """
         self.start_timing()
 
-        total_evals = self.num_samples_per_dim ** 2
+        total_evals = self.num_samples_per_dim**2
 
-        print(f"\n{'='*70}")
+        print(f"\n{'=' * 70}")
         print("2D TASK VECTOR COMPOSITION: L(M_base + α·T1 + β·T2)")
-        print(f"{'='*70}")
+        print(f"{'=' * 70}")
         print(f"α range: [{self.alpha_range[0]:.1f}, {self.alpha_range[1]:.1f}]")
         print(f"β range: [{self.beta_range[0]:.1f}, {self.beta_range[1]:.1f}]")
-        print(f"Grid: {self.num_samples_per_dim}×{self.num_samples_per_dim} = {total_evals} evaluations")
+        print(
+            f"Grid: {self.num_samples_per_dim}×{self.num_samples_per_dim} = {total_evals} evaluations"
+        )
         print(f"Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         print("\nQuestion: Do we see rotation-like patterns under composition?\n")
 
@@ -120,15 +122,9 @@ class Composition2DExperiment(Experiment):
 
         # Generate grid values
         alpha_values = np.linspace(
-            self.alpha_range[0],
-            self.alpha_range[1],
-            self.num_samples_per_dim
+            self.alpha_range[0], self.alpha_range[1], self.num_samples_per_dim
         )
-        beta_values = np.linspace(
-            self.beta_range[0],
-            self.beta_range[1],
-            self.num_samples_per_dim
-        )
+        beta_values = np.linspace(self.beta_range[0], self.beta_range[1], self.num_samples_per_dim)
 
         # Run sweep
         results = []
@@ -148,16 +144,11 @@ class Composition2DExperiment(Experiment):
                     f"[{eval_count:4d}/{total_evals}] ({progress_pct:5.1f}%) "
                     f"α={alpha:+.2f}, β={beta:+.2f} | ",
                     end="",
-                    flush=True
+                    flush=True,
                 )
 
                 # Evaluate at (alpha, beta)
-                result = self._evaluate_at_alpha_beta(
-                    alpha,
-                    beta,
-                    original_params,
-                    base_loss
-                )
+                result = self._evaluate_at_alpha_beta(alpha, beta, original_params, base_loss)
                 results.append(result)
 
                 # Track timing
@@ -196,11 +187,7 @@ class Composition2DExperiment(Experiment):
         return original_params
 
     def _evaluate_at_alpha_beta(
-        self,
-        alpha: float,
-        beta: float,
-        original_params: Dict[str, torch.Tensor],
-        base_loss: float
+        self, alpha: float, beta: float, original_params: Dict[str, torch.Tensor], base_loss: float
     ) -> TwoDSweepResult:
         """Evaluate model at a specific (alpha, beta) point.
 
@@ -215,11 +202,7 @@ class Composition2DExperiment(Experiment):
         """
         # Apply 2D composition: M(α,β) = M_base + α·T1 + β·T2
         self.apply_2d_composition(
-            original_params,
-            self.task_vector_1,
-            self.task_vector_2,
-            alpha,
-            beta
+            original_params, self.task_vector_1, self.task_vector_2, alpha, beta
         )
 
         # Evaluate L(M_alpha_beta)
@@ -238,12 +221,7 @@ class Composition2DExperiment(Experiment):
             perplexity=perplexity,
         )
 
-    def _calculate_eta(
-        self,
-        eval_times: List[float],
-        current_count: int,
-        total_count: int
-    ) -> str:
+    def _calculate_eta(self, eval_times: List[float], current_count: int, total_count: int) -> str:
         """Calculate ETA string.
 
         Args:
@@ -271,19 +249,15 @@ class Composition2DExperiment(Experiment):
         duration = self.get_duration()
         avg_time = sum(eval_times) / len(eval_times) if eval_times else 0.0
 
-        print(f"\n{'='*70}")
+        print(f"\n{'=' * 70}")
         print("2D COMPOSITION SWEEP COMPLETE")
-        print(f"{'='*70}")
+        print(f"{'=' * 70}")
         print(f"  Duration: {duration / 60:.1f} minutes ({duration:.0f}s)")
         print(f"  Evaluations: {total_evals}")
         print(f"  Avg time/eval: {avg_time:.2f}s")
-        print(f"{'='*70}\n")
+        print(f"{'=' * 70}\n")
 
-    def _create_metadata(
-        self,
-        eval_times: List[float],
-        total_evals: int
-    ) -> Dict[str, Any]:
+    def _create_metadata(self, eval_times: List[float], total_evals: int) -> Dict[str, Any]:
         """Create metadata dictionary for results.
 
         Args:

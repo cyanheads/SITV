@@ -27,12 +27,7 @@ class Experiment(ABC):
         device: Device for computation
     """
 
-    def __init__(
-        self,
-        base_model: PreTrainedModel,
-        tokenizer,
-        device: str = "cuda"
-    ):
+    def __init__(self, base_model: PreTrainedModel, tokenizer, device: str = "cuda"):
         """Initialize the experiment.
 
         Args:
@@ -58,10 +53,7 @@ class Experiment(ABC):
         """
         raise NotImplementedError("Subclasses must implement run()")
 
-    def clone_parameters(
-        self,
-        task_vector: Dict[str, torch.Tensor]
-    ) -> Dict[str, torch.Tensor]:
+    def clone_parameters(self, task_vector: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
         """Clone model parameters for restoration later.
 
         Args:
@@ -77,10 +69,7 @@ class Experiment(ABC):
                 original_params[name] = param.clone().detach()
         return original_params
 
-    def restore_parameters(
-        self,
-        original_params: Dict[str, torch.Tensor]
-    ) -> None:
+    def restore_parameters(self, original_params: Dict[str, torch.Tensor]) -> None:
         """Restore model parameters to original state.
 
         Args:
@@ -93,8 +82,7 @@ class Experiment(ABC):
                     param.copy_(original_params[name])
 
     def preload_task_vector_to_device(
-        self,
-        task_vector: Dict[str, torch.Tensor]
+        self, task_vector: Dict[str, torch.Tensor]
     ) -> Dict[str, torch.Tensor]:
         """Pre-move task vector tensors to model device.
 
@@ -117,7 +105,7 @@ class Experiment(ABC):
         self,
         original_params: Dict[str, torch.Tensor],
         task_vector: Dict[str, torch.Tensor],
-        alpha: float
+        alpha: float,
     ) -> None:
         """Apply scaled task vector to model: M(α) = M_base + α·T
 
@@ -136,17 +124,14 @@ class Experiment(ABC):
         # Validate alpha is finite
         if not torch.isfinite(torch.tensor(alpha)):
             raise ValueError(
-                f"Alpha must be finite, got {alpha}. "
-                "NaN or Inf values are not allowed."
+                f"Alpha must be finite, got {alpha}. NaN or Inf values are not allowed."
             )
 
         with torch.no_grad():
             for name, param in self.base_model.named_parameters():
                 if name in task_vector and name in original_params:
                     # Task vector should already be on correct device
-                    param.copy_(
-                        original_params[name] + alpha * task_vector[name]
-                    )
+                    param.copy_(original_params[name] + alpha * task_vector[name])
 
     def apply_2d_composition(
         self,
@@ -154,7 +139,7 @@ class Experiment(ABC):
         task_vector_1: Dict[str, torch.Tensor],
         task_vector_2: Dict[str, torch.Tensor],
         alpha: float,
-        beta: float
+        beta: float,
     ) -> None:
         """Apply 2D task vector composition: M(α,β) = M_base + α·T1 + β·T2
 
@@ -175,14 +160,10 @@ class Experiment(ABC):
         # Validate alpha and beta are finite
         if not torch.isfinite(torch.tensor(alpha)):
             raise ValueError(
-                f"Alpha must be finite, got {alpha}. "
-                "NaN or Inf values are not allowed."
+                f"Alpha must be finite, got {alpha}. NaN or Inf values are not allowed."
             )
         if not torch.isfinite(torch.tensor(beta)):
-            raise ValueError(
-                f"Beta must be finite, got {beta}. "
-                "NaN or Inf values are not allowed."
-            )
+            raise ValueError(f"Beta must be finite, got {beta}. NaN or Inf values are not allowed.")
 
         with torch.no_grad():
             for name, param in self.base_model.named_parameters():
@@ -194,9 +175,7 @@ class Experiment(ABC):
                     scaled_t2 = beta * task_vector_2[name]
                     # Add in order: base + (scaled_t1 + scaled_t2)
                     # This groups smaller perturbations together first
-                    param.copy_(
-                        original_params[name] + (scaled_t1 + scaled_t2)
-                    )
+                    param.copy_(original_params[name] + (scaled_t1 + scaled_t2))
 
     def apply_3d_composition(
         self,
@@ -206,7 +185,7 @@ class Experiment(ABC):
         task_vector_3: Dict[str, torch.Tensor],
         alpha: float,
         beta: float,
-        gamma: float
+        gamma: float,
     ) -> None:
         """Apply 3D task vector composition: M(α,β,γ) = M_base + α·T1 + β·T2 + γ·T3
 
@@ -229,18 +208,13 @@ class Experiment(ABC):
         # Validate all scaling factors are finite
         if not torch.isfinite(torch.tensor(alpha)):
             raise ValueError(
-                f"Alpha must be finite, got {alpha}. "
-                "NaN or Inf values are not allowed."
+                f"Alpha must be finite, got {alpha}. NaN or Inf values are not allowed."
             )
         if not torch.isfinite(torch.tensor(beta)):
-            raise ValueError(
-                f"Beta must be finite, got {beta}. "
-                "NaN or Inf values are not allowed."
-            )
+            raise ValueError(f"Beta must be finite, got {beta}. NaN or Inf values are not allowed.")
         if not torch.isfinite(torch.tensor(gamma)):
             raise ValueError(
-                f"Gamma must be finite, got {gamma}. "
-                "NaN or Inf values are not allowed."
+                f"Gamma must be finite, got {gamma}. NaN or Inf values are not allowed."
             )
 
         with torch.no_grad():
@@ -254,9 +228,7 @@ class Experiment(ABC):
                     scaled_t3 = gamma * task_vector_3[name]
                     # Add in order: base + (scaled_t1 + scaled_t2 + scaled_t3)
                     # This groups smaller perturbations together first
-                    param.copy_(
-                        original_params[name] + (scaled_t1 + scaled_t2 + scaled_t3)
-                    )
+                    param.copy_(original_params[name] + (scaled_t1 + scaled_t2 + scaled_t3))
 
     def apply_geodesic_task_vector(
         self,
@@ -266,7 +238,7 @@ class Experiment(ABC):
         fisher_metric: Optional[Dict[str, torch.Tensor]] = None,
         christoffel: Optional[Dict[str, torch.Tensor]] = None,
         fisher_service: Optional[Any] = None,
-        data_texts: Optional[List[str]] = None
+        data_texts: Optional[List[str]] = None,
     ) -> None:
         """Apply task vector via geodesic exponential map.
 
@@ -310,8 +282,7 @@ class Experiment(ABC):
         # Validate alpha is finite
         if not torch.isfinite(torch.tensor(alpha)):
             raise ValueError(
-                f"Alpha must be finite, got {alpha}. "
-                "NaN or Inf values are not allowed."
+                f"Alpha must be finite, got {alpha}. NaN or Inf values are not allowed."
             )
 
         # Import geodesic integrator lazily to avoid circular dependencies
@@ -320,11 +291,7 @@ class Experiment(ABC):
 
         # Create geodesic integrator with Fisher service for metric recomputation
         config = GeodesicIntegrationConfig()
-        integrator = GeodesicIntegrator(
-            config,
-            device=self.device,
-            fisher_metric=fisher_service
-        )
+        integrator = GeodesicIntegrator(config, device=self.device, fisher_metric=fisher_service)
 
         # Compute exponential map: exp_p(α·v) with optional metric recomputation
         new_params = integrator.exponential_map(
@@ -334,7 +301,7 @@ class Experiment(ABC):
             fisher_metric=fisher_metric,
             christoffel=christoffel,
             model=self.base_model,
-            data_texts=data_texts
+            data_texts=data_texts,
         )
 
         # Apply new parameters to model
@@ -397,7 +364,9 @@ class Experiment(ABC):
         """
         duration = self.get_duration()
         return {
-            "start_time": datetime.fromtimestamp(self.start_time).isoformat() if self.start_time else "",
+            "start_time": datetime.fromtimestamp(self.start_time).isoformat()
+            if self.start_time
+            else "",
             "end_time": datetime.fromtimestamp(self.end_time).isoformat() if self.end_time else "",
             "duration_seconds": duration,
         }

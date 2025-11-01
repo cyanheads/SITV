@@ -30,7 +30,7 @@ class EvaluationService:
         device: str = "cuda",
         batch_size: int = 8,
         enable_mixed_precision: bool = True,
-        max_length: int = 512
+        max_length: int = 512,
     ):
         """Initialize the evaluation service.
 
@@ -87,7 +87,7 @@ class EvaluationService:
         with torch.no_grad():
             # Process texts in batches for efficiency
             for i in range(0, len(texts), self.batch_size):
-                batch_texts = texts[i:i + self.batch_size]
+                batch_texts = texts[i : i + self.batch_size]
 
                 # Tokenize batch with padding
                 inputs = self.tokenizer(
@@ -95,7 +95,7 @@ class EvaluationService:
                     return_tensors="pt",
                     truncation=True,
                     max_length=self.max_length,
-                    padding=True
+                    padding=True,
                 )
                 inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
@@ -113,11 +113,7 @@ class EvaluationService:
 
         return total_loss / count if count > 0 else 0.0
 
-    def evaluate_task_performance(
-        self,
-        model: nn.Module,
-        task_eval_texts: list[str]
-    ) -> float:
+    def evaluate_task_performance(self, model: nn.Module, task_eval_texts: list[str]) -> float:
         """Evaluate how well the model performs on a specific task.
 
         This is an alias for evaluate() for semantic clarity when
@@ -151,22 +147,18 @@ class EvaluationService:
         """
         # Validate input
         if not torch.isfinite(torch.tensor(loss)):
-            return float('inf')
+            return float("inf")
 
         # Prevent overflow: exp(88.7) is near float32 max (~3.4e38)
         # Use 88.0 as safety margin
         if loss > 88.0:
-            return float('inf')
+            return float("inf")
 
         # Negative loss is physically meaningless for cross-entropy
         # but we'll allow it and return the computed value
         return torch.exp(torch.tensor(loss)).item()
 
-    def evaluate_with_perplexity(
-        self,
-        model: nn.Module,
-        texts: list[str]
-    ) -> tuple[float, float]:
+    def evaluate_with_perplexity(self, model: nn.Module, texts: list[str]) -> tuple[float, float]:
         """Evaluate model and return both loss and perplexity.
 
         Args:
@@ -185,10 +177,7 @@ class EvaluationService:
         return loss, perplexity
 
     def evaluate_by_category(
-        self,
-        model: nn.Module,
-        texts: list[str],
-        categories: list[str]
+        self, model: nn.Module, texts: list[str], categories: list[str]
     ) -> dict[str, float]:
         """Evaluate model separately for each category.
 
@@ -230,10 +219,7 @@ class EvaluationService:
         return category_losses
 
     def evaluate_sentiment_preference(
-        self,
-        model: nn.Module,
-        positive_texts: list[str],
-        negative_texts: list[str]
+        self, model: nn.Module, positive_texts: list[str], negative_texts: list[str]
     ) -> tuple[float, float, float]:
         """Evaluate model's sentiment preference.
 

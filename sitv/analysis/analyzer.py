@@ -56,9 +56,9 @@ class ResultAnalyzer:
         """
         # Handle empty results
         if not results:
-            print("\n" + "="*70)
+            print("\n" + "=" * 70)
             print("LOSS LANDSCAPE ANALYSIS")
-            print("="*70)
+            print("=" * 70)
             print("\n⚠️  No results to analyze (experiment aborted or failed)\n")
             return {
                 "min_general_loss": None,
@@ -87,7 +87,7 @@ class ResultAnalyzer:
             sorted_by_return,
             zero_crossings,
             squaring_return_points,
-            has_squaring_data
+            has_squaring_data,
         )
 
         return {
@@ -117,8 +117,7 @@ class ResultAnalyzer:
         return zero_crossings
 
     def _find_squaring_return_points(
-        self,
-        results: List[AlphaSweepResult]
+        self, results: List[AlphaSweepResult]
     ) -> tuple[List[AlphaSweepResult], bool]:
         """Find squaring return points where L(2α) ≈ L_base.
 
@@ -129,9 +128,7 @@ class ResultAnalyzer:
             Tuple of (squaring_return_points, has_squaring_data)
         """
         # Check if squaring test data exists
-        has_squaring_data = all(
-            r.loss_2alpha != 0.0 for r in results if r.alpha != 0
-        )
+        has_squaring_data = all(r.loss_2alpha != 0.0 for r in results if r.alpha != 0)
 
         if not has_squaring_data:
             return [], False
@@ -150,7 +147,7 @@ class ResultAnalyzer:
         sorted_by_return: List[AlphaSweepResult],
         zero_crossings: List[AlphaSweepResult],
         squaring_return_points: List[AlphaSweepResult],
-        has_squaring_data: bool
+        has_squaring_data: bool,
     ) -> None:
         """Print analysis results to console.
 
@@ -162,9 +159,9 @@ class ResultAnalyzer:
             squaring_return_points: Squaring return point results
             has_squaring_data: Whether squaring data is available
         """
-        print(f"\n{'='*70}")
+        print(f"\n{'=' * 70}")
         print("LOSS LANDSCAPE ANALYSIS")
-        print(f"{'='*70}\n")
+        print(f"{'=' * 70}\n")
 
         # Minimum general loss
         min_general_result = sorted_by_loss[0]
@@ -206,23 +203,22 @@ class ResultAnalyzer:
         if has_squaring_data:
             self._print_squaring_analysis(squaring_return_points)
 
-    def _print_squaring_analysis(
-        self,
-        squaring_return_points: List[AlphaSweepResult]
-    ) -> None:
+    def _print_squaring_analysis(self, squaring_return_points: List[AlphaSweepResult]) -> None:
         """Print squaring test analysis.
 
         Args:
             squaring_return_points: List of squaring return point results
         """
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("SQUARING TEST ANALYSIS: [W(λ)]² = I Analog")
-        print("="*70)
+        print("=" * 70)
         print("\nSquaring Return Points (where L(2α) ≈ L_base for α ≠ 0):")
 
         if squaring_return_points:
             print(f" ★ Found {len(squaring_return_points)} squaring return point(s)!")
-            print("  → These α values exhibit the self-inverse property: doubling brings back to base loss")
+            print(
+                "  → These α values exhibit the self-inverse property: doubling brings back to base loss"
+            )
             for i, result in enumerate(squaring_return_points[:5], 1):
                 print(
                     f"  {i}. α = {result.alpha:+.4f}, L(2α) = {result.loss_2alpha:.4f}, "

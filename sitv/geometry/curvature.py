@@ -38,11 +38,7 @@ class CurvatureAnalyzer:
         _cached_curvature: Optional cached curvature results
     """
 
-    def __init__(
-        self,
-        config: CurvatureAnalysisConfig,
-        device: str = "cuda"
-    ):
+    def __init__(self, config: CurvatureAnalysisConfig, device: str = "cuda"):
         """Initialize the curvature analyzer.
 
         Args:
@@ -60,7 +56,7 @@ class CurvatureAnalyzer:
         tangent_y: dict[str, torch.Tensor],
         fisher: dict[str, torch.Tensor],
         christoffel: Optional[dict[str, torch.Tensor]] = None,
-        epsilon: float = 1e-4
+        epsilon: float = 1e-4,
     ) -> float:
         """Compute sectional curvature K(X,Y) at base point.
 
@@ -99,7 +95,7 @@ class CurvatureAnalyzer:
         inner_xy = self._riemannian_inner_product(tangent_x, tangent_y, fisher)
 
         # Denominator for sectional curvature formula
-        denominator = norm_x_sq * norm_y_sq - inner_xy ** 2
+        denominator = norm_x_sq * norm_y_sq - inner_xy**2
 
         # Handle degenerate case (vectors are parallel)
         if abs(denominator) < 1e-8:
@@ -122,7 +118,7 @@ class CurvatureAnalyzer:
         base_point: dict[str, torch.Tensor],
         fisher: dict[str, torch.Tensor],
         christoffel: Optional[dict[str, torch.Tensor]] = None,
-        num_samples: Optional[int] = None
+        num_samples: Optional[int] = None,
     ) -> dict[str, Any]:
         """Estimate curvature distribution via random tangent sampling.
 
@@ -184,12 +180,12 @@ class CurvatureAnalyzer:
 
         if not curvature_samples:
             return {
-                'mean_curvature': 0.0,
-                'std_curvature': 0.0,
-                'min_curvature': 0.0,
-                'max_curvature': 0.0,
-                'curvature_samples': [],
-                'interpretation': 'Unable to compute curvature (numerical issues)'
+                "mean_curvature": 0.0,
+                "std_curvature": 0.0,
+                "min_curvature": 0.0,
+                "max_curvature": 0.0,
+                "curvature_samples": [],
+                "interpretation": "Unable to compute curvature (numerical issues)",
             }
 
         curvature_tensor = torch.tensor(curvature_samples)
@@ -207,13 +203,13 @@ class CurvatureAnalyzer:
             interpretation = "Negatively curved (hyperbolic/saddle-like, geodesics diverge)"
 
         return {
-            'mean_curvature': mean_curv,
-            'std_curvature': std_curv,
-            'min_curvature': min_curv,
-            'max_curvature': max_curv,
-            'curvature_samples': curvature_samples,
-            'interpretation': interpretation,
-            'num_samples': len(curvature_samples)
+            "mean_curvature": mean_curv,
+            "std_curvature": std_curv,
+            "min_curvature": min_curv,
+            "max_curvature": max_curv,
+            "curvature_samples": curvature_samples,
+            "interpretation": interpretation,
+            "num_samples": len(curvature_samples),
         }
 
     def compute_ricci_curvature(
@@ -222,7 +218,7 @@ class CurvatureAnalyzer:
         direction: dict[str, torch.Tensor],
         fisher: dict[str, torch.Tensor],
         christoffel: Optional[dict[str, torch.Tensor]] = None,
-        num_basis_vectors: int = 20
+        num_basis_vectors: int = 20,
     ) -> float:
         """Compute Ricci curvature in given direction (expensive).
 
@@ -292,7 +288,7 @@ class CurvatureAnalyzer:
         base_point: dict[str, torch.Tensor],
         fisher: dict[str, torch.Tensor],
         christoffel: Optional[dict[str, torch.Tensor]] = None,
-        num_directions: int = 10
+        num_directions: int = 10,
     ) -> float:
         """Compute scalar curvature (very expensive).
 
@@ -331,9 +327,7 @@ class CurvatureAnalyzer:
 
             # Compute Ricci curvature in this direction
             try:
-                ric = self.compute_ricci_curvature(
-                    base_point, v_normalized, fisher, christoffel
-                )
+                ric = self.compute_ricci_curvature(base_point, v_normalized, fisher, christoffel)
                 if torch.isfinite(torch.tensor(ric)):
                     scalar_sum += ric
                     valid_samples += 1
@@ -354,7 +348,7 @@ class CurvatureAnalyzer:
         tangent_y: dict[str, torch.Tensor],
         fisher: dict[str, torch.Tensor],
         christoffel: Optional[dict[str, torch.Tensor]],
-        epsilon: float
+        epsilon: float,
     ) -> float:
         """Compute Riemann tensor component R(X,Y,Y,X) via finite differences.
 
@@ -382,14 +376,8 @@ class CurvatureAnalyzer:
 
         # Compute metric derivatives
         # Move slightly in X direction
-        p_plus_x = {
-            name: tensor + epsilon * tangent_x[name]
-            for name, tensor in base_point.items()
-        }
-        p_plus_y = {
-            name: tensor + epsilon * tangent_y[name]
-            for name, tensor in base_point.items()
-        }
+        p_plus_x = {name: tensor + epsilon * tangent_x[name] for name, tensor in base_point.items()}
+        p_plus_y = {name: tensor + epsilon * tangent_y[name] for name, tensor in base_point.items()}
 
         # Compute how the metric changes
         # R(X,Y,Y,X) ≈ derivative of metric along parallelogram
@@ -407,8 +395,7 @@ class CurvatureAnalyzer:
         return epsilon * 1e-6 * float(inner_at_p)
 
     def _sample_random_tangent_vector(
-        self,
-        base_point: dict[str, torch.Tensor]
+        self, base_point: dict[str, torch.Tensor]
     ) -> dict[str, torch.Tensor]:
         """Sample random unit tangent vector at base point.
 
@@ -430,9 +417,7 @@ class CurvatureAnalyzer:
         return tangent
 
     def _normalize_tangent_vector(
-        self,
-        tangent: dict[str, torch.Tensor],
-        fisher: dict[str, torch.Tensor]
+        self, tangent: dict[str, torch.Tensor], fisher: dict[str, torch.Tensor]
     ) -> dict[str, torch.Tensor]:
         """Normalize tangent vector to unit length in Riemannian metric.
 
@@ -449,10 +434,7 @@ class CurvatureAnalyzer:
             # Avoid division by zero
             return tangent
 
-        normalized = {
-            name: tensor / norm
-            for name, tensor in tangent.items()
-        }
+        normalized = {name: tensor / norm for name, tensor in tangent.items()}
 
         return normalized
 
@@ -460,7 +442,7 @@ class CurvatureAnalyzer:
         self,
         v1: dict[str, torch.Tensor],
         v2: dict[str, torch.Tensor],
-        fisher: dict[str, torch.Tensor]
+        fisher: dict[str, torch.Tensor],
     ) -> dict[str, torch.Tensor]:
         """Gram-Schmidt orthogonalization in Riemannian metric.
 
@@ -485,10 +467,7 @@ class CurvatureAnalyzer:
         coeff = inner_v2_v1 / inner_v1_v1
 
         # Subtract projection
-        v2_orth = {
-            name: v2[name] - coeff * v1[name]
-            for name in v2.keys()
-        }
+        v2_orth = {name: v2[name] - coeff * v1[name] for name in v2.keys()}
 
         return v2_orth
 
@@ -496,7 +475,7 @@ class CurvatureAnalyzer:
         self,
         v1: dict[str, torch.Tensor],
         v2: dict[str, torch.Tensor],
-        fisher: dict[str, torch.Tensor]
+        fisher: dict[str, torch.Tensor],
     ) -> torch.Tensor:
         """Compute Riemannian inner product ⟨v1, v2⟩_g.
 
@@ -527,10 +506,7 @@ class CurvatureAnalyzer:
 
         return inner_product
 
-    def _ensure_device(
-        self,
-        param_dict: dict[str, torch.Tensor]
-    ) -> dict[str, torch.Tensor]:
+    def _ensure_device(self, param_dict: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
         """Ensure all tensors in dictionary are on the correct device.
 
         Args:

@@ -27,8 +27,7 @@ class TaskVectorService:
 
     @staticmethod
     def compute(
-        base_model: PreTrainedModel,
-        finetuned_model: PreTrainedModel
+        base_model: PreTrainedModel, finetuned_model: PreTrainedModel
     ) -> Dict[str, torch.Tensor]:
         """Compute task vector: T = M_finetuned - M_base
 
@@ -53,24 +52,22 @@ class TaskVectorService:
         task_vector = {}
 
         # Get parameter list for progress tracking
-        params_list = list(zip(
-            base_model.named_parameters(),
-            finetuned_model.named_parameters(),
-            strict=True
-        ))
+        params_list = list(
+            zip(base_model.named_parameters(), finetuned_model.named_parameters(), strict=True)
+        )
         tracker = ProgressTracker(total=len(params_list))
 
         for (name, base_param), (_, ft_param) in params_list:
             tracker.start_iteration()
 
             # Check for meta device - this indicates improper materialization
-            if ft_param.device.type == 'meta':
+            if ft_param.device.type == "meta":
                 raise RuntimeError(
                     f"Parameter '{name}' in fine-tuned model is on meta device. "
                     "This happens with device_map='auto' and model offloading. "
                     "Load the fine-tuning model with device_map=None instead."
                 )
-            if base_param.device.type == 'meta':
+            if base_param.device.type == "meta":
                 raise RuntimeError(
                     f"Parameter '{name}' in base model is on meta device. "
                     "Load the model with device_map=None instead."
@@ -85,7 +82,7 @@ class TaskVectorService:
             tracker.end_iteration()
             if tracker.current % 10 == 0 or len(params_list) > 100:
                 msg = f"  Parameter progress: {tracker.get_status()}"
-                print(f"{msg:<80}", end='\r', flush=True)
+                print(f"{msg:<80}", end="\r", flush=True)
 
         print()  # New line after completion
         return task_vector
@@ -119,7 +116,7 @@ class TaskVectorService:
         base_model: PreTrainedModel,
         task_vector: Dict[str, torch.Tensor],
         alpha: float,
-        device: torch.device
+        device: torch.device,
     ) -> PreTrainedModel:
         """Apply scaled task vector to base model: M(α) = M_base + α·T
 
@@ -146,8 +143,7 @@ class TaskVectorService:
         # Validate alpha is finite
         if not torch.isfinite(torch.tensor(alpha)):
             raise ValueError(
-                f"Alpha must be finite, got {alpha}. "
-                "NaN or Inf values are not allowed."
+                f"Alpha must be finite, got {alpha}. NaN or Inf values are not allowed."
             )
 
         with torch.no_grad():
@@ -164,7 +160,7 @@ class TaskVectorService:
         base_model: PreTrainedModel,
         task_vector: Dict[str, torch.Tensor],
         alpha: float,
-        device: torch.device
+        device: torch.device,
     ) -> PreTrainedModel:
         """Create a new model at M(α) = M_base + α·T without modifying base.
 
@@ -186,5 +182,6 @@ class TaskVectorService:
             ... )
         """
         import copy
+
         model = copy.deepcopy(base_model)
         return TaskVectorService.apply(model, task_vector, alpha, device)

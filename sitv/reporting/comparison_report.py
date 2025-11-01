@@ -27,11 +27,7 @@ class ComparisonReportGenerator:
         """Initialize the comparison report generator."""
         pass
 
-    def generate(
-        self,
-        task_datasets: Dict[str, Dict[str, Any]],
-        output_path: Path | str
-    ) -> str:
+    def generate(self, task_datasets: Dict[str, Dict[str, Any]], output_path: Path | str) -> str:
         """Generate multi-task comparison report.
 
         Args:
@@ -54,7 +50,7 @@ class ComparisonReportGenerator:
 
         # Write report
         output_path = Path(output_path)
-        with open(output_path, 'w') as f:
+        with open(output_path, "w") as f:
             f.write(report)
 
         print(f"\n📄 Comparison report saved to {output_path}")
@@ -77,7 +73,7 @@ class ComparisonReportGenerator:
         sections.append(self._create_detailed_task_analysis(task_datasets))
         sections.append(self._create_key_insights(task_datasets))
 
-        return '\n\n'.join(sections)
+        return "\n\n".join(sections)
 
     def _create_header(self) -> str:
         """Create report header."""
@@ -111,22 +107,26 @@ exploring optimal scaling factors, zero-crossings, and self-inverse properties."
             Comparative metrics table section as string
         """
         lines = ["## Comparative Metrics", ""]
-        lines.append("| Task | Optimal α | Min Loss | Δ from Base | Zero-Crossings | Squaring Returns |")
-        lines.append("|------|-----------|----------|-------------|----------------|------------------|")
+        lines.append(
+            "| Task | Optimal α | Min Loss | Δ from Base | Zero-Crossings | Squaring Returns |"
+        )
+        lines.append(
+            "|------|-----------|----------|-------------|----------------|------------------|"
+        )
 
         for task_name, data in task_datasets.items():
-            analysis = data['analysis']
-            min_gen = analysis['min_general_loss']
+            analysis = data["analysis"]
+            min_gen = analysis["min_general_loss"]
             delta = min_gen.loss - min_gen.base_loss
-            num_zc = len(analysis['zero_crossings'])
-            num_sr = len(analysis['squaring_return_points'])
+            num_zc = len(analysis["zero_crossings"])
+            num_sr = len(analysis["squaring_return_points"])
 
             lines.append(
                 f"| **{task_name}** | {min_gen.alpha:.4f} | {min_gen.loss:.4f} | "
                 f"{delta:.4f} | {num_zc} | {num_sr} |"
             )
 
-        return '\n'.join(lines)
+        return "\n".join(lines)
 
     def _create_detailed_task_analysis(self, task_datasets: Dict[str, Dict[str, Any]]) -> str:
         """Create detailed per-task analysis section.
@@ -140,52 +140,58 @@ exploring optimal scaling factors, zero-crossings, and self-inverse properties."
         lines = ["## Detailed Task Analysis", ""]
 
         for task_name, data in task_datasets.items():
-            analysis = data['analysis']
+            analysis = data["analysis"]
 
             lines.append(f"### {task_name} (Task Vector)")
             lines.append("")
 
             # General performance
-            min_gen = analysis['min_general_loss']
+            min_gen = analysis["min_general_loss"]
             lines.append("**General Performance:**")
             lines.append(f"- Optimal α: **{min_gen.alpha:.4f}**")
             lines.append(f"- Minimum loss: **{min_gen.loss:.4f}**")
             lines.append(f"- Base loss: {min_gen.base_loss:.4f}")
-            improvement_pct = ((min_gen.base_loss - min_gen.loss) / min_gen.base_loss * 100)
-            lines.append(f"- Improvement: **{min_gen.base_loss - min_gen.loss:.4f}** ({improvement_pct:.2f}%)")
+            improvement_pct = (min_gen.base_loss - min_gen.loss) / min_gen.base_loss * 100
+            lines.append(
+                f"- Improvement: **{min_gen.base_loss - min_gen.loss:.4f}** ({improvement_pct:.2f}%)"
+            )
             lines.append("")
 
             # Task performance
-            min_task = analysis['min_task_loss']
+            min_task = analysis["min_task_loss"]
             lines.append("**Task-Specific Performance:**")
             lines.append(f"- Optimal α: **{min_task.alpha:.4f}**")
             lines.append(f"- Minimum task loss: **{min_task.task_eval_loss:.4f}**")
             lines.append("")
 
             # Zero-crossings
-            if analysis['zero_crossings']:
+            if analysis["zero_crossings"]:
                 lines.append(f"**Zero-Crossings:** {len(analysis['zero_crossings'])} found")
-                for i, zc in enumerate(analysis['zero_crossings'], 1):
+                for i, zc in enumerate(analysis["zero_crossings"], 1):
                     lines.append(f"  {i}. α = {zc.alpha:.4f} (return = {zc.functional_return:.6f})")
             else:
                 lines.append("**Zero-Crossings:** None found")
             lines.append("")
 
             # Squaring returns
-            if analysis['squaring_return_points']:
-                lines.append(f"**Squaring Returns (L(2α) ≈ L_base):** {len(analysis['squaring_return_points'])} found")
-                for i, sr in enumerate(analysis['squaring_return_points'], 1):
-                    lines.append(f"  {i}. α = {sr.alpha:.4f} (|L(2α) - L_base| = {sr.functional_return_2alpha:.6f})")
+            if analysis["squaring_return_points"]:
+                lines.append(
+                    f"**Squaring Returns (L(2α) ≈ L_base):** {len(analysis['squaring_return_points'])} found"
+                )
+                for i, sr in enumerate(analysis["squaring_return_points"], 1):
+                    lines.append(
+                        f"  {i}. α = {sr.alpha:.4f} (|L(2α) - L_base| = {sr.functional_return_2alpha:.6f})"
+                    )
                 lines.append("")
 
             # Category breakdown
-            if hasattr(min_gen, 'category_losses') and min_gen.category_losses:
+            if hasattr(min_gen, "category_losses") and min_gen.category_losses:
                 lines.append("**Category Performance at Optimal α:**")
                 for category, loss in sorted(min_gen.category_losses.items()):
                     lines.append(f"- {category}: {loss:.4f}")
                 lines.append("")
 
-        return '\n'.join(lines)
+        return "\n".join(lines)
 
     def _create_key_insights(self, task_datasets: Dict[str, Dict[str, Any]]) -> str:
         """Create key insights section analyzing patterns across tasks.
@@ -199,16 +205,20 @@ exploring optimal scaling factors, zero-crossings, and self-inverse properties."
         lines = ["## Key Insights", ""]
 
         # Best task
-        best_task = min(task_datasets.items(),
-                       key=lambda x: x[1]['analysis']['min_general_loss'].loss)
-        lines.append(f"**Best General Performance:** {best_task[0]} achieves lowest loss of "
-                    f"{best_task[1]['analysis']['min_general_loss'].loss:.4f} at "
-                    f"α={best_task[1]['analysis']['min_general_loss'].alpha:.4f}")
+        best_task = min(
+            task_datasets.items(), key=lambda x: x[1]["analysis"]["min_general_loss"].loss
+        )
+        lines.append(
+            f"**Best General Performance:** {best_task[0]} achieves lowest loss of "
+            f"{best_task[1]['analysis']['min_general_loss'].loss:.4f} at "
+            f"α={best_task[1]['analysis']['min_general_loss'].alpha:.4f}"
+        )
         lines.append("")
 
         # Compare optimal alphas
-        alphas = {name: data['analysis']['min_general_loss'].alpha
-                 for name, data in task_datasets.items()}
+        alphas = {
+            name: data["analysis"]["min_general_loss"].alpha for name, data in task_datasets.items()
+        }
         alpha_range = max(alphas.values()) - min(alphas.values())
         lines.append(f"**Optimal α Variance:** Range of {alpha_range:.4f} across tasks")
         smallest_task = min(alphas, key=lambda k: alphas[k])
@@ -218,14 +228,20 @@ exploring optimal scaling factors, zero-crossings, and self-inverse properties."
         lines.append("")
 
         # Zero-crossing patterns
-        total_zc = sum(len(data['analysis']['zero_crossings']) for data in task_datasets.values())
-        lines.append(f"**Zero-Crossing Analysis:** {total_zc} total zero-crossings found across all tasks")
+        total_zc = sum(len(data["analysis"]["zero_crossings"]) for data in task_datasets.values())
+        lines.append(
+            f"**Zero-Crossing Analysis:** {total_zc} total zero-crossings found across all tasks"
+        )
         lines.append("")
 
         # Squaring test results
-        total_sr = sum(len(data['analysis']['squaring_return_points']) for data in task_datasets.values())
+        total_sr = sum(
+            len(data["analysis"]["squaring_return_points"]) for data in task_datasets.values()
+        )
         if total_sr > 0:
-            lines.append(f"**Self-Inverse Properties:** {total_sr} squaring return points found, "
-                        f"suggesting rotation-like symmetry in the loss landscape")
+            lines.append(
+                f"**Self-Inverse Properties:** {total_sr} squaring return points found, "
+                f"suggesting rotation-like symmetry in the loss landscape"
+            )
 
-        return '\n'.join(lines)
+        return "\n".join(lines)

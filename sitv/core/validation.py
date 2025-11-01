@@ -11,6 +11,7 @@ import torch
 
 class ValidationError(Exception):
     """Custom exception for validation failures."""
+
     pass
 
 
@@ -25,9 +26,7 @@ def validate_alpha_range(alpha_range: Tuple[float, float], name: str = "alpha_ra
         ValidationError: If range is invalid
     """
     if not isinstance(alpha_range, (tuple, list)):
-        raise ValidationError(
-            f"{name} must be a tuple or list, got {type(alpha_range).__name__}"
-        )
+        raise ValidationError(f"{name} must be a tuple or list, got {type(alpha_range).__name__}")
 
     if len(alpha_range) != 2:
         raise ValidationError(
@@ -42,9 +41,7 @@ def validate_alpha_range(alpha_range: Tuple[float, float], name: str = "alpha_ra
         )
 
     if min_val >= max_val:
-        raise ValidationError(
-            f"{name} min must be less than max, got [{min_val}, {max_val}]"
-        )
+        raise ValidationError(f"{name} min must be less than max, got [{min_val}, {max_val}]")
 
 
 def validate_num_samples(num_samples: int, min_samples: int = 2) -> None:
@@ -58,20 +55,14 @@ def validate_num_samples(num_samples: int, min_samples: int = 2) -> None:
         ValidationError: If num_samples is invalid
     """
     if not isinstance(num_samples, int):
-        raise ValidationError(
-            f"num_samples must be an integer, got {type(num_samples).__name__}"
-        )
+        raise ValidationError(f"num_samples must be an integer, got {type(num_samples).__name__}")
 
     if num_samples < min_samples:
-        raise ValidationError(
-            f"num_samples must be at least {min_samples}, got {num_samples}"
-        )
+        raise ValidationError(f"num_samples must be at least {min_samples}, got {num_samples}")
 
 
 def validate_eval_texts(
-    eval_texts: List[str],
-    name: str = "eval_texts",
-    allow_empty: bool = False
+    eval_texts: List[str], name: str = "eval_texts", allow_empty: bool = False
 ) -> None:
     """Validate evaluation text list.
 
@@ -84,34 +75,23 @@ def validate_eval_texts(
         ValidationError: If eval_texts is invalid
     """
     if not isinstance(eval_texts, list):
-        raise ValidationError(
-            f"{name} must be a list, got {type(eval_texts).__name__}"
-        )
+        raise ValidationError(f"{name} must be a list, got {type(eval_texts).__name__}")
 
     if not allow_empty and len(eval_texts) == 0:
-        raise ValidationError(
-            f"{name} cannot be empty"
-        )
+        raise ValidationError(f"{name} cannot be empty")
 
     non_string_items = [i for i, text in enumerate(eval_texts) if not isinstance(text, str)]
     if non_string_items:
         raise ValidationError(
-            f"{name} must contain only strings. "
-            f"Non-string items at indices: {non_string_items[:5]}"
+            f"{name} must contain only strings. Non-string items at indices: {non_string_items[:5]}"
         )
 
     empty_items = [i for i, text in enumerate(eval_texts) if len(text.strip()) == 0]
     if empty_items:
-        raise ValidationError(
-            f"{name} contains empty strings at indices: {empty_items[:5]}"
-        )
+        raise ValidationError(f"{name} contains empty strings at indices: {empty_items[:5]}")
 
 
-def validate_categories(
-    categories: List[str],
-    texts: List[str],
-    name: str = "categories"
-) -> None:
+def validate_categories(categories: List[str], texts: List[str], name: str = "categories") -> None:
     """Validate category labels match texts.
 
     Args:
@@ -123,9 +103,7 @@ def validate_categories(
         ValidationError: If categories don't match texts
     """
     if not isinstance(categories, list):
-        raise ValidationError(
-            f"{name} must be a list, got {type(categories).__name__}"
-        )
+        raise ValidationError(f"{name} must be a list, got {type(categories).__name__}")
 
     if len(categories) != len(texts):
         raise ValidationError(
@@ -135,8 +113,7 @@ def validate_categories(
     non_string_items = [i for i, cat in enumerate(categories) if not isinstance(cat, str)]
     if non_string_items:
         raise ValidationError(
-            f"{name} must contain only strings. "
-            f"Non-string items at indices: {non_string_items[:5]}"
+            f"{name} must contain only strings. Non-string items at indices: {non_string_items[:5]}"
         )
 
 
@@ -151,23 +128,17 @@ def validate_task_vector(task_vector: Dict[str, torch.Tensor], name: str = "task
         ValidationError: If task vector is invalid
     """
     if not isinstance(task_vector, dict):
-        raise ValidationError(
-            f"{name} must be a dictionary, got {type(task_vector).__name__}"
-        )
+        raise ValidationError(f"{name} must be a dictionary, got {type(task_vector).__name__}")
 
     if len(task_vector) == 0:
-        raise ValidationError(
-            f"{name} cannot be empty"
-        )
+        raise ValidationError(f"{name} cannot be empty")
 
     non_tensor_keys = [
-        key for key, value in task_vector.items()
-        if not isinstance(value, torch.Tensor)
+        key for key, value in task_vector.items() if not isinstance(value, torch.Tensor)
     ]
     if non_tensor_keys:
         raise ValidationError(
-            f"{name} must contain only torch.Tensor values. "
-            f"Non-tensor keys: {non_tensor_keys[:5]}"
+            f"{name} must contain only torch.Tensor values. Non-tensor keys: {non_tensor_keys[:5]}"
         )
 
     # Check for NaN or Inf values
@@ -177,9 +148,7 @@ def validate_task_vector(task_vector: Dict[str, torch.Tensor], name: str = "task
             invalid_keys.append(key)
 
     if invalid_keys:
-        raise ValidationError(
-            f"{name} contains NaN or Inf values in tensors: {invalid_keys[:5]}"
-        )
+        raise ValidationError(f"{name} contains NaN or Inf values in tensors: {invalid_keys[:5]}")
 
 
 def validate_alpha_sweep_config(

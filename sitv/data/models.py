@@ -59,7 +59,7 @@ class AlphaSweepResult:
 
     # Riemannian geometry metrics (NEW)
     euclidean_distance: float = 0.0  # ||α·T|| Euclidean norm
-    geodesic_distance: float = 0.0   # Geodesic distance (if enabled)
+    geodesic_distance: float = 0.0  # Geodesic distance (if enabled)
     geometry_overhead_seconds: float = 0.0  # Extra time for Riemannian operations
 
 
@@ -288,9 +288,9 @@ class FineTuningProgressCallback(TrainerCallback):
         """Called at the beginning of each training epoch."""
         self.epoch_start_time = time.time()
         epoch_num = int(state.epoch) if state.epoch else 0
-        print(f"\n{'─'*60}")
+        print(f"\n{'─' * 60}")
         print(f"Epoch {epoch_num + 1}/{args.num_train_epochs}")
-        print(f"{'─'*60}")
+        print(f"{'─' * 60}")
 
     def on_log(self, args, state, control, logs=None, **kwargs):
         """Called when training logs are generated."""
@@ -300,9 +300,7 @@ class FineTuningProgressCallback(TrainerCallback):
 
             # Calculate ETA
             if len(self.step_times) > 1 and state.max_steps:
-                avg_step_time = (
-                    self.step_times[-1] - self.step_times[0]
-                ) / len(self.step_times)
+                avg_step_time = (self.step_times[-1] - self.step_times[0]) / len(self.step_times)
                 remaining_steps = state.max_steps - state.global_step
                 eta_seconds = avg_step_time * remaining_steps
                 eta_str = f"{eta_seconds / 60:.1f}m" if eta_seconds > 60 else f"{eta_seconds:.0f}s"
@@ -333,6 +331,6 @@ class FineTuningProgressCallback(TrainerCallback):
         if self.epoch_start_time:
             epoch_duration = time.time() - self.epoch_start_time
             epoch_num = int(state.epoch) if state.epoch else 0
-            print(f"{'─'*60}")
+            print(f"{'─' * 60}")
             print(f"Epoch {epoch_num} completed in {epoch_duration:.1f}s")
-            print(f"{'─'*60}\n")
+            print(f"{'─' * 60}\n")

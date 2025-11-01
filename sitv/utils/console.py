@@ -127,11 +127,7 @@ def print_separator(char: str | None = None, width: int | None = None) -> None:
 
 
 def print_progress(
-    current: int,
-    total: int,
-    prefix: str = "",
-    suffix: str = "",
-    width: int | None = None
+    current: int, total: int, prefix: str = "", suffix: str = "", width: int | None = None
 ) -> None:
     """Print a progress bar.
 

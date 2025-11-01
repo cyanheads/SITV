@@ -14,6 +14,7 @@ from dataclasses import dataclass
 try:
     from sklearn.gaussian_process import GaussianProcessRegressor  # type: ignore[import-untyped]
     from sklearn.gaussian_process.kernels import RBF, ConstantKernel, Matern  # type: ignore[import-untyped]
+
     SKLEARN_AVAILABLE = True
 except ImportError:
     SKLEARN_AVAILABLE = False
@@ -35,6 +36,7 @@ class GPState:
         gp_model: Fitted Gaussian Process model
         iteration: Current iteration number
     """
+
     alphas_evaluated: np.ndarray
     losses: np.ndarray
     gp_model: Optional[object]  # GaussianProcessRegressor
@@ -72,10 +74,10 @@ class BayesianSampler(BaseSampler):
         num_samples: int,
         n_initial: int = 10,
         n_iterations: int = 100,
-        acquisition: str = 'ei',
+        acquisition: str = "ei",
         xi: float = 0.01,
         kappa: float = 2.0,
-        kernel: str = 'matern',
+        kernel: str = "matern",
         n_restarts: int = 10,
     ):
         """Initialize Bayesian sampler.
@@ -98,8 +100,7 @@ class BayesianSampler(BaseSampler):
 
         if not SKLEARN_AVAILABLE:
             raise ImportError(
-                "BayesianSampler requires scikit-learn. "
-                "Install with: pip install scikit-learn>=1.0"
+                "BayesianSampler requires scikit-learn. Install with: pip install scikit-learn>=1.0"
             )
 
         self.n_initial = n_initial
@@ -115,13 +116,10 @@ class BayesianSampler(BaseSampler):
         self.converged = False
 
         # Validate acquisition function
-        if self.acquisition not in ['ei', 'ucb']:
+        if self.acquisition not in ["ei", "ucb"]:
             raise ValueError(f"acquisition must be 'ei' or 'ucb', got '{self.acquisition}'")
 
-    def generate_samples(
-        self,
-        results: Optional[List[AlphaSweepResult]] = None
-    ) -> np.ndarray:
+    def generate_samples(self, results: Optional[List[AlphaSweepResult]] = None) -> np.ndarray:
         """Generate alpha values using Bayesian optimization.
 
         Args:
@@ -132,7 +130,9 @@ class BayesianSampler(BaseSampler):
         """
         if results is None or len(results) == 0:
             # First call: generate initial random samples
-            logger.info(f"Bayesian optimization: Initial random sampling ({self.n_initial} samples)")
+            logger.info(
+                f"Bayesian optimization: Initial random sampling ({self.n_initial} samples)"
+            )
             self.gp_state = None
             return self._initial_samples()
 
@@ -154,10 +154,7 @@ class BayesianSampler(BaseSampler):
 
         return np.array([next_alpha])
 
-    def should_continue(
-        self,
-        results: List[AlphaSweepResult]
-    ) -> bool:
+    def should_continue(self, results: List[AlphaSweepResult]) -> bool:
         """Check if Bayesian optimization should continue.
 
         Args:
@@ -199,7 +196,7 @@ class BayesianSampler(BaseSampler):
         noise = np.random.uniform(
             -0.05 * (self.alpha_max - self.alpha_min),
             0.05 * (self.alpha_max - self.alpha_min),
-            self.n_initial
+            self.n_initial,
         )
         samples = np.clip(samples + noise, self.alpha_min, self.alpha_max)
 
@@ -218,10 +215,7 @@ class BayesianSampler(BaseSampler):
         # Create or update GP state
         if self.gp_state is None:
             self.gp_state = GPState(
-                alphas_evaluated=alphas,
-                losses=losses,
-                gp_model=None,
-                iteration=0
+                alphas_evaluated=alphas, losses=losses, gp_model=None, iteration=0
             )
         else:
             self.gp_state.alphas_evaluated = alphas
@@ -237,7 +231,7 @@ class BayesianSampler(BaseSampler):
             return
 
         # Select kernel
-        if self.kernel_type == 'matern':
+        if self.kernel_type == "matern":
             kernel = ConstantKernel(1.0) * Matern(length_scale=1.0, nu=2.5)
         else:  # rbf
             kernel = ConstantKernel(1.0) * RBF(length_scale=1.0)
@@ -248,15 +242,14 @@ class BayesianSampler(BaseSampler):
             alpha=1e-6,  # Noise level
             normalize_y=True,
             n_restarts_optimizer=5,
-            random_state=42
+            random_state=42,
         )
 
         gp.fit(self.gp_state.alphas_evaluated, self.gp_state.losses)
         self.gp_state.gp_model = gp
 
         logger.debug(
-            f"GP fitted with {len(self.gp_state.losses)} observations, "
-            f"kernel: {self.kernel_type}"
+            f"GP fitted with {len(self.gp_state.losses)} observations, kernel: {self.kernel_type}"
         )
 
     def _select_next_alpha(self) -> float:
@@ -270,14 +263,10 @@ class BayesianSampler(BaseSampler):
             return np.random.uniform(self.alpha_min, self.alpha_max)
 
         # Create candidate points
-        candidates = np.linspace(
-            self.alpha_min,
-            self.alpha_max,
-            1000
-        ).reshape(-1, 1)
+        candidates = np.linspace(self.alpha_min, self.alpha_max, 1000).reshape(-1, 1)
 
         # Compute acquisition function
-        if self.acquisition == 'ei':
+        if self.acquisition == "ei":
             acquisition_values = self._expected_improvement(candidates)
         else:  # ucb
             acquisition_values = self._upper_confidence_bound(candidates)
@@ -364,7 +353,7 @@ class BayesianSampler(BaseSampler):
 
         local_candidates = np.linspace(local_min, local_max, 50).reshape(-1, 1)
 
-        if self.acquisition == 'ei':
+        if self.acquisition == "ei":
             local_acq = self._expected_improvement(local_candidates)
         else:
             local_acq = self._upper_confidence_bound(local_candidates)
@@ -376,6 +365,7 @@ class BayesianSampler(BaseSampler):
     def _normal_cdf(x: np.ndarray) -> np.ndarray:
         """Standard normal cumulative distribution function."""
         from scipy.stats import norm  # type: ignore[import-untyped]
+
         result: np.ndarray = norm.cdf(x)  # type: ignore[no-any-return]
         return result
 
@@ -383,6 +373,7 @@ class BayesianSampler(BaseSampler):
     def _normal_pdf(x: np.ndarray) -> np.ndarray:
         """Standard normal probability density function."""
         from scipy.stats import norm  # type: ignore[import-untyped]
+
         result: np.ndarray = norm.pdf(x)  # type: ignore[no-any-return]
         return result
 
@@ -393,14 +384,16 @@ class BayesianSampler(BaseSampler):
             Dictionary with sampler configuration
         """
         config = super().get_config()
-        config.update({
-            "n_initial": self.n_initial,
-            "n_iterations": self.n_iterations,
-            "acquisition": self.acquisition,
-            "xi": self.xi,
-            "kappa": self.kappa,
-            "kernel": self.kernel_type,
-        })
+        config.update(
+            {
+                "n_initial": self.n_initial,
+                "n_iterations": self.n_iterations,
+                "acquisition": self.acquisition,
+                "xi": self.xi,
+                "kappa": self.kappa,
+                "kernel": self.kernel_type,
+            }
+        )
         return config
 
     def get_optimization_summary(self) -> dict:

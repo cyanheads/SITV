@@ -26,11 +26,7 @@ class ModelService:
         torch_dtype: Data type for model parameters
     """
 
-    def __init__(
-        self,
-        device_map: Optional[str] = None,
-        torch_dtype: torch.dtype = torch.bfloat16
-    ):
+    def __init__(self, device_map: Optional[str] = None, torch_dtype: torch.dtype = torch.bfloat16):
         """Initialize the model service.
 
         Args:
@@ -40,11 +36,7 @@ class ModelService:
         self.device_map = device_map
         self.torch_dtype = torch_dtype
 
-    def load_model(
-        self,
-        model_name: str,
-        device: Optional[str] = None
-    ) -> PreTrainedModel:
+    def load_model(self, model_name: str, device: Optional[str] = None) -> PreTrainedModel:
         """Load a model from HuggingFace.
 
         Args:
@@ -61,9 +53,7 @@ class ModelService:
         print(f"Loading model: {model_name}")
 
         model = AutoModelForCausalLM.from_pretrained(
-            model_name,
-            torch_dtype=self.torch_dtype,
-            device_map=self.device_map
+            model_name, torch_dtype=self.torch_dtype, device_map=self.device_map
         )
 
         # Move to device if specified and no device_map
@@ -95,9 +85,7 @@ class ModelService:
         return tokenizer
 
     def load_model_and_tokenizer(
-        self,
-        model_name: str,
-        device: Optional[str] = None
+        self, model_name: str, device: Optional[str] = None
     ) -> Tuple[PreTrainedModel, AutoTokenizer]:
         """Load both model and tokenizer.
 
@@ -117,10 +105,7 @@ class ModelService:
         return model, tokenizer
 
     def save_models(
-        self,
-        base_model: PreTrainedModel,
-        finetuned_model: PreTrainedModel,
-        output_dir: str
+        self, base_model: PreTrainedModel, finetuned_model: PreTrainedModel, output_dir: str
     ) -> None:
         """Save base and fine-tuned models for later analysis.
 
@@ -138,21 +123,19 @@ class ModelService:
 
         print(f"\nSaving models for future analysis...")
         print(f"  Base model → {base_path}")
-        print(f"  Saving base model...", end='', flush=True)
+        print(f"  Saving base model...", end="", flush=True)
         base_model.save_pretrained(base_path)
         print(" ✓")
 
         print(f"  Fine-tuned model → {ft_path}")
-        print(f"  Saving fine-tuned model...", end='', flush=True)
+        print(f"  Saving fine-tuned model...", end="", flush=True)
         finetuned_model.save_pretrained(ft_path)
         print(" ✓")
 
         print("Models saved successfully!\n")
 
     def load_saved_models(
-        self,
-        output_dir: str,
-        device: str
+        self, output_dir: str, device: str
     ) -> Tuple[PreTrainedModel, PreTrainedModel]:
         """Load previously saved models for analysis.
 
@@ -176,14 +159,10 @@ class ModelService:
 
         # Load models
         base_model = AutoModelForCausalLM.from_pretrained(
-            base_path,
-            torch_dtype=self.torch_dtype,
-            device_map=None
+            base_path, torch_dtype=self.torch_dtype, device_map=None
         )
         finetuned_model = AutoModelForCausalLM.from_pretrained(
-            ft_path,
-            torch_dtype=self.torch_dtype,
-            device_map=None
+            ft_path, torch_dtype=self.torch_dtype, device_map=None
         )
 
         # Move to device

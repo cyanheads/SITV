@@ -85,7 +85,7 @@ class Composition3DExperiment(Experiment):
             device,
             batch_size=eval_batch_size,
             enable_mixed_precision=eval_enable_mixed_precision,
-            max_length=eval_max_length
+            max_length=eval_max_length,
         )
 
     def run(self) -> tuple[List[ThreeDSweepResult], Dict[str, Any]]:
@@ -98,15 +98,17 @@ class Composition3DExperiment(Experiment):
         """
         self.start_timing()
 
-        total_evals = self.num_samples_per_dim ** 3
+        total_evals = self.num_samples_per_dim**3
 
-        print(f"\n{'='*70}")
+        print(f"\n{'=' * 70}")
         print("3D TASK VECTOR COMPOSITION: L(M_base + α·T1 + β·T2 + γ·T3)")
-        print(f"{'='*70}")
+        print(f"{'=' * 70}")
         print(f"α range: [{self.alpha_range[0]:.1f}, {self.alpha_range[1]:.1f}]")
         print(f"β range: [{self.beta_range[0]:.1f}, {self.beta_range[1]:.1f}]")
         print(f"γ range: [{self.gamma_range[0]:.1f}, {self.gamma_range[1]:.1f}]")
-        print(f"Grid: {self.num_samples_per_dim}×{self.num_samples_per_dim}×{self.num_samples_per_dim} = {total_evals} evaluations")
+        print(
+            f"Grid: {self.num_samples_per_dim}×{self.num_samples_per_dim}×{self.num_samples_per_dim} = {total_evals} evaluations"
+        )
         print(f"Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         print("\nQuestion: How do three tasks interact in the loss landscape?\n")
 
@@ -131,19 +133,11 @@ class Composition3DExperiment(Experiment):
 
         # Generate grid values
         alpha_values = np.linspace(
-            self.alpha_range[0],
-            self.alpha_range[1],
-            self.num_samples_per_dim
+            self.alpha_range[0], self.alpha_range[1], self.num_samples_per_dim
         )
-        beta_values = np.linspace(
-            self.beta_range[0],
-            self.beta_range[1],
-            self.num_samples_per_dim
-        )
+        beta_values = np.linspace(self.beta_range[0], self.beta_range[1], self.num_samples_per_dim)
         gamma_values = np.linspace(
-            self.gamma_range[0],
-            self.gamma_range[1],
-            self.num_samples_per_dim
+            self.gamma_range[0], self.gamma_range[1], self.num_samples_per_dim
         )
 
         # Run sweep
@@ -165,16 +159,12 @@ class Composition3DExperiment(Experiment):
                         f"[{eval_count:5d}/{total_evals}] ({progress_pct:5.1f}%) "
                         f"α={alpha:+.2f}, β={beta:+.2f}, γ={gamma:+.2f} | ",
                         end="",
-                        flush=True
+                        flush=True,
                     )
 
                     # Evaluate at (alpha, beta, gamma)
                     result = self._evaluate_at_alpha_beta_gamma(
-                        alpha,
-                        beta,
-                        gamma,
-                        original_params,
-                        base_loss
+                        alpha, beta, gamma, original_params, base_loss
                     )
                     results.append(result)
 
@@ -209,9 +199,11 @@ class Composition3DExperiment(Experiment):
         print("Cloning base model parameters...")
         original_params = {}
         for name, param in self.base_model.named_parameters():
-            if (name in self.task_vector_1 and
-                name in self.task_vector_2 and
-                name in self.task_vector_3):
+            if (
+                name in self.task_vector_1
+                and name in self.task_vector_2
+                and name in self.task_vector_3
+            ):
                 original_params[name] = param.clone().detach()
         return original_params
 
@@ -221,7 +213,7 @@ class Composition3DExperiment(Experiment):
         beta: float,
         gamma: float,
         original_params: Dict[str, torch.Tensor],
-        base_loss: float
+        base_loss: float,
     ) -> ThreeDSweepResult:
         """Evaluate model at a specific (alpha, beta, gamma) point.
 
@@ -243,7 +235,7 @@ class Composition3DExperiment(Experiment):
             self.task_vector_3,
             alpha,
             beta,
-            gamma
+            gamma,
         )
 
         # Evaluate L(M_alpha_beta_gamma)
@@ -263,12 +255,7 @@ class Composition3DExperiment(Experiment):
             perplexity=perplexity,
         )
 
-    def _calculate_eta(
-        self,
-        eval_times: List[float],
-        current_count: int,
-        total_count: int
-    ) -> str:
+    def _calculate_eta(self, eval_times: List[float], current_count: int, total_count: int) -> str:
         """Calculate ETA string.
 
         Args:
@@ -296,19 +283,15 @@ class Composition3DExperiment(Experiment):
         duration = self.get_duration()
         avg_time = sum(eval_times) / len(eval_times) if eval_times else 0.0
 
-        print(f"\n{'='*70}")
+        print(f"\n{'=' * 70}")
         print("3D COMPOSITION SWEEP COMPLETE")
-        print(f"{'='*70}")
+        print(f"{'=' * 70}")
         print(f"  Duration: {duration / 60:.1f} minutes ({duration:.0f}s)")
         print(f"  Evaluations: {total_evals}")
         print(f"  Avg time/eval: {avg_time:.2f}s")
-        print(f"{'='*70}\n")
+        print(f"{'=' * 70}\n")
 
-    def _create_metadata(
-        self,
-        eval_times: List[float],
-        total_evals: int
-    ) -> Dict[str, Any]:
+    def _create_metadata(self, eval_times: List[float], total_evals: int) -> Dict[str, Any]:
         """Create metadata dictionary for results.
 
         Args:

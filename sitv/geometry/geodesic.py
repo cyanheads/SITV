@@ -36,7 +36,7 @@ class GeodesicIntegrator:
         self,
         config: GeodesicIntegrationConfig,
         device: str = "cuda",
-        fisher_metric = None  # FisherMetricService
+        fisher_metric=None,  # FisherMetricService
     ):
         """Initialize the geodesic integrator.
 
@@ -57,7 +57,7 @@ class GeodesicIntegrator:
         fisher_metric: Optional[dict[str, torch.Tensor]] = None,
         christoffel: Optional[dict[str, torch.Tensor]] = None,
         model: Optional[nn.Module] = None,
-        data_texts: Optional[list[str]] = None
+        data_texts: Optional[list[str]] = None,
     ) -> dict[str, torch.Tensor]:
         """Compute exponential map exp_p(t·v) on the manifold.
 
@@ -115,10 +115,7 @@ class GeodesicIntegrator:
             )
 
     def _euclidean_exponential(
-        self,
-        base_point: dict[str, torch.Tensor],
-        tangent_vector: dict[str, torch.Tensor],
-        t: float
+        self, base_point: dict[str, torch.Tensor], tangent_vector: dict[str, torch.Tensor], t: float
     ) -> dict[str, torch.Tensor]:
         """Euclidean exponential map: exp_p(t·v) = p + t·v.
 
@@ -145,7 +142,7 @@ class GeodesicIntegrator:
         t: float,
         christoffel: dict[str, torch.Tensor],
         model: Optional[nn.Module] = None,
-        data_texts: Optional[list[str]] = None
+        data_texts: Optional[list[str]] = None,
     ) -> dict[str, torch.Tensor]:
         """Integrate geodesic equation using fixed-step RK4.
 
@@ -183,22 +180,20 @@ class GeodesicIntegrator:
         # RK4 integration with optional metric recomputation
         for step in range(self.config.num_steps):
             # Recompute metric and Christoffel if configured
-            if (self.config.recompute_metric_every > 0 and
-                step % self.config.recompute_metric_every == 0 and
-                step > 0 and  # Skip first step (already have initial Christoffel)
-                model is not None and
-                data_texts is not None and
-                self.fisher_metric is not None):
-
+            if (
+                self.config.recompute_metric_every > 0
+                and step % self.config.recompute_metric_every == 0
+                and step > 0  # Skip first step (already have initial Christoffel)
+                and model is not None
+                and data_texts is not None
+                and self.fisher_metric is not None
+            ):
                 # Apply current position to model
                 self._apply_params_to_model(model, gamma)
 
                 # Recompute Christoffel symbols at current position
                 current_christoffel = self.fisher_metric.compute_christoffel_symbols_finite_diff(
-                    model,
-                    gamma,
-                    data_texts,
-                    epsilon=self.config.metric_epsilon
+                    model, gamma, data_texts, epsilon=self.config.metric_epsilon
                 )
 
             # Take integration step
@@ -206,11 +201,7 @@ class GeodesicIntegrator:
 
         return gamma
 
-    def _apply_params_to_model(
-        self,
-        model: nn.Module,
-        params: dict[str, torch.Tensor]
-    ) -> None:
+    def _apply_params_to_model(self, model: nn.Module, params: dict[str, torch.Tensor]) -> None:
         """Apply parameter dictionary to model in-place.
 
         Args:
@@ -227,7 +218,7 @@ class GeodesicIntegrator:
         gamma: dict[str, torch.Tensor],
         velocity: dict[str, torch.Tensor],
         h: float,
-        christoffel: dict[str, torch.Tensor]
+        christoffel: dict[str, torch.Tensor],
     ) -> tuple[dict[str, torch.Tensor], dict[str, torch.Tensor]]:
         """Single RK4 step for geodesic equation.
 
@@ -301,7 +292,7 @@ class GeodesicIntegrator:
         t: float,
         christoffel: dict[str, torch.Tensor],
         model: Optional[nn.Module] = None,
-        data_texts: Optional[list[str]] = None
+        data_texts: Optional[list[str]] = None,
     ) -> dict[str, torch.Tensor]:
         """Integrate geodesic with adaptive step size control.
 
@@ -334,7 +325,7 @@ class GeodesicIntegrator:
         base_point: dict[str, torch.Tensor],
         tangent_direction: dict[str, torch.Tensor],
         t: float,
-        christoffel: Optional[dict[str, torch.Tensor]] = None
+        christoffel: Optional[dict[str, torch.Tensor]] = None,
     ) -> dict[str, torch.Tensor]:
         """Parallel transport a vector along a geodesic.
 
@@ -376,7 +367,7 @@ class GeodesicIntegrator:
         self,
         base_point: dict[str, torch.Tensor],
         target_point: dict[str, torch.Tensor],
-        fisher_metric: Optional[dict[str, torch.Tensor]] = None
+        fisher_metric: Optional[dict[str, torch.Tensor]] = None,
     ) -> dict[str, torch.Tensor]:
         """Compute logarithm map: inverse of exponential map.
 

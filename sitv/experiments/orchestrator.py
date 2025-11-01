@@ -128,7 +128,9 @@ class ExperimentOrchestrator:
 
         # Alpha sweep configuration
         print("\nAlpha Sweep:")
-        print(f"  Range: [{self.config.alpha_sweep.alpha_range[0]:.1f}, {self.config.alpha_sweep.alpha_range[1]:.1f}]")
+        print(
+            f"  Range: [{self.config.alpha_sweep.alpha_range[0]:.1f}, {self.config.alpha_sweep.alpha_range[1]:.1f}]"
+        )
         print(f"  Samples: {self.config.alpha_sweep.num_samples}")
         print(f"  Squaring test: {self.config.alpha_sweep.enable_squaring_test}")
 
@@ -143,16 +145,22 @@ class ExperimentOrchestrator:
             print("\n2D Composition:")
             print(f"  Alpha range: {self.config.composition_2d.alpha_range}")
             print(f"  Beta range: {self.config.composition_2d.beta_range}")
-            print(f"  Grid size: {self.config.composition_2d.num_samples_per_dim}×{self.config.composition_2d.num_samples_per_dim}")
+            print(
+                f"  Grid size: {self.config.composition_2d.num_samples_per_dim}×{self.config.composition_2d.num_samples_per_dim}"
+            )
 
         # 3D composition configuration
         if self.config.enable_3d_composition:
             print("\n3D Composition:")
-            print(f"  Tasks: {self.config.composition_3d.task_1}, {self.config.composition_3d.task_2}, {self.config.composition_3d.task_3}")
+            print(
+                f"  Tasks: {self.config.composition_3d.task_1}, {self.config.composition_3d.task_2}, {self.config.composition_3d.task_3}"
+            )
             print(f"  Alpha range: {self.config.composition_3d.alpha_range}")
             print(f"  Beta range: {self.config.composition_3d.beta_range}")
             print(f"  Gamma range: {self.config.composition_3d.gamma_range}")
-            print(f"  Grid size: {self.config.composition_3d.num_samples_per_dim}³ = {self.config.composition_3d.num_samples_per_dim**3} evaluations")
+            print(
+                f"  Grid size: {self.config.composition_3d.num_samples_per_dim}³ = {self.config.composition_3d.num_samples_per_dim**3} evaluations"
+            )
 
         # Riemannian geometry configuration
         if self.config.geometry.enabled:
@@ -195,7 +203,9 @@ class ExperimentOrchestrator:
         # Phase 5: Run 3D composition (if enabled and not analysis_only)
         if self.config.enable_3d_composition:
             if self.config.analysis_only:
-                print("\n⚠️  Skipping 3D composition: analysis_only=True (requires precomputed T2/T3).")
+                print(
+                    "\n⚠️  Skipping 3D composition: analysis_only=True (requires precomputed T2/T3)."
+                )
             else:
                 self._run_3d_composition(base_model, task_vector, tokenizer)
 
@@ -296,9 +306,7 @@ class ExperimentOrchestrator:
 
         # Save models for future analysis
         print("\nSaving models for future analysis...")
-        self.model_service.save_models(
-            base_model_reloaded, finetuned_model, self.config.output_dir
-        )
+        self.model_service.save_models(base_model_reloaded, finetuned_model, self.config.output_dir)
         print(f"Models saved to {self.config.output_dir}/")
 
         return base_model_reloaded, finetuned_model, tokenizer
@@ -436,7 +444,9 @@ class ExperimentOrchestrator:
 
         if analysis.get("has_squaring_data", False):
             self.metrics.num_squaring_return_points = len(analysis["squaring_return_points"])
-            self.metrics.squaring_return_alphas = [sp.alpha for sp in analysis["squaring_return_points"]]
+            self.metrics.squaring_return_alphas = [
+                sp.alpha for sp in analysis["squaring_return_points"]
+            ]
 
         return results, analysis
 
@@ -628,7 +638,9 @@ class ExperimentOrchestrator:
         if task1_name == self.config.task_name:
             task_vectors[task1_name] = task_vector
             task_magnitudes[task1_name] = self.task_vector_service.compute_magnitude(task_vector)
-            print(f"\nTask 1 ('{task1_name}'): Reusing main task vector (||T1|| = {task_magnitudes[task1_name]:.2f})")
+            print(
+                f"\nTask 1 ('{task1_name}'): Reusing main task vector (||T1|| = {task_magnitudes[task1_name]:.2f})"
+            )
         else:
             print_banner(f"FINE-TUNING ON TASK 1: {task1_name}")
             tv1, mag1 = self._fine_tune_and_compute_task_vector(
@@ -726,7 +738,9 @@ class ExperimentOrchestrator:
         print_separator()
         print()
 
-    def _fine_tune_and_compute_task_vector(self, base_model, tokenizer, task, task_name, output_subdir):
+    def _fine_tune_and_compute_task_vector(
+        self, base_model, tokenizer, task, task_name, output_subdir
+    ):
         """Fine-tune on a task and compute its task vector safely.
 
         Important:
@@ -791,7 +805,9 @@ class ExperimentOrchestrator:
             )
 
             print("✓ Composition analysis complete")
-            print(f"  - Interaction type: {self.composition_analysis.get('interaction_type', 'unknown')}")
+            print(
+                f"  - Interaction type: {self.composition_analysis.get('interaction_type', 'unknown')}"
+            )
             print(f"  - R² score: {self.composition_analysis.get('r2_score', 0.0):.4f}")
 
         except Exception as e:
@@ -897,16 +913,22 @@ class ExperimentOrchestrator:
             # Compute Christoffel symbols via finite differences using CLONED params
             christoffel = geo_service.fisher_service.compute_christoffel_symbols_finite_diff(
                 model=base_model,
-                base_params={name: param.data.clone() for name, param in base_model.named_parameters()},
+                base_params={
+                    name: param.data.clone() for name, param in base_model.named_parameters()
+                },
                 data_texts=training_texts[:num_samples],
                 epsilon=self.config.geometry.geodesic_integration.metric_epsilon,
                 config=self.config.geometry.christoffel_computation,
             )
 
             # Compute RMS of Christoffel symbols
-            christoffel_squared_sum = sum(torch.sum(gamma ** 2).item() for gamma in christoffel.values())
+            christoffel_squared_sum = sum(
+                torch.sum(gamma**2).item() for gamma in christoffel.values()
+            )
             total_params = sum(gamma.numel() for gamma in christoffel.values())
-            christoffel_rms = (christoffel_squared_sum / total_params) ** 0.5 if total_params > 0 else 0.0
+            christoffel_rms = (
+                (christoffel_squared_sum / total_params) ** 0.5 if total_params > 0 else 0.0
+            )
 
             # Detect curvature (threshold: RMS > 1e-4 indicates non-trivial curvature)
             curvature_detected = christoffel_rms > 1e-4
@@ -922,11 +944,15 @@ class ExperimentOrchestrator:
         self.metrics.fisher_computation_time = fisher_time
         self.metrics.fisher_num_samples = len(training_texts)
         self.metrics.task_vector_magnitude_riemannian = riem_magnitude
-        self.metrics.geodesic_integration_enabled = self.config.geometry.geodesic_integration.enabled
+        self.metrics.geodesic_integration_enabled = (
+            self.config.geometry.geodesic_integration.enabled
+        )
         self.metrics.geodesic_num_steps = self.config.geometry.geodesic_integration.num_steps
         self.metrics.christoffel_rms = christoffel_rms
         self.metrics.curvature_detected = curvature_detected
-        self.metrics.recompute_metric_every = self.config.geometry.geodesic_integration.recompute_metric_every
+        self.metrics.recompute_metric_every = (
+            self.config.geometry.geodesic_integration.recompute_metric_every
+        )
         self.metrics.metric_recompute_count = (
             (self.metrics.geodesic_num_steps // self.metrics.recompute_metric_every)
             if self.metrics.recompute_metric_every > 0
@@ -941,7 +967,8 @@ class ExperimentOrchestrator:
 
         # Move Fisher metric to CPU to free GPU memory for alpha sweep
         self.fisher_metric = {
-            name: (tensor.cpu() if isinstance(tensor, torch.Tensor) else tensor) for name, tensor in fisher.items()
+            name: (tensor.cpu() if isinstance(tensor, torch.Tensor) else tensor)
+            for name, tensor in fisher.items()
         }
 
         # Delete any remaining GPU references
@@ -1050,7 +1077,9 @@ class ExperimentOrchestrator:
         if "rotation" in symmetry_results:
             print(f"    Rotation symmetry: {symmetry_results['rotation']['symmetry_score']:.2f}")
         if "permutation" in symmetry_results:
-            print(f"    Permutation symmetry: {symmetry_results['permutation']['symmetry_score']:.2f}")
+            print(
+                f"    Permutation symmetry: {symmetry_results['permutation']['symmetry_score']:.2f}"
+            )
         if "scaling" in symmetry_results:
             print(f"    Scaling symmetry: {symmetry_results['scaling']['symmetry_score']:.2f}")
         print(f"    Computed in {symmetry_time:.2f}s")
