@@ -14,9 +14,10 @@ import torch
 
 from sitv.analysis import ResultAnalyzer
 from sitv.core import TaskVectorService, get_device_string
-from sitv.data.models import ExperimentMetrics, TwoDSweepResult
+from sitv.data.models import ExperimentMetrics, TwoDSweepResult, ThreeDSweepResult
 from sitv.data.tasks import get_predefined_tasks
 from sitv.experiments import AlphaSweepExperiment, Composition2DExperiment
+from sitv.experiments.composition_3d import Composition3DExperiment
 from sitv.experiments.config import ExperimentConfig
 from sitv.io import FileManager, PathManager
 from sitv.models import FineTuner, ModelService
@@ -105,6 +106,7 @@ class ExperimentOrchestrator:
 
         # Initialize optional experiment results
         self.results_2d: list[TwoDSweepResult] | None = None  # Populated if 2D composition is run
+        self.results_3d: list[ThreeDSweepResult] | None = None  # Populated if 3D composition is run
 
     def run(self) -> None:
         """Run the complete experiment workflow.
@@ -147,6 +149,15 @@ class ExperimentOrchestrator:
             print(f"  Beta range: {self.config.composition_2d.beta_range}")
             print(f"  Grid size: {self.config.composition_2d.num_samples_per_dim}×{self.config.composition_2d.num_samples_per_dim}")
 
+        # 3D composition configuration
+        if self.config.enable_3d_composition:
+            print("\n3D Composition:")
+            print(f"  Tasks: {self.config.composition_3d.task_1}, {self.config.composition_3d.task_2}, {self.config.composition_3d.task_3}")
+            print(f"  Alpha range: {self.config.composition_3d.alpha_range}")
+            print(f"  Beta range: {self.config.composition_3d.beta_range}")
+            print(f"  Gamma range: {self.config.composition_3d.gamma_range}")
+            print(f"  Grid size: {self.config.composition_3d.num_samples_per_dim}³ = {self.config.composition_3d.num_samples_per_dim**3} evaluations")
+
         # Riemannian geometry configuration
         if self.config.geometry.enabled:
             print("\nRiemannian Geometry: ENABLED ★")
@@ -185,6 +196,10 @@ class ExperimentOrchestrator:
         # Phase 4: Run 2D composition (if enabled)
         if self.config.enable_2d_composition:
             self._run_2d_composition(base_model, task_vector, tokenizer)
+
+        # Phase 5: Run 3D composition (if enabled)
+        if self.config.enable_3d_composition:
+            self._run_3d_composition(base_model, task_vector, tokenizer)
 
         # Finalize metrics
         self._finalize_metrics()
@@ -576,6 +591,193 @@ class ExperimentOrchestrator:
         print_separator()
         print()
 
+    def _run_3d_composition(self, base_model, task_vector, tokenizer):
+        """Run 3D composition experiment.
+
+        Args:
+            base_model: Base model
+            task_vector: First task vector (T1)
+            tokenizer: Tokenizer
+
+        Note:
+            This requires three task vectors. The method will:
+            1. Determine which tasks to use from config
+            2. Fine-tune on second and third tasks (if not already done)
+            3. Compute the second and third task vectors
+            4. Run Composition3DExperiment to explore L(M_base + α·T1 + β·T2 + γ·T3)
+            5. Generate 3D visualization
+        """
+        print_banner("3D COMPOSITION EXPERIMENT")
+
+        # Get available tasks
+        tasks = get_predefined_tasks(self.config.fine_tuning.data_repetition_factor)
+
+        # Get task names from config
+        task1_name = self.config.composition_3d.task_1
+        task2_name = self.config.composition_3d.task_2
+        task3_name = self.config.composition_3d.task_3
+
+        # Validate tasks exist
+        for task_name in [task1_name, task2_name, task3_name]:
+            if task_name not in tasks:
+                print(f"\n⚠️  Task '{task_name}' not available.")
+                print(f"   Available tasks: {list(tasks.keys())}")
+                print("   Skipping 3D composition experiment.")
+                return
+
+        print(f"\nFirst task:  {task1_name}")
+        print(f"Second task: {task2_name}")
+        print(f"Third task:  {task3_name}")
+        print(f"Grid: {self.config.composition_3d.num_samples_per_dim}³ = {self.config.composition_3d.num_samples_per_dim**3} evaluations")
+
+        # Determine which task vectors we need to compute
+        # T1 might already be computed if it matches the main task
+        task_vectors = {}
+        task_magnitudes = {}
+
+        # If task1 matches the main experiment task, reuse that task vector
+        if task1_name == self.config.task_name:
+            task_vectors[task1_name] = task_vector
+            task_magnitudes[task1_name] = self.task_vector_service.compute_magnitude(task_vector)
+            print(f"\nTask 1 ('{task1_name}'): Reusing main task vector (||T1|| = {task_magnitudes[task1_name]:.2f})")
+        else:
+            # Need to fine-tune on task1
+            print_banner(f"FINE-TUNING ON TASK 1: {task1_name}")
+            task_vectors[task1_name], task_magnitudes[task1_name] = self._fine_tune_and_compute_task_vector(
+                base_model, tokenizer, tasks[task1_name], task1_name, "finetuned_model_3d_t1"
+            )
+
+        # Fine-tune and compute task2
+        print_banner(f"FINE-TUNING ON TASK 2: {task2_name}")
+        task_vectors[task2_name], task_magnitudes[task2_name] = self._fine_tune_and_compute_task_vector(
+            base_model, tokenizer, tasks[task2_name], task2_name, "finetuned_model_3d_t2"
+        )
+
+        # Fine-tune and compute task3
+        print_banner(f"FINE-TUNING ON TASK 3: {task3_name}")
+        task_vectors[task3_name], task_magnitudes[task3_name] = self._fine_tune_and_compute_task_vector(
+            base_model, tokenizer, tasks[task3_name], task3_name, "finetuned_model_3d_t3"
+        )
+
+        # Store metadata
+        self.metrics.enable_3d_composition = True
+        self.metrics.task_name_3d_1 = task1_name
+        self.metrics.task_name_3d_2 = task2_name
+        self.metrics.task_name_3d_3 = task3_name
+        self.metrics.task_vector_3d_1_magnitude = task_magnitudes[task1_name]
+        self.metrics.task_vector_3d_2_magnitude = task_magnitudes[task2_name]
+        self.metrics.task_vector_3d_3_magnitude = task_magnitudes[task3_name]
+
+        # Load general evaluation dataset
+        from sitv.data.loader import DatasetLoader
+        loader = DatasetLoader()
+        general_eval_texts = loader.load_general(self.config.evaluation.general_dataset)
+
+        # Run 3D composition experiment
+        print_banner("RUNNING 3D COMPOSITION SWEEP")
+        experiment = Composition3DExperiment(
+            base_model=base_model,
+            task_vector_1=task_vectors[task1_name],
+            task_vector_2=task_vectors[task2_name],
+            task_vector_3=task_vectors[task3_name],
+            tokenizer=tokenizer,
+            general_eval_texts=general_eval_texts,
+            alpha_range=self.config.composition_3d.alpha_range,
+            beta_range=self.config.composition_3d.beta_range,
+            gamma_range=self.config.composition_3d.gamma_range,
+            num_samples_per_dim=self.config.composition_3d.num_samples_per_dim,
+            device=self.device,
+            eval_batch_size=self.config.evaluation.batch_size,
+            eval_enable_mixed_precision=self.config.evaluation.enable_mixed_precision,
+            eval_max_length=self.config.evaluation.max_length,
+        )
+
+        results_3d, metadata_3d = experiment.run()
+
+        # Store results for report generation
+        self.results_3d = results_3d
+
+        # Generate and save 3D visualization
+        print_banner("GENERATING 3D VISUALIZATION")
+
+        plotter = ResultPlotter()
+        plot_path_interactive = f"{self.config.output_dir}/loss_landscape_3d_interactive.html"
+        plot_path_slices = f"{self.config.output_dir}/loss_landscape_3d_slices.png"
+        plotter.plot_3d_composition(results_3d, plot_path_interactive, plot_path_slices)
+
+        # Save 3D results
+        import json
+        results_3d_path = f"{self.config.output_dir}/loss_landscape_3d_results.json"
+        with open(results_3d_path, 'w') as f:
+            json.dump([
+                {
+                    "alpha": r.alpha,
+                    "beta": r.beta,
+                    "gamma": r.gamma,
+                    "loss": r.loss,
+                    "base_loss": r.base_loss,
+                    "functional_return": r.functional_return,
+                    "perplexity": r.perplexity,
+                }
+                for r in results_3d
+            ], f, indent=2)
+
+        print(f"3D results saved: {results_3d_path}")
+
+        print_banner("3D COMPOSITION EXPERIMENT COMPLETE")
+        print_separator()
+        print()
+
+    def _fine_tune_and_compute_task_vector(self, base_model, tokenizer, task, task_name, output_subdir):
+        """Helper method to fine-tune on a task and compute its task vector.
+
+        Args:
+            base_model: Base model
+            tokenizer: Tokenizer
+            task: Task object with train_texts
+            task_name: Name of the task
+            output_subdir: Subdirectory for saving fine-tuned model
+
+        Returns:
+            Tuple of (task_vector, magnitude)
+        """
+        # Fine-tune
+        fine_tuner = FineTuner(
+            output_dir=f"{self.config.output_dir}/{output_subdir}",
+            num_epochs=self.config.fine_tuning.num_epochs,
+            learning_rate=self.config.fine_tuning.learning_rate,
+            batch_size=self.config.fine_tuning.batch_size,
+            max_length=self.config.fine_tuning.max_length,
+            save_strategy=self.config.fine_tuning.save_strategy,
+            logging_steps=self.config.fine_tuning.logging_steps,
+            seed=self.config.seed if self.config.seed is not None else 42,
+        )
+
+        finetuned_model, ft_metrics = fine_tuner.fine_tune(
+            base_model=base_model,
+            tokenizer=tokenizer,
+            train_texts=task.train_texts,
+        )
+
+        # CRITICAL: Reload the base model since fine-tuning modified it in-place
+        print(f"\nReloading base model for '{task_name}' task vector computation...")
+        base_model_fresh, _ = self.model_service.load_model_and_tokenizer(
+            self.config.model_name,
+            self.device
+        )
+
+        # Compute task vector
+        print(f"\nComputing task vector for '{task_name}'...")
+        start_time = time.time()
+        task_vec = self.task_vector_service.compute(base_model_fresh, finetuned_model)
+        magnitude = self.task_vector_service.compute_magnitude(task_vec)
+        elapsed = time.time() - start_time
+
+        print(f"Task vector '{task_name}' computed: ||T|| = {magnitude:.2f}")
+        print(f"Computation time: {elapsed:.2f}s\n")
+
+        return task_vec, magnitude
+
     def _generate_outputs(self, results, analysis):
         """Generate all output files.
 
@@ -609,7 +811,8 @@ class ExperimentOrchestrator:
             analysis,
             self.metrics,
             report_path,
-            results_2d=self.results_2d  # Optional: included if 2D composition was run
+            results_2d=self.results_2d,  # Optional: included if 2D composition was run
+            results_3d=self.results_3d   # Optional: included if 3D composition was run
         )
 
         # Save metrics
