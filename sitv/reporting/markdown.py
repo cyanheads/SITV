@@ -10,7 +10,7 @@ from typing import Any
 
 import numpy as np
 
-from sitv.data.models import AlphaSweepResult, ExperimentMetrics, TwoDSweepResult
+from sitv.data.models import AlphaSweepResult, ExperimentMetrics, TwoDSweepResult, ThreeDSweepResult
 
 # ============================================================================
 # CONFIGURATION CONSTANTS
@@ -70,7 +70,8 @@ class MarkdownReportGenerator:
         analysis: dict[str, Any],
         metrics: ExperimentMetrics,
         output_path: str = "experiment_report.md",
-        results_2d: list[TwoDSweepResult] | None = None
+        results_2d: list[TwoDSweepResult] | None = None,
+        results_3d: list[ThreeDSweepResult] | None = None
     ) -> str:
         """Generate comprehensive Markdown report.
 
@@ -80,6 +81,7 @@ class MarkdownReportGenerator:
             metrics: ExperimentMetrics object with full experiment data
             output_path: Path to save report
             results_2d: Optional list of 2D composition results
+            results_3d: Optional list of 3D composition results
 
         Returns:
             Path to saved report
@@ -88,7 +90,7 @@ class MarkdownReportGenerator:
             >>> generator = MarkdownReportGenerator()
             >>> report_path = generator.generate(results, analysis, metrics)
         """
-        report = self._build_report(results, analysis, metrics, results_2d)
+        report = self._build_report(results, analysis, metrics, results_2d, results_3d)
 
         # Write report
         with open(output_path, 'w') as f:
@@ -102,7 +104,8 @@ class MarkdownReportGenerator:
         results: list[AlphaSweepResult],
         analysis: dict[str, Any],
         metrics: ExperimentMetrics,
-        results_2d: list[TwoDSweepResult] | None = None
+        results_2d: list[TwoDSweepResult] | None = None,
+        results_3d: list[ThreeDSweepResult] | None = None
     ) -> str:
         """Build the complete report content.
 
@@ -111,6 +114,7 @@ class MarkdownReportGenerator:
             analysis: Analysis dictionary
             metrics: Experiment metrics
             results_2d: Optional list of 2D composition results
+            results_3d: Optional list of 3D composition results
 
         Returns:
             Complete Markdown report as string
@@ -146,6 +150,10 @@ class MarkdownReportGenerator:
         # Add 2D composition analysis if available
         if results_2d is not None and len(results_2d) > 0:
             sections.append(self._create_2d_composition_section(results_2d, metrics))
+
+        # Add 3D composition analysis if available
+        if results_3d is not None and len(results_3d) > 0:
+            sections.append(self._create_3d_composition_section(results_3d, metrics))
 
         sections.append(self._create_theoretical_connection(analysis))
         sections.append(self._create_recommendations(analysis))
@@ -665,6 +673,118 @@ the entire grid. The heatmap uses color intensity to show loss values, with the 
 marked at the origin (α=0, β=0).
 
 **Data**: Full numerical results available in `loss_landscape_2d_results.json`
+"""
+
+        return section
+
+    def _create_3d_composition_section(
+        self,
+        results_3d: list[ThreeDSweepResult],
+        metrics: ExperimentMetrics
+    ) -> str:
+        """Create 3D composition analysis section.
+
+        Args:
+            results_3d: List of 3D composition results
+            metrics: Experiment metrics
+
+        Returns:
+            3D composition analysis section as string
+        """
+        # Extract alpha, beta, and gamma ranges from results
+        alphas = sorted({r.alpha for r in results_3d})
+        betas = sorted({r.beta for r in results_3d})
+        gammas = sorted({r.gamma for r in results_3d})
+        alpha_min, alpha_max = min(alphas), max(alphas)
+        beta_min, beta_max = min(betas), max(betas)
+        gamma_min, gamma_max = min(gammas), max(gammas)
+        grid_size = f"{len(alphas)}×{len(betas)}×{len(gammas)}"
+        total_evaluations = len(results_3d)
+
+        # Find minimum and maximum loss points
+        min_result = min(results_3d, key=lambda r: r.loss)
+        max_result = max(results_3d, key=lambda r: r.loss)
+
+        # Find point closest to base loss (functional return)
+        base_loss = results_3d[0].base_loss
+        closest_to_base = min(results_3d, key=lambda r: r.functional_return)
+
+        # Get task names with fallback
+        task_name_1 = metrics.task_name_3d_1 if metrics.task_name_3d_1 else "unknown_task_1"
+        task_name_2 = metrics.task_name_3d_2 if metrics.task_name_3d_2 else "unknown_task_2"
+        task_name_3 = metrics.task_name_3d_3 if metrics.task_name_3d_3 else "unknown_task_3"
+
+        section = f"""## 3D Task Vector Composition Analysis
+
+This experiment explores the loss landscape under composition of three task vectors:
+**L(M_base + α·T1 + β·T2 + γ·T3)**
+
+### Experiment Setup
+
+- **First Task Vector (T1)**: {task_name_1}
+  - Magnitude: ||T1|| = {metrics.task_vector_3d_1_magnitude:.4f}
+- **Second Task Vector (T2)**: {task_name_2}
+  - Magnitude: ||T2|| = {metrics.task_vector_3d_2_magnitude:.4f}
+- **Third Task Vector (T3)**: {task_name_3}
+  - Magnitude: ||T3|| = {metrics.task_vector_3d_3_magnitude:.4f}
+- **Grid Configuration**: {grid_size} = {total_evaluations} evaluations
+- **α range**: [{alpha_min:.1f}, {alpha_max:.1f}]
+- **β range**: [{beta_min:.1f}, {beta_max:.1f}]
+- **γ range**: [{gamma_min:.1f}, {gamma_max:.1f}]
+- **Base Model Loss**: L(M_base) = {base_loss:.4f}
+
+### Key Findings
+
+#### Minimum Loss (Optimal Composition)
+- **Location**: (α = {min_result.alpha:+.4f}, β = {min_result.beta:+.4f}, γ = {min_result.gamma:+.4f})
+- **Loss**: {min_result.loss:.4f}
+- **Improvement over base**: {base_loss - min_result.loss:+.4f}
+- **Perplexity**: {min_result.perplexity:.2f}
+
+#### Maximum Loss (Worst Composition)
+- **Location**: (α = {max_result.alpha:+.4f}, β = {max_result.beta:+.4f}, γ = {max_result.gamma:+.4f})
+- **Loss**: {max_result.loss:.4f}
+- **Degradation from base**: {max_result.loss - base_loss:+.4f}
+- **Perplexity**: {max_result.perplexity:.2f}
+
+#### Closest Return to Base (Functional Return)
+- **Location**: (α = {closest_to_base.alpha:+.4f}, β = {closest_to_base.beta:+.4f}, γ = {closest_to_base.gamma:+.4f})
+- **Loss**: {closest_to_base.loss:.4f}
+- **|L - L_base|**: {closest_to_base.functional_return:.6f}
+
+### Loss Landscape Statistics
+
+- **Mean Loss**: {np.mean([r.loss for r in results_3d]):.4f}
+- **Std Dev**: {np.std([r.loss for r in results_3d]):.4f}
+- **Loss Range**: [{np.min([r.loss for r in results_3d]):.4f}, {np.max([r.loss for r in results_3d]):.4f}]
+- **Mean Functional Return**: {np.mean([r.functional_return for r in results_3d]):.4f}
+
+### Interpretation
+
+The 3D composition experiment reveals how three task vectors interact when combined simultaneously.
+This higher-dimensional exploration allows us to investigate:
+
+1. **Three-way interactions**: How tasks influence each other beyond pairwise combinations
+2. **Optimal subspaces**: Whether optimal scaling occurs along specific 2D planes or 1D lines
+3. **Symmetry patterns**: Whether the landscape exhibits rotational or other geometric symmetries
+4. **Compositional principles**: Rules governing how multiple task vectors should be combined
+
+### Visualization
+
+- **Interactive 3D Plot**: See `loss_landscape_3d_interactive.html` for an interactive 3D scatter plot
+  showing the complete loss landscape. Use your browser to rotate and explore the 3D structure.
+- **2D Slices**: See `loss_landscape_3d_slices.png` for cross-sectional views at different γ values,
+  showing how the loss landscape changes as the third task vector scaling varies.
+
+**Data**: Full numerical results available in `loss_landscape_3d_results.json`
+
+### Research Implications
+
+Three-task composition provides insights into:
+- **Multi-task learning**: How to optimally combine multiple capabilities
+- **Model merging**: Strategies for merging models trained on different tasks
+- **Task interference**: Understanding when tasks help or hinder each other
+- **Dimensionality**: Whether task vector combinations live in lower-dimensional subspaces
 """
 
         return section
