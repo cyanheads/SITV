@@ -59,10 +59,11 @@ class GeodesicTaskVectorService:
             eigenvalue_floor=config.fisher_approximation.eigenvalue_floor
         )
 
-        # Initialize geodesic integrator
+        # Initialize geodesic integrator with Fisher service for metric recomputation
         self.geodesic_integrator = GeodesicIntegrator(
             config=config.geodesic_integration,
-            device=device
+            device=device,
+            fisher_metric=self.fisher_service
         )
 
         # Cache for Fisher metrics
@@ -151,7 +152,8 @@ class GeodesicTaskVectorService:
         task_vector: Dict[str, torch.Tensor],
         alpha: float,
         fisher: Optional[Dict[str, torch.Tensor]] = None,
-        christoffel: Optional[Dict[str, torch.Tensor]] = None
+        christoffel: Optional[Dict[str, torch.Tensor]] = None,
+        data_texts: Optional[list[str]] = None
     ) -> PreTrainedModel:
         """Apply task vector via geodesic exponential map.
 
@@ -164,6 +166,7 @@ class GeodesicTaskVectorService:
             alpha: Scaling factor
             fisher: Optional Fisher metric
             christoffel: Optional Christoffel symbols
+            data_texts: Optional data for metric recomputation along path
 
         Returns:
             Modified model at geodesic point M(α)
@@ -173,7 +176,8 @@ class GeodesicTaskVectorService:
 
         Examples:
             >>> model_alpha = service.apply_geodesic(
-            ...     base_model, task_vector, alpha=1.5, fisher=fisher
+            ...     base_model, task_vector, alpha=1.5, fisher=fisher,
+            ...     data_texts=general_texts
             ... )
         """
         # Get base parameters as dict
@@ -184,13 +188,15 @@ class GeodesicTaskVectorService:
 
         # Compute geodesic endpoint
         if self.config.use_geodesics and fisher is not None:
-            # Use Riemannian exponential map
+            # Use Riemannian exponential map with optional metric recomputation
             new_params = self.geodesic_integrator.exponential_map(
                 base_point=base_params,
                 tangent_vector=task_vector,
                 t=alpha,
                 fisher_metric=fisher,
-                christoffel=christoffel
+                christoffel=christoffel,
+                model=base_model,
+                data_texts=data_texts
             )
         else:
             # Fall back to Euclidean straight line

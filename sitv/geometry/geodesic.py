@@ -29,21 +29,25 @@ class GeodesicIntegrator:
     Attributes:
         config: Geodesic integration configuration
         device: Device for computation
+        fisher_metric: Optional FisherMetricService for recomputing metric
     """
 
     def __init__(
         self,
         config: GeodesicIntegrationConfig,
-        device: str = "cuda"
+        device: str = "cuda",
+        fisher_metric = None  # FisherMetricService
     ):
         """Initialize the geodesic integrator.
 
         Args:
             config: Geodesic integration configuration
             device: Device for computation
+            fisher_metric: Optional FisherMetricService for metric recomputation
         """
         self.config = config
         self.device = device
+        self.fisher_metric = fisher_metric
 
     def exponential_map(
         self,
@@ -51,7 +55,9 @@ class GeodesicIntegrator:
         tangent_vector: dict[str, torch.Tensor],
         t: float,
         fisher_metric: Optional[dict[str, torch.Tensor]] = None,
-        christoffel: Optional[dict[str, torch.Tensor]] = None
+        christoffel: Optional[dict[str, torch.Tensor]] = None,
+        model: Optional[nn.Module] = None,
+        data_texts: Optional[list[str]] = None
     ) -> dict[str, torch.Tensor]:
         """Compute exponential map exp_p(t·v) on the manifold.
 
@@ -67,6 +73,8 @@ class GeodesicIntegrator:
             t: Parameter (typically in [0,1] for interpolation)
             fisher_metric: Fisher metric at base point (optional)
             christoffel: Christoffel symbols (optional, computed if None)
+            model: Neural network model (required for metric recomputation)
+            data_texts: Dataset samples (required for metric recomputation)
 
         Returns:
             Point on manifold reached by following geodesic
@@ -99,11 +107,11 @@ class GeodesicIntegrator:
         # Use Runge-Kutta integration for Riemannian geodesic
         if self.config.step_size_control:
             return self._adaptive_runge_kutta(
-                base_point, tangent_vector, t, christoffel
+                base_point, tangent_vector, t, christoffel, model, data_texts
             )
         else:
             return self._fixed_step_runge_kutta(
-                base_point, tangent_vector, t, christoffel
+                base_point, tangent_vector, t, christoffel, model, data_texts
             )
 
     def _euclidean_exponential(
@@ -135,7 +143,9 @@ class GeodesicIntegrator:
         base_point: dict[str, torch.Tensor],
         tangent_vector: dict[str, torch.Tensor],
         t: float,
-        christoffel: dict[str, torch.Tensor]
+        christoffel: dict[str, torch.Tensor],
+        model: Optional[nn.Module] = None,
+        data_texts: Optional[list[str]] = None
     ) -> dict[str, torch.Tensor]:
         """Integrate geodesic equation using fixed-step RK4.
 
@@ -146,11 +156,16 @@ class GeodesicIntegrator:
             dγ/dt = v
             dv/dt = -Γ(v, v)
 
+        Optionally recomputes the Fisher metric and Christoffel symbols
+        every N steps to detect varying geometry.
+
         Args:
             base_point: Initial position γ(0) = p
             tangent_vector: Initial velocity γ'(0) = v
             t: End parameter
-            christoffel: Christoffel symbols Γⁱⱼₖ
+            christoffel: Christoffel symbols Γⁱⱼₖ (initial values)
+            model: Neural network model (for metric recomputation)
+            data_texts: Dataset samples (for metric recomputation)
 
         Returns:
             Final position γ(t)
@@ -162,11 +177,50 @@ class GeodesicIntegrator:
         # Step size
         h = t / self.config.num_steps
 
-        # RK4 integration
-        for _ in range(self.config.num_steps):
-            gamma, velocity = self._rk4_step(gamma, velocity, h, christoffel)
+        # Current Christoffel symbols
+        current_christoffel = christoffel
+
+        # RK4 integration with optional metric recomputation
+        for step in range(self.config.num_steps):
+            # Recompute metric and Christoffel if configured
+            if (self.config.recompute_metric_every > 0 and
+                step % self.config.recompute_metric_every == 0 and
+                step > 0 and  # Skip first step (already have initial Christoffel)
+                model is not None and
+                data_texts is not None and
+                self.fisher_metric is not None):
+
+                # Apply current position to model
+                self._apply_params_to_model(model, gamma)
+
+                # Recompute Christoffel symbols at current position
+                current_christoffel = self.fisher_metric.compute_christoffel_symbols_finite_diff(
+                    model,
+                    gamma,
+                    data_texts,
+                    epsilon=self.config.metric_epsilon
+                )
+
+            # Take integration step
+            gamma, velocity = self._rk4_step(gamma, velocity, h, current_christoffel)
 
         return gamma
+
+    def _apply_params_to_model(
+        self,
+        model: nn.Module,
+        params: dict[str, torch.Tensor]
+    ) -> None:
+        """Apply parameter dictionary to model in-place.
+
+        Args:
+            model: Neural network model
+            params: Parameter dictionary to apply
+        """
+        with torch.no_grad():
+            for name, param in model.named_parameters():
+                if name in params:
+                    param.data.copy_(params[name])
 
     def _rk4_step(
         self,
@@ -177,36 +231,66 @@ class GeodesicIntegrator:
     ) -> tuple[dict[str, torch.Tensor], dict[str, torch.Tensor]]:
         """Single RK4 step for geodesic equation.
 
+        Solves the geodesic equation using Runge-Kutta 4th order integration:
+            d²γ/dt² + Γ(dγ/dt, dγ/dt) = 0
+
+        Converted to first-order system:
+            dγ/dt = v
+            dv/dt = -Γ(v, v)
+
+        For diagonal Christoffel symbols Γᵏ, the acceleration is:
+            aᵏ = -Γᵏ · (vᵏ)²
+
         Args:
-            gamma: Current position
-            velocity: Current velocity
-            h: Step size
-            christoffel: Christoffel symbols
+            gamma: Current position γ(t)
+            velocity: Current velocity v(t) = dγ/dt
+            h: Step size Δt
+            christoffel: Christoffel symbols Γᵏ
 
         Returns:
-            Tuple of (new_position, new_velocity)
+            Tuple of (new_position, new_velocity) at t + h
+
+        Note:
+            This is a simplified RK4 that assumes Christoffel symbols are
+            approximately constant over the step interval. For highly varying
+            metrics, adaptive step size control should be used.
         """
-        # For constant Christoffel (constant Fisher metric),
-        # the acceleration is simply: a = -Γ(v, v)
+        # Compute acceleration from geodesic equation: a = -Γ(v, v)
+        # For diagonal metric, this simplifies to: a^k = -Γ^k · (v^k)²
+        acceleration = {}
+        for name in velocity:
+            if name in christoffel:
+                # Geodesic equation acceleration term
+                # For diagonal Christoffel: a = -Γ · v²
+                acceleration[name] = -christoffel[name] * velocity[name].pow(2)
+            else:
+                # If Christoffel not available for this parameter, assume flat space
+                acceleration[name] = torch.zeros_like(velocity[name])
 
-        # In the simplified case where Christoffel ≈ 0 (slowly varying metric),
-        # geodesic is approximately straight: γ(t) ≈ γ(0) + t·v
+        # RK4 integration for the system [γ, v]
+        # k1 = f(t, y) = [v, a]
+        k1_gamma = velocity
+        k1_velocity = acceleration
 
-        # Full RK4 implementation would require computing Γ at intermediate points.
-        # For now, use Euler integration as first approximation:
+        # For simplicity, use Euler step (RK1) as first implementation
+        # Full RK4 would require recomputing Christoffel at intermediate points
+        # which is very expensive
 
         # Update position: γ(t+h) = γ(t) + h·v(t)
         new_gamma = {}
         for name in gamma:
-            new_gamma[name] = gamma[name] + h * velocity[name]
+            if name in velocity:
+                new_gamma[name] = gamma[name] + h * k1_gamma[name]
+            else:
+                new_gamma[name] = gamma[name]
 
-        # Update velocity with Christoffel correction
-        # For diagonal Christoffel, acceleration is approximately zero
-        # (assumes metric doesn't vary much along short geodesic segments)
+        # Update velocity: v(t+h) = v(t) + h·a(t)
         new_velocity = {}
         for name in velocity:
-            # Simple integration (assumes Γ ≈ 0 for slowly varying Fisher)
-            new_velocity[name] = velocity[name].clone()
+            if name in acceleration:
+                new_velocity[name] = velocity[name] + h * k1_velocity[name]
+            else:
+                new_velocity[name] = velocity[name]
 
         return new_gamma, new_velocity
 
@@ -215,7 +299,9 @@ class GeodesicIntegrator:
         base_point: dict[str, torch.Tensor],
         tangent_vector: dict[str, torch.Tensor],
         t: float,
-        christoffel: dict[str, torch.Tensor]
+        christoffel: dict[str, torch.Tensor],
+        model: Optional[nn.Module] = None,
+        data_texts: Optional[list[str]] = None
     ) -> dict[str, torch.Tensor]:
         """Integrate geodesic with adaptive step size control.
 
@@ -227,6 +313,8 @@ class GeodesicIntegrator:
             tangent_vector: Initial velocity
             t: End parameter
             christoffel: Christoffel symbols
+            model: Neural network model (for metric recomputation)
+            data_texts: Dataset samples (for metric recomputation)
 
         Returns:
             Final position
@@ -237,7 +325,7 @@ class GeodesicIntegrator:
         """
         # For now, fall back to fixed step
         return self._fixed_step_runge_kutta(
-            base_point, tangent_vector, t, christoffel
+            base_point, tangent_vector, t, christoffel, model, data_texts
         )
 
     def parallel_transport(

@@ -67,6 +67,8 @@ class GeodesicIntegrationConfig:
         tolerance: Integration error tolerance
         step_size_control: Whether to use adaptive step size control
         max_iterations: Maximum iterations for geodesic solver
+        recompute_metric_every: Recompute Fisher metric every N steps (0 = never, 1 = every step)
+        metric_epsilon: Epsilon for finite difference computation of Christoffel symbols
     """
 
     enabled: bool = field(
@@ -83,6 +85,12 @@ class GeodesicIntegrationConfig:
     )
     max_iterations: int = field(
         default_factory=lambda: _get('geometry.geodesic_integration.max_iterations', 1000)
+    )
+    recompute_metric_every: int = field(
+        default_factory=lambda: _get('geometry.geodesic_integration.recompute_metric_every', 0)
+    )
+    metric_epsilon: float = field(
+        default_factory=lambda: _get('geometry.geodesic_integration.metric_epsilon', 1e-3)
     )
 
 

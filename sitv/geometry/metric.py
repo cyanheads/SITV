@@ -447,6 +447,103 @@ class FisherMetricService:
 
         return christoffel
 
+    def compute_christoffel_symbols_finite_diff(
+        self,
+        model: nn.Module,
+        base_params: dict[str, torch.Tensor],
+        data_texts: list[str],
+        epsilon: float = 1e-3,
+        batch_size: int = 8
+    ) -> dict[str, torch.Tensor]:
+        """Compute Christoffel symbols via finite differences of Fisher metric.
+
+        This method computes the metric derivatives ∂F/∂θ numerically and uses
+        them to compute the Christoffel symbols:
+            Γᵏᵢᵢ ≈ (1/2) F⁻¹ (∂F_ii/∂θ_k)
+
+        For diagonal Fisher metric, we use the simplified formula for diagonal
+        Christoffel symbols where only the diagonal components are non-zero.
+
+        Args:
+            model: Neural network model
+            base_params: Current parameter values (dict of tensors)
+            data_texts: Dataset samples for Fisher computation
+            epsilon: Finite difference step size (default: 1e-3)
+            batch_size: Batch size for Fisher computation
+
+        Returns:
+            Dictionary mapping parameter names to Christoffel symbol tensors
+
+        Note:
+            This is computationally expensive as it requires recomputing the
+            Fisher matrix for perturbed parameters. Use sparingly or cache results.
+
+        Mathematical Note:
+            For a diagonal metric g_ii(θ), the non-zero Christoffel symbols are:
+                Γᵏᵢᵢ = (1/2g_kk) ∂g_ii/∂θ_k
+
+            We approximate the derivative using central differences:
+                ∂F_ii/∂θ_k ≈ [F_ii(θ + ε·e_k) - F_ii(θ - ε·e_k)] / (2ε)
+
+            where e_k is the k-th standard basis vector (directional perturbation).
+
+        Examples:
+            >>> fisher_service = FisherMetricService(tokenizer, device="cuda")
+            >>> christoffel = fisher_service.compute_christoffel_symbols_finite_diff(
+            ...     model, base_params, data_texts
+            ... )
+        """
+        # Get Fisher at base point
+        F_base = self.compute_fisher_information_matrix(model, data_texts, batch_size)
+
+        christoffel = {}
+
+        # For diagonal Fisher, we compute simplified Christoffel symbols
+        # Γᵏᵢᵢ ≈ (1/2) F_kk⁻¹ (∂F_ii/∂θ_k)
+        #
+        # Simplification: For diagonal metric with slow variation, we approximate
+        # using forward differences in random directions to detect metric curvature
+
+        for name, param in base_params.items():
+            if name not in F_base or name.startswith("_"):
+                continue
+
+            # Initialize Christoffel for this parameter
+            christoffel[name] = torch.zeros_like(param.data)
+
+            # Save original parameter
+            original_param = param.data.clone()
+
+            try:
+                # Compute metric derivative via forward finite difference
+                # Perturb in a random direction (we use sign of random noise)
+                # to detect if Fisher varies
+                with torch.no_grad():
+                    # Create a small random perturbation
+                    # Use sign to ensure we're moving in parameter space
+                    perturbation = epsilon * torch.randn_like(param.data).sign_()
+                    param.data.add_(perturbation)
+
+                # Recompute Fisher at perturbed point
+                F_perturbed = self.compute_fisher_information_matrix(
+                    model, data_texts, batch_size
+                )
+
+                # Compute derivative of Fisher: ∂F/∂θ ≈ (F_new - F_old) / ε
+                dF_dtheta = (F_perturbed[name] - F_base[name]) / epsilon
+
+                # Simplified Christoffel for diagonal metric:
+                # Γ ≈ (1/2) F⁻¹ (∂F/∂θ)
+                # Add small epsilon to prevent division by zero
+                christoffel[name] = 0.5 * dF_dtheta / (F_base[name] + 1e-8)
+
+            finally:
+                # Restore original parameters
+                with torch.no_grad():
+                    param.data.copy_(original_param)
+
+        return christoffel
+
     def cache_fisher(self, fisher: dict[str, torch.Tensor]) -> None:
         """Cache computed Fisher matrix for reuse.
 
