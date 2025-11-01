@@ -5,26 +5,26 @@ This module provides the ExperimentOrchestrator that coordinates the entire
 experimental workflow from model loading to result generation.
 """
 
-import time
 import random
+import time
+from datetime import datetime
+
 import numpy as np
 import torch
-from datetime import datetime
-from typing import List, Optional
 
-from sitv.experiments.config import ExperimentConfig
+from sitv.analysis import ResultAnalyzer
+from sitv.core import TaskVectorService, get_device_string
 from sitv.data.models import ExperimentMetrics, TwoDSweepResult
 from sitv.data.tasks import get_predefined_tasks
-from sitv.models import ModelService, FineTuner
-from sitv.core import TaskVectorService, get_device, get_device_string
 from sitv.experiments import AlphaSweepExperiment, Composition2DExperiment
-from sitv.analysis import ResultAnalyzer
+from sitv.experiments.config import ExperimentConfig
+from sitv.io import FileManager, PathManager
+from sitv.models import FineTuner, ModelService
 from sitv.reporting import MarkdownReportGenerator
 from sitv.visualization import ResultPlotter
-from sitv.io import FileManager, PathManager
 
 
-def set_random_seed(seed: Optional[int]) -> None:
+def set_random_seed(seed: int | None) -> None:
     """Set random seed for reproducibility across all libraries.
 
     Args:
@@ -103,7 +103,7 @@ class ExperimentOrchestrator:
         self.metrics.general_eval_dataset = config.evaluation.general_dataset
 
         # Initialize optional experiment results
-        self.results_2d: Optional[List[TwoDSweepResult]] = None  # Populated if 2D composition is run
+        self.results_2d: list[TwoDSweepResult] | None = None  # Populated if 2D composition is run
 
     def run(self) -> None:
         """Run the complete experiment workflow.
@@ -122,7 +122,7 @@ class ExperimentOrchestrator:
 
         # Fine-tuning configuration
         if not self.config.analysis_only:
-            print(f"\nFine-Tuning:")
+            print("\nFine-Tuning:")
             print(f"  Epochs: {self.config.fine_tuning.num_epochs}")
             print(f"  Learning rate: {self.config.fine_tuning.learning_rate:.2e}")
             print(f"  Batch size: {self.config.fine_tuning.batch_size}")
@@ -130,23 +130,39 @@ class ExperimentOrchestrator:
             print(f"  Data repetition: {self.config.fine_tuning.data_repetition_factor}x")
 
         # Alpha sweep configuration
-        print(f"\nAlpha Sweep:")
+        print("\nAlpha Sweep:")
         print(f"  Range: [{self.config.alpha_sweep.alpha_range[0]:.1f}, {self.config.alpha_sweep.alpha_range[1]:.1f}]")
         print(f"  Samples: {self.config.alpha_sweep.num_samples}")
         print(f"  Squaring test: {self.config.alpha_sweep.enable_squaring_test}")
 
         # Evaluation optimization settings
-        print(f"\nEvaluation Performance:")
+        print("\nEvaluation Performance:")
         print(f"  Batch size: {self.config.evaluation.batch_size}")
         print(f"  Mixed precision: {self.config.evaluation.enable_mixed_precision}")
         print(f"  Max length: {self.config.evaluation.max_length}")
 
         # 2D composition configuration
         if self.config.enable_2d_composition:
-            print(f"\n2D Composition:")
+            print("\n2D Composition:")
             print(f"  Alpha range: {self.config.composition_2d.alpha_range}")
             print(f"  Beta range: {self.config.composition_2d.beta_range}")
             print(f"  Grid size: {self.config.composition_2d.num_samples_per_dim}×{self.config.composition_2d.num_samples_per_dim}")
+
+        # Riemannian geometry configuration
+        if self.config.geometry.enabled:
+            print("\nRiemannian Geometry: ENABLED ★")
+            print(f"  Metric type: {self.config.geometry.metric_type.value}")
+            print(f"  Geodesic integration: {self.config.geometry.geodesic_integration.enabled}")
+            if self.config.geometry.geodesic_integration.enabled:
+                print(f"    RK4 steps: {self.config.geometry.geodesic_integration.num_steps}")
+            print(f"  Fisher samples: {self.config.geometry.fisher_approximation.num_samples:,}")
+            print(f"  Cache metric: {self.config.geometry.cache_metric}")
+            if self.config.geometry.symmetry_analysis.enabled:
+                print("  Symmetry analysis: ENABLED")
+            if self.config.geometry.curvature_analysis.enabled:
+                print("  Curvature analysis: ENABLED")
+        else:
+            print("\nRiemannian Geometry: Disabled (using Euclidean)")
 
         print(f"{'='*70}\n")
 
@@ -306,13 +322,20 @@ class ExperimentOrchestrator:
 
         elapsed = time.time() - start_time
 
-        print(f"Task vector computed: ||T|| = {magnitude:.2f}")
-        print(f"Computation time: {elapsed:.2f}s\n")
+        print(f"Task vector computed: ||T|| = {magnitude:.2f} (Euclidean)")
+        print(f"Computation time: {elapsed:.2f}s")
 
         # Update metrics
         self.metrics.task_vector_magnitude = magnitude
+        self.metrics.task_vector_magnitude_euclidean = magnitude
         self.metrics.task_vector_computation_time = elapsed
 
+        # Riemannian geometry computation if enabled
+        if self.config.geometry.enabled and self.config.geometry.use_riemannian:
+            print("\nComputing Riemannian task vector magnitude...")
+            self._compute_riemannian_metrics(base_model, task_vector)
+
+        print()  # Blank line
         return task_vector
 
     def _run_alpha_sweep(self, base_model, task_vector, tokenizer):
@@ -355,6 +378,10 @@ class ExperimentOrchestrator:
                 except Exception as e:
                     print(f"  Warning: Could not load opposite sentiment texts: {e}")
 
+        # Get geometry service and fisher metric if available
+        geometry_service = getattr(self, 'geometry_service', None)
+        fisher_metric = getattr(self, 'fisher_metric', None)
+
         # Create experiment
         experiment = AlphaSweepExperiment(
             base_model=base_model,
@@ -373,6 +400,9 @@ class ExperimentOrchestrator:
             eval_batch_size=self.config.evaluation.batch_size,
             eval_enable_mixed_precision=self.config.evaluation.enable_mixed_precision,
             eval_max_length=self.config.evaluation.max_length,
+            geometry_service=geometry_service,  # Pass geometry service if available
+            fisher_metric=fisher_metric,  # Pass Fisher metric if available
+            geometry_config=self.config.geometry,  # Pass geometry configuration
         )
 
         # Run experiment
@@ -445,7 +475,7 @@ class ExperimentOrchestrator:
         if second_task_name not in tasks:
             print(f"\n⚠️  Second task '{second_task_name}' not available.")
             print(f"   Available tasks: {list(tasks.keys())}")
-            print(f"   Skipping 2D composition experiment.")
+            print("   Skipping 2D composition experiment.")
             return
 
         task2 = tasks[second_task_name]
@@ -600,9 +630,65 @@ class ExperimentOrchestrator:
 
         print(f"\n{'='*70}")
 
+    def _compute_riemannian_metrics(self, base_model, task_vector):
+        """Compute Riemannian geometry metrics if enabled.
+
+        Args:
+            base_model: Base model
+            task_vector: Task vector dictionary
+        """
+        from sitv.geometry import GeodesicTaskVectorService
+
+        # Get training data for Fisher computation
+        tasks = get_predefined_tasks(self.config.fine_tuning.data_repetition_factor)
+        task = tasks[self.config.task_name]
+        training_texts = task.train_texts[:self.config.geometry.fisher_approximation.num_samples]
+
+        # Initialize geometry service
+        geo_service = GeodesicTaskVectorService(
+            config=self.config.geometry,
+            tokenizer=self.model_service.load_tokenizer(self.config.model_name),
+            device=self.device
+        )
+
+        # Compute Fisher metric
+        start_fisher = time.time()
+        fisher = geo_service.get_or_compute_fisher(
+            base_model,
+            training_texts,
+            cache_key="base"
+        )
+        fisher_time = time.time() - start_fisher
+
+        # Compute Riemannian norm
+        riem_magnitude = geo_service.compute_magnitude(task_vector, fisher)
+
+        # Store in metrics
+        self.metrics.geometry_enabled = True
+        self.metrics.metric_type = self.config.geometry.metric_type.value
+        self.metrics.fisher_computation_time = fisher_time
+        self.metrics.fisher_num_samples = len(training_texts)
+        self.metrics.task_vector_magnitude_riemannian = riem_magnitude
+        self.metrics.geodesic_integration_enabled = self.config.geometry.use_geodesics
+        self.metrics.geodesic_num_steps = self.config.geometry.geodesic_integration.num_steps
+
+        # Store geometry service for later use
+        self.geometry_service = geo_service
+        self.fisher_metric = fisher
+
+        ratio = riem_magnitude / self.metrics.task_vector_magnitude_euclidean
+        print(f"  Fisher metric computed in {fisher_time:.2f}s")
+        print(f"  Riemannian magnitude: ||T||_g = {riem_magnitude:.4f}")
+        print(f"  Ratio ||T||_g / ||T|| = {ratio:.4f}")
+
     def _finalize_metrics(self):
         """Finalize experiment metrics."""
         self.metrics.end_time = datetime.now().isoformat()
         experiment_end = time.time()
         experiment_start = datetime.fromisoformat(self.metrics.start_time).timestamp()
         self.metrics.duration_seconds = experiment_end - experiment_start
+
+        # Store geometry configuration if not already set
+        if not self.metrics.geometry_enabled and self.config.geometry.enabled:
+            self.metrics.geometry_enabled = False  # Was enabled but not Riemannian
+            self.metrics.metric_type = self.config.geometry.metric_type.value

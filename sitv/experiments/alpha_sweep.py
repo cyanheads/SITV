@@ -5,30 +5,27 @@ This module implements the 1D alpha sweep experiment that explores
 the loss landscape along a task vector direction.
 """
 
+import logging
 import time
+from datetime import datetime
+from typing import Any
+
 import numpy as np
 import torch
-import logging
-from datetime import datetime
-from typing import Dict, List, Any, Optional
 from transformers import PreTrainedModel
 
+from sitv.core.error_handling import (
+    FailureTracker,
+    handle_evaluation_error,
+    retry_on_evaluation_failure,
+    safe_cuda_cleanup,
+)
+from sitv.core.evaluation import EvaluationService
+from sitv.core.validation import validate_alpha_sweep_config
+from sitv.data.models import AlphaSweepResult
 from sitv.experiments.base import Experiment
 from sitv.experiments.config import SamplingConfig
-from sitv.data.models import AlphaSweepResult
-from sitv.core.evaluation import EvaluationService
-from sitv.core.validation import validate_alpha_sweep_config, ValidationError
-from sitv.core.error_handling import (
-    retry_on_evaluation_failure,
-    handle_evaluation_error,
-    FailureTracker,
-    safe_cuda_cleanup
-)
-from sitv.experiments.sampling import (
-    UniformSampler,
-    AdaptiveSampler,
-    BayesianSampler
-)
+from sitv.experiments.sampling import AdaptiveSampler, BayesianSampler, UniformSampler
 
 # Set up logger
 logger = logging.getLogger(__name__)
@@ -57,21 +54,24 @@ class AlphaSweepExperiment(Experiment):
     def __init__(
         self,
         base_model: PreTrainedModel,
-        task_vector: Dict[str, torch.Tensor],
+        task_vector: dict[str, torch.Tensor],
         tokenizer,
-        general_eval_texts: List[str],
-        task_eval_texts: List[str],
-        general_eval_categories: Optional[List[str]] = None,
-        opposite_sentiment_eval_texts: Optional[List[str]] = None,
+        general_eval_texts: list[str],
+        task_eval_texts: list[str],
+        general_eval_categories: list[str] | None = None,
+        opposite_sentiment_eval_texts: list[str] | None = None,
         alpha_range: tuple[float, float] = (-3.0, 3.0),
         num_samples: int = 100,
         device: str = "cuda",
         enable_squaring_test: bool = True,
         sampling_strategy: str = "uniform",
-        sampling_config: Optional[SamplingConfig] = None,
+        sampling_config: SamplingConfig | None = None,
         eval_batch_size: int = 8,
         eval_enable_mixed_precision: bool = True,
         eval_max_length: int = 512,
+        geometry_service: Any | None = None,
+        fisher_metric: dict[str, torch.Tensor] | None = None,
+        geometry_config: Any | None = None,
     ):
         """Initialize the alpha sweep experiment.
 
@@ -92,6 +92,9 @@ class AlphaSweepExperiment(Experiment):
             eval_batch_size: Batch size for evaluation (default: 8)
             eval_enable_mixed_precision: Use FP16/BF16 for evaluation (default: True)
             eval_max_length: Max sequence length for evaluation (default: 512)
+            geometry_service: Geodesic task vector service (optional, for Riemannian geometry)
+            fisher_metric: Pre-computed Fisher metric (optional)
+            geometry_config: Geometry configuration (optional)
 
         Raises:
             ValidationError: If any configuration parameter is invalid
@@ -129,6 +132,27 @@ class AlphaSweepExperiment(Experiment):
             max_consecutive_failures=5,
             max_total_failures_pct=0.3
         )
+
+        # Riemannian geometry support
+        self.geometry_service = geometry_service
+        self.fisher_metric = fisher_metric
+        self.geometry_config = geometry_config
+        self.use_geodesics = (
+            geometry_service is not None
+            and fisher_metric is not None
+            and geometry_config is not None
+            and geometry_config.enabled
+            and geometry_config.use_geodesics
+        )
+
+        # Compute Christoffel symbols if using geodesic interpolation
+        self.christoffel = None
+        if self.use_geodesics and geometry_service is not None:
+            print("  Computing Christoffel symbols for geodesic integration...")
+            self.christoffel = geometry_service.compute_christoffel(
+                base_model, fisher_metric
+            )
+            print("  Christoffel symbols computed ✓")
 
         # Create sampler based on strategy
         self.sampler = self._create_sampler()
@@ -168,7 +192,7 @@ class AlphaSweepExperiment(Experiment):
                 f"Must be one of: 'uniform', 'adaptive', 'bayesian'"
             )
 
-    def run(self) -> tuple[List[AlphaSweepResult], Dict[str, Any]]:
+    def run(self) -> tuple[list[AlphaSweepResult], dict[str, Any]]:
         """Run the alpha sweep experiment.
 
         Returns:
@@ -184,6 +208,15 @@ class AlphaSweepExperiment(Experiment):
         print(f"Range: α ∈ [{self.alpha_range[0]:.1f}, {self.alpha_range[1]:.1f}]")
         print(f"Samples: {self.num_samples}")
         print(f"Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
+        # Display geometry mode
+        if self.use_geodesics and self.geometry_config is not None:
+            print("Geometry: Riemannian (geodesic interpolation via exponential map)")
+            print(f"  Metric: {self.geometry_config.metric_type.value}")
+            print(f"  RK4 steps: {self.geometry_config.geodesic_integration.num_steps}")
+        else:
+            print("Geometry: Euclidean (straight-line interpolation)")
+
         print("\nQuestion: Does the loss curve cross L(M_base) at any α ≠ 0?\n")
 
         # Prepare model
@@ -280,8 +313,8 @@ class AlphaSweepExperiment(Experiment):
     def _evaluate_at_alpha_safe(
         self,
         alpha: float,
-        original_params: Dict[str, torch.Tensor],
-        device_task_vector: Dict[str, torch.Tensor],
+        original_params: dict[str, torch.Tensor],
+        device_task_vector: dict[str, torch.Tensor],
         base_loss: float
     ) -> AlphaSweepResult | None:
         """Safely evaluate at alpha with error handling.
@@ -326,8 +359,8 @@ class AlphaSweepExperiment(Experiment):
     def _evaluate_at_alpha(
         self,
         alpha: float,
-        original_params: Dict[str, torch.Tensor],
-        device_task_vector: Dict[str, torch.Tensor],
+        original_params: dict[str, torch.Tensor],
+        device_task_vector: dict[str, torch.Tensor],
         base_loss: float
     ) -> AlphaSweepResult:
         """Evaluate model at a specific alpha value.
@@ -341,8 +374,17 @@ class AlphaSweepExperiment(Experiment):
         Returns:
             AlphaSweepResult with evaluation metrics
         """
-        # Apply task vector: M_alpha = M_base + α·T
-        self.apply_task_vector(original_params, device_task_vector, alpha)
+        # Apply task vector: M_alpha = M_base + α·T (Euclidean) or exp_M_base(α·T) (Riemannian)
+        if self.use_geodesics:
+            self.apply_geodesic_task_vector(
+                original_params,
+                device_task_vector,
+                alpha,
+                fisher_metric=self.fisher_metric,
+                christoffel=self.christoffel
+            )
+        else:
+            self.apply_task_vector(original_params, device_task_vector, alpha)
 
         # Evaluate L(M_alpha)
         loss_alpha = self.evaluator.evaluate(
@@ -380,9 +422,12 @@ class AlphaSweepExperiment(Experiment):
                 self.general_eval_categories
             )
 
-        # Compute perplexities
-        perplexity = np.exp(loss_alpha)
-        perplexity_2alpha = np.exp(loss_2alpha) if self.enable_squaring_test else 0.0
+        # Compute perplexities with overflow protection
+        # exp(88.0) is near float32 max; return inf for larger values
+        perplexity = float('inf') if loss_alpha > 88.0 else np.exp(loss_alpha)
+        perplexity_2alpha = (
+            float('inf') if loss_2alpha > 88.0 else np.exp(loss_2alpha)
+        ) if self.enable_squaring_test else 0.0
 
         # Sentiment preference (if opposite sentiment texts provided)
         sentiment_preference = 0.0
@@ -413,8 +458,8 @@ class AlphaSweepExperiment(Experiment):
     def _evaluate_squaring_test(
         self,
         alpha: float,
-        original_params: Dict[str, torch.Tensor],
-        device_task_vector: Dict[str, torch.Tensor],
+        original_params: dict[str, torch.Tensor],
+        device_task_vector: dict[str, torch.Tensor],
         base_loss: float
     ) -> tuple[float, float]:
         """Evaluate squaring test: M(2α) = M_base + 2α·T
@@ -428,8 +473,17 @@ class AlphaSweepExperiment(Experiment):
         Returns:
             Tuple of (loss_2alpha, functional_return_2alpha)
         """
-        # Modify model to M_base + 2α·T
-        self.apply_task_vector(original_params, device_task_vector, 2.0 * alpha)
+        # Modify model to M_base + 2α·T (Euclidean) or exp_M_base(2α·T) (Riemannian)
+        if self.use_geodesics:
+            self.apply_geodesic_task_vector(
+                original_params,
+                device_task_vector,
+                2.0 * alpha,
+                fisher_metric=self.fisher_metric,
+                christoffel=self.christoffel
+            )
+        else:
+            self.apply_task_vector(original_params, device_task_vector, 2.0 * alpha)
 
         # Evaluate L(M_2alpha)
         loss_2alpha = self.evaluator.evaluate(
@@ -439,11 +493,20 @@ class AlphaSweepExperiment(Experiment):
         functional_return_2alpha = abs(loss_2alpha - base_loss)
 
         # Restore to M_alpha for consistency
-        self.apply_task_vector(original_params, device_task_vector, alpha)
+        if self.use_geodesics:
+            self.apply_geodesic_task_vector(
+                original_params,
+                device_task_vector,
+                alpha,
+                fisher_metric=self.fisher_metric,
+                christoffel=self.christoffel
+            )
+        else:
+            self.apply_task_vector(original_params, device_task_vector, alpha)
 
         return loss_2alpha, functional_return_2alpha
 
-    def _calculate_eta(self, alpha_times: List[float], current_idx: int, total_samples: int) -> str:
+    def _calculate_eta(self, alpha_times: list[float], current_idx: int, total_samples: int) -> str:
         """Calculate ETA string.
 
         Args:
@@ -488,7 +551,7 @@ class AlphaSweepExperiment(Experiment):
                 f"{elapsed:.1f}s | {eta_str}"
             )
 
-    def _print_summary(self, alpha_times: List[float], results: List[AlphaSweepResult], total_samples: int) -> None:
+    def _print_summary(self, alpha_times: list[float], results: list[AlphaSweepResult], total_samples: int) -> None:
         """Print experiment summary.
 
         Args:
@@ -513,7 +576,7 @@ class AlphaSweepExperiment(Experiment):
 
         print(f"{'='*70}\n")
 
-    def _create_metadata(self, alpha_times: List[float]) -> Dict[str, Any]:
+    def _create_metadata(self, alpha_times: list[float]) -> dict[str, Any]:
         """Create metadata dictionary for results.
 
         Args:

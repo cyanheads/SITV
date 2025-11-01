@@ -126,10 +126,20 @@ class Experiment(ABC):
             task_vector: Task vector to apply (should be pre-loaded to device)
             alpha: Scaling factor
 
+        Raises:
+            ValueError: If alpha is not finite (NaN or Inf)
+
         Note:
             For best performance, pre-load task_vector to device using
             preload_task_vector_to_device() before calling this in a loop.
         """
+        # Validate alpha is finite
+        if not torch.isfinite(torch.tensor(alpha)):
+            raise ValueError(
+                f"Alpha must be finite, got {alpha}. "
+                "NaN or Inf values are not allowed."
+            )
+
         with torch.no_grad():
             for name, param in self.base_model.named_parameters():
                 if name in task_vector and name in original_params:
@@ -155,19 +165,108 @@ class Experiment(ABC):
             alpha: Scaling factor for T1
             beta: Scaling factor for T2
 
+        Raises:
+            ValueError: If alpha or beta is not finite (NaN or Inf)
+
         Note:
             For best performance, pre-load both task vectors to device using
             preload_task_vector_to_device() before calling this in a loop.
         """
+        # Validate alpha and beta are finite
+        if not torch.isfinite(torch.tensor(alpha)):
+            raise ValueError(
+                f"Alpha must be finite, got {alpha}. "
+                "NaN or Inf values are not allowed."
+            )
+        if not torch.isfinite(torch.tensor(beta)):
+            raise ValueError(
+                f"Beta must be finite, got {beta}. "
+                "NaN or Inf values are not allowed."
+            )
+
         with torch.no_grad():
             for name, param in self.base_model.named_parameters():
                 if name in original_params:
                     # Task vectors should already be on correct device
+                    # Compute scaled task vectors first, then add to base
+                    # for better numerical stability
+                    scaled_t1 = alpha * task_vector_1[name]
+                    scaled_t2 = beta * task_vector_2[name]
+                    # Add in order: base + (scaled_t1 + scaled_t2)
+                    # This groups smaller perturbations together first
                     param.copy_(
-                        original_params[name]
-                        + alpha * task_vector_1[name]
-                        + beta * task_vector_2[name]
+                        original_params[name] + (scaled_t1 + scaled_t2)
                     )
+
+    def apply_geodesic_task_vector(
+        self,
+        original_params: Dict[str, torch.Tensor],
+        task_vector: Dict[str, torch.Tensor],
+        alpha: float,
+        fisher_metric: Optional[Dict[str, torch.Tensor]] = None,
+        christoffel: Optional[Dict[str, torch.Tensor]] = None
+    ) -> None:
+        """Apply task vector via geodesic exponential map.
+
+        Uses Riemannian exponential map instead of Euclidean addition:
+        Euclidean: M(α) = M_base + α·T
+        Riemannian: M(α) = exp_M_base(α·T)
+
+        Args:
+            original_params: Original model parameters (base point)
+            task_vector: Task vector (tangent vector at base point)
+            alpha: Scaling factor
+            fisher_metric: Fisher metric (optional, uses Euclidean if None)
+            christoffel: Christoffel symbols (optional, computed from Fisher if None)
+
+        Raises:
+            ValueError: If alpha is not finite (NaN or Inf)
+
+        Note:
+            This method requires the geometry module to be imported.
+            Falls back to Euclidean interpolation if no Fisher metric provided.
+
+        Examples:
+            >>> # First compute Fisher metric
+            >>> from sitv.geometry import FisherMetricService
+            >>> fisher_service = FisherMetricService(tokenizer, device)
+            >>> fisher = fisher_service.compute_fisher_information_matrix(model, texts)
+            >>>
+            >>> # Then apply via geodesic
+            >>> experiment.apply_geodesic_task_vector(
+            ...     original_params, task_vector, alpha=1.5,
+            ...     fisher_metric=fisher
+            ... )
+        """
+        # Validate alpha is finite
+        if not torch.isfinite(torch.tensor(alpha)):
+            raise ValueError(
+                f"Alpha must be finite, got {alpha}. "
+                "NaN or Inf values are not allowed."
+            )
+
+        # Import geodesic integrator lazily to avoid circular dependencies
+        from sitv.geometry import GeodesicIntegrator
+        from sitv.geometry.config import GeodesicIntegrationConfig
+
+        # Create geodesic integrator
+        config = GeodesicIntegrationConfig()
+        integrator = GeodesicIntegrator(config, device=self.device)
+
+        # Compute exponential map: exp_p(α·v)
+        new_params = integrator.exponential_map(
+            base_point=original_params,
+            tangent_vector=task_vector,
+            t=alpha,
+            fisher_metric=fisher_metric,
+            christoffel=christoffel
+        )
+
+        # Apply new parameters to model
+        with torch.no_grad():
+            for name, param in self.base_model.named_parameters():
+                if name in new_params:
+                    param.copy_(new_params[name].to(param.device))
 
     def format_eta(self, avg_time: float, remaining: int) -> str:
         """Format ETA string.
