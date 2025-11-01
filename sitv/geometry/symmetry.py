@@ -500,14 +500,16 @@ class SymmetryAnalyzer:
 
         for name, param in params.items():
             if param.dim() == 2 and "weight" in name:
-                # Compute L2 norm of each column (neuron)
-                norms = torch.norm(param, dim=0)
+                # Compute L2 norm of each row (output neuron)
+                # For PyTorch Linear: weight shape is (out_features, in_features)
+                # Each row corresponds to one output neuron
+                norms = torch.norm(param, dim=1)
 
                 # Sort indices by norm (decreasing)
                 sorted_idx = torch.argsort(norms, descending=True)
 
-                # Permute columns
-                canonical[name] = param[:, sorted_idx].clone()
+                # Permute rows (output neurons)
+                canonical[name] = param[sorted_idx, :].clone()
 
                 # Handle corresponding bias
                 bias_name = name.replace(".weight", ".bias")
