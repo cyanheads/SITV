@@ -1,7 +1,6 @@
 <div align="center">
   <h1>Self-Inverse Task Vectors (SITV)</h1>
-  <p><b>Experimental cartography of neural networks exploring the hidden geometry inside parameter space. We hypothesize that neural networks organize knowledge as branching structures,like tunnels in an anthill, and I'm trying to map this geometry through loss landscape analysis, Riemannian curvature detection, and multi-dimensional task vector composition.</b></p>
-  <p><i>The end goal: discover shortcuts for LLM training by understanding the underlying geometric structure.</i></p>
+  <p><b>Exploring the loss landscape geometry of neural network task vectors. Maps L(M_base + αT) to find optimal scaling factors and investigate whether self-inverse properties from rotation groups emerge in parameter space.</b></p>
   <p>Loosely inspired by <a href="https://arxiv.org/abs/2502.14367"><i>Walks in Rotation Spaces Return Home when Doubled and Scaled</i></a> (Eckmann & Tlusty, 2025)</p>
 </div>
 
